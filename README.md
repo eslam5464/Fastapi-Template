@@ -19,8 +19,8 @@ A production-ready FastAPI project template with modern best practices, async su
 
 ### Prerequisites
 
-- Python 3.13+
-- PostgreSQL
+- [Python 3.13+](https://www.python.org/downloads/)
+- [PostgreSQL](https://www.postgresql.org/download/)
 - [uv](https://docs.astral.sh/uv/)
 
 ### Installation
@@ -35,6 +35,17 @@ A production-ready FastAPI project template with modern best practices, async su
 2. **Install dependencies**
 
    ```bash
+   # Create a virtual environment
+   uv venv .venv
+
+   # Activate the virtual environment
+
+   # On Linux / macOS
+   source .venv/bin/activate
+   # On Windows (PowerShell)
+   .venv\Scripts\Activate.ps1
+
+   # Install dependencies
    uv sync
    ```
 
@@ -47,13 +58,13 @@ A production-ready FastAPI project template with modern best practices, async su
 
 4. **Configure database**
 
-```bash
-   # Create database
-   createdb fastapi_template
+   ```bash
+      # Create database
+      createdb fastapi_template
 
-   # Run migrations
-   alembic upgrade head
-```
+      # Run migrations
+      alembic upgrade head
+   ```
 
 5. **Start the development server**
 

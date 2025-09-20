@@ -9,7 +9,6 @@ from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
-
 PROJECT_DIR = Path(__file__).parent.parent.parent
 
 with open(f"{PROJECT_DIR}{os.sep}pyproject.toml", "rb") as f:
@@ -54,7 +53,7 @@ class Settings(BaseSettings):
     allowed_hosts: str
 
     # Number of workers for uvicorn
-    workers_count: int 
+    workers_count: int
 
     # Enable uvicorn reloading
     reload_uvicorn: bool = False
@@ -96,9 +95,7 @@ class Settings(BaseSettings):
         """
         Parse CORS origins from a comma-separated string.
         """
-        return [
-            origin.strip() for origin in self.cors_origins.split(",") if origin.strip()
-        ]
+        return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
 
     @computed_field
     @property
@@ -132,6 +129,21 @@ class Settings(BaseSettings):
             user=self.postgres_user,
             password=self.postgres_password,
             path=f"/{self.postgres_db}",
+        )
+
+    @computed_field
+    @property
+    def db_test_url(self) -> URL:
+        """
+        Assemble test database URL from settings.
+        """
+        return URL.build(
+            scheme="postgresql+asyncpg",
+            host=self.postgres_host,
+            port=self.postgres_port,
+            user=self.postgres_user,
+            password=self.postgres_password,
+            path=f"/{self.postgres_db}-test",
         )
 
 
