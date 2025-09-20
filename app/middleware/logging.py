@@ -4,7 +4,7 @@ from typing import Callable
 
 from fastapi import Request, Response
 from loguru import logger
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, _StreamingResponse
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
@@ -28,7 +28,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         )
 
         try:
-            response = await call_next(request)
+            response: _StreamingResponse = await call_next(request)
 
             # Log response
             process_time = time.time() - start_time

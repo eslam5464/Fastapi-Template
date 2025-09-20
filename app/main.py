@@ -4,8 +4,8 @@ from loguru import logger
 from starlette.middleware.cors import CORSMiddleware
 
 from app.api.routes import api_router
-from app.core.config import settings, Environment
-from app.core.logger import configure_logging, cleanup_logging
+from app.core.config import Environment, settings
+from app.core.logger import cleanup_logging, configure_logging
 from app.middleware.logging import LoggingMiddleware
 
 
@@ -30,15 +30,9 @@ app = FastAPI(
     title=settings.app_title,
     version=settings.app_version,
     description=settings.app_description,
-    openapi_url=(
-        "/openapi.json"
-        if settings.current_environment in ALLOWED_ENVIRONMENTS
-        else None
-    ),
+    openapi_url=("/openapi.json" if settings.current_environment in ALLOWED_ENVIRONMENTS else None),
     docs_url="/docs" if settings.current_environment in ALLOWED_ENVIRONMENTS else None,
-    redoc_url=(
-        "/redoc" if settings.current_environment in ALLOWED_ENVIRONMENTS else None
-    ),
+    redoc_url="/redoc" if settings.current_environment in ALLOWED_ENVIRONMENTS else None,
     lifespan=lifespan,
     generate_unique_id_function=lambda route: f"{route.tags[0]}-{route.name}",
 )

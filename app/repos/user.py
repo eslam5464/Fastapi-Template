@@ -1,9 +1,9 @@
 from sqlalchemy import insert, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.auth import get_password_hash, verify_password
-from app.repos import BaseRepository
+from app.core.auth import get_password_hash
 from app.models.user import User
+from app.repos import BaseRepository
 from app.schemas import UserCreate, UserUpdate
 
 
@@ -19,9 +19,7 @@ class UserRepo(BaseRepository[User, UserCreate, UserUpdate]):
         """Create a new user with hashed password"""
         user_in.password = get_password_hash(user_in.password)
         stmt = (
-            insert(self.model)
-            .values(**user_in.model_dump(exclude_none=True))
-            .returning(self.model)
+            insert(self.model).values(**user_in.model_dump(exclude_none=True)).returning(self.model)
         )
         result = await self.session.execute(stmt)
         await self.session.commit()

@@ -68,9 +68,9 @@ A production-ready FastAPI project template with modern best practices, async su
 
 5. **Start the development server**
 
-```bash
-   python main.py
-```
+   ```bash
+      python main.py
+   ```
 
 The API will be available at `http://localhost:8000` with interactive documentation at `http://localhost:8000/docs`.
 
