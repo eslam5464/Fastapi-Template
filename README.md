@@ -46,7 +46,10 @@ A production-ready FastAPI project template with modern best practices, async su
    .venv\Scripts\Activate.ps1
 
    # Install dependencies
-   uv sync
+   uv sync --all-groups
+
+   # Install pre-commit hooks
+   pre-commit install
    ```
 
 3. **Set up environment variables**
@@ -135,6 +138,14 @@ The project includes several tools for maintaining code quality:
 - **Pre-commit hooks** - Automated checks before commits
 - **Loguru** - Structured logging
 - **Environment validation** - Pydantic settings
+
+### Security Analysis
+
+Run security analysis using Bandit:
+
+```bash
+bandit -x VIRTUAL_ENV_PATH -f json -o bandit_results.json -r PROJECT_PATH
+```
 
 ### Running Tests
 

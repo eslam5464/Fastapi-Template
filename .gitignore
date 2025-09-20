@@ -107,3 +107,6 @@ node_modules/
 .sass-cache/
 tmp/
 temp/
+
+# Bandit
+bandit_results.json

@@ -5,26 +5,24 @@ FROM python:3.13-alpine AS builder
 RUN apk add --no-cache \
     build-base \
     postgresql-dev \
-    libffi-dev \
-    && pip install --no-cache-dir poetry==2.1.3
+    libffi-dev
 
-# Set Poetry configuration for production
-ENV POETRY_NO_INTERACTION=1 \
-    POETRY_VENV_IN_PROJECT=0 \
-    POETRY_CACHE_DIR=/tmp/poetry_cache \
-    POETRY_HOME="/opt/poetry"
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Set uv configuration for production
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_PYTHON_DOWNLOADS=never
 
 WORKDIR /build
 
-# Copy Poetry files for dependency resolution
-COPY pyproject.toml poetry.lock ./
+# Copy dependency files
+COPY pyproject.toml uv.lock* ./
 
-# Install dependencies to a virtual environment
-RUN python -m venv /opt/venv && \
-    . /opt/venv/bin/activate && \
-    poetry config virtualenvs.create false && \
-    poetry install --only=main --no-root && \
-    rm -rf /tmp/poetry_cache
+# Create virtual environment and install dependencies
+RUN uv venv /opt/venv && \
+    uv sync --frozen --no-dev --no-install-project
 
 # Production stage
 FROM python:3.13-alpine AS production

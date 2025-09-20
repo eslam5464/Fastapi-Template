@@ -100,3 +100,6 @@ temp/
 **/.env
 Dockerfile
 docker-compose.yml
+
+# Bandit
+bandit_results.json
