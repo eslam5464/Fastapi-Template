@@ -1,8 +1,8 @@
-"""init tables
+"""add main tables
 
-Revision ID: cda7d0878abb
+Revision ID: 9d538fba92b0
 Revises:
-Create Date: 2025-09-19 19:46:26.791583+00:00
+Create Date: 2025-09-26 08:51:52.377335+00:00
 
 """
 
@@ -13,7 +13,7 @@ import sqlalchemy as sa
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision: str = "cda7d0878abb"
+revision: str = "9d538fba92b0"
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

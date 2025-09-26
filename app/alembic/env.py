@@ -2,12 +2,12 @@ import asyncio
 from logging.config import fileConfig
 
 from alembic import context
-from app.core.config import settings
-from app.core.db import meta  # noqa
-from app.models import *  # noqa
 from sqlalchemy import Connection, Inspector, inspect
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy.sql.ddl import CreateSchema
+
+from app.core.config import settings
+from app.core.db import meta
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -21,6 +21,11 @@ if config.config_file_name is not None:
 # add your model's MetaData object here
 # for 'autogenerate' support
 target_metadata = meta
+
+
+def get_schema_name():
+    """Get schema name from environment variable"""
+    return settings.postgres_db_schema
 
 
 def include_name(name, type_, parent_names):
@@ -37,7 +42,7 @@ def include_name(name, type_, parent_names):
         return True
 
 
-async def run_migrations_offline() -> None:
+def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
     This configures the context with just a URL
@@ -53,8 +58,8 @@ async def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
-        include_schemas=True,
-        version_table_schema=settings.postgres_db_schema,
+        version_table_schema=get_schema_name(),
+        include_name=include_name,
     )
 
     with context.begin_transaction():
@@ -71,13 +76,12 @@ def do_run_migrations(connection: Connection) -> None:
         connection=connection,
         target_metadata=target_metadata,
         include_name=include_name,
-        include_schemas=True,
-        version_table_schema=settings.postgres_db_schema,
+        version_table_schema=get_schema_name(),
     )
     inspector: Inspector = inspect(connection)
 
-    if not inspector.has_schema(schema_name=settings.postgres_db_schema):
-        connection.execute(CreateSchema(settings.postgres_db_schema))
+    if not inspector.has_schema(schema_name=get_schema_name()):
+        connection.execute(CreateSchema(get_schema_name()))
         connection.commit()
 
     with context.begin_transaction():
@@ -96,10 +100,8 @@ async def run_migrations_online() -> None:
         await connection.run_sync(do_run_migrations)
 
 
-loop = asyncio.get_event_loop()
 if context.is_offline_mode():
-    task = run_migrations_offline()
+    run_migrations_offline()
 else:
-    task = run_migrations_online()
-
-loop.run_until_complete(task)
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run_migrations_online())
