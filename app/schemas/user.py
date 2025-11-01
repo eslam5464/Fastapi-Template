@@ -8,21 +8,15 @@ from pydantic import EmailStr, Field, SecretStr, field_validator
 from app.core.field_sizes import FieldSizes
 from app.schemas import BaseSchema, BaseTimestampSchema
 
-USER_PASSWORD_REGEX = (
-    r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
-)
+USER_PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
 USER_PASSWORD_DESCRIPTION = (
-    "Password must be at least 8 characters long, "
-    + "contain at least one uppercase letter, "
-    + "one lowercase letter, one number, and one special character."
+    "Password must be at least 8 characters long and include at least one uppercase letter, "
+    + "one lowercase letter, one number, and one special character from @$!%*?&."
 )
-USER_USERNAME_REGEX = (
-    r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,50}$"
-)
+USER_USERNAME_REGEX = r"^(?=.*\d)[A-Za-z0-9_]{3,50}$"
 USER_USERNAME_DESCRIPTION = (
-    "Username must be 3-50 characters long, "
-    + "contain at least one uppercase letter, one lowercase letter, "
-    + "one number, and one special character."
+    "Username must be 3 to 50 characters long, contain only letters, "
+    + "numbers, or underscores, and include at least one number."
 )
 
 
@@ -41,7 +35,7 @@ class UserCreate(BaseSchema):
 
     username: str
     email: EmailStr
-    password: str
+    hashed_password: str
     first_name: str
     last_name: str
 
@@ -87,7 +81,7 @@ class UserSignup(BaseSchema):
     @field_validator("username")
     def validate_username(cls, value: str) -> str:
         """Validate username to ensure it contains no spaces."""
-        if re.compile(USER_USERNAME_REGEX).match(value) is None:
+        if re.match(USER_USERNAME_REGEX, value) is None:
             raise ValueError(USER_USERNAME_DESCRIPTION)
 
         return value
@@ -95,7 +89,7 @@ class UserSignup(BaseSchema):
     @field_validator("password")
     def validate_password(cls, value: SecretStr) -> SecretStr:
         """Validate password to ensure it meets complexity requirements."""
-        if re.compile(USER_PASSWORD_REGEX).match(value.get_secret_value()) is None:
+        if re.match(USER_PASSWORD_REGEX, value.get_secret_value()) is None:
             raise ValueError(USER_PASSWORD_DESCRIPTION)
 
         return value

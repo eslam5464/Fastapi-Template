@@ -1,11 +1,11 @@
 import secrets
 import string
+import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Optional
-import uuid
 
-import jwt
 from fastapi import Request
+from jose import jwt
 from passlib.context import CryptContext
 
 from app.core.config import Environment, settings
@@ -30,14 +30,10 @@ def create_access_token(
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(UTC) + timedelta(
-            seconds=settings.access_token_expire_seconds
-        )
+        expire = datetime.now(UTC) + timedelta(seconds=settings.access_token_expire_seconds)
 
     to_encode = {"exp": expire, "sub": str(subject), "iat": datetime.now(UTC)}
-    encoded_jwt = jwt.encode(
-        to_encode, settings.secret_key, algorithm=settings.jwt_algorithm
-    )
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.jwt_algorithm)
     return encoded_jwt
 
 
@@ -50,13 +46,9 @@ def create_refresh_token(subject: str | int | uuid.UUID) -> str:
     Returns:
         Encoded JWT refresh token
     """
-    expire = datetime.now(UTC) + timedelta(
-        seconds=settings.refresh_token_expire_seconds
-    )
+    expire = datetime.now(UTC) + timedelta(seconds=settings.refresh_token_expire_seconds)
     to_encode = {"exp": expire, "sub": str(subject), "iat": datetime.now(UTC)}
-    encoded_jwt = jwt.encode(
-        to_encode, settings.secret_key, algorithm=settings.jwt_algorithm
-    )
+    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.jwt_algorithm)
     return encoded_jwt
 
 

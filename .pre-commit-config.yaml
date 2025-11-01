@@ -11,6 +11,7 @@ repos:
       - id: detect-private-key
       - id: check-merge-conflict
       - id: name-tests-test
+        exclude: ^tests/(conftest|schemas|utils)\.py$
 
   - repo: https://github.com/psf/black
     rev: 25.9.0

@@ -24,7 +24,7 @@ async def lifespan(app: FastAPI):
     logger.success("Resources cleaned up.")
 
 
-ALLOWED_ENVIRONMENTS = {Environment.LOCAL, Environment.DEV, Environment.STAGING}
+ALLOWED_ENVIRONMENTS = {Environment.LOCAL, Environment.DEV, Environment.STG}
 
 app = FastAPI(
     title=settings.app_title,
