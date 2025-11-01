@@ -34,17 +34,24 @@ A production-ready FastAPI project template with modern best practices, async su
 
 2. **Install dependencies**
 
+   Create a virtual environment
+
    ```bash
-   # Create a virtual environment
-   uv venv .venv
+   python -m venv .venv
+   ```
 
-   # Activate the virtual environment
+   Activate the virtual environment
 
+   ```bash
    # On Linux / macOS
    source .venv/bin/activate
    # On Windows (PowerShell)
    .venv\Scripts\Activate.ps1
+   ```
 
+   Install dependencies
+
+   ```bash
    # Install dependencies
    uv sync --all-groups
 
@@ -144,20 +151,28 @@ The project includes several tools for maintaining code quality:
 Run security analysis using Bandit:
 
 ```bash
-bandit -x VIRTUAL_ENV_PATH -f json -o bandit_results.json -r PROJECT_PATH
+uv run bandit -r app -f json -o bandit_results.json
 ```
 
 ### Running Tests
 
 ```bash
-# Install test dependencies
-uv add pytest pytest-asyncio
-
-# Run tests
-pytest
+uv run pytest -v
 ```
 
 ### Database Migrations
+
+Use the scripts provided (Recommended):
+
+```bash
+# Run database migrations for linux/macOS
+./scripts/alembic.sh
+
+# Run database migrations for windows
+.\scripts\alembic.bat
+```
+
+Or use Alembic commands directly:
 
 ```bash
 # Create a new migration
@@ -176,8 +191,8 @@ The application supports multiple environments:
 
 - **local** - Development with debug features
 - **dev** - Development server
-- **staging** - Pre-production testing
-- **prod** - Production deployment
+- **stg** - Pre-production testing (Staging)
+- **prd** - Production deployment
 
 Configure via environment variables or `.env` file:
 
@@ -224,3 +239,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [FastAPI](https://fastapi.tiangolo.com/) - The amazing web framework
 - [SQLAlchemy](https://sqlalchemy.org/) - The Python SQL toolkit
 - [Pydantic](https://pydantic-docs.helpmanual.io/) - Data validation library
+- [Fastapi Template by tiangolo](https://github.com/tiangolo/fastapi-template) - A FastAPI project template
+- [Fastapi best practices](https://github.com/zhanymkanov/fastapi-best-practices) - Inspiration for best practices
+- [Fastapi Tips](https://github.com/Kludex/fastapi-tips) - Useful tips and tricks from FastAPI Expert
+- [Fastapi structure](https://github.com/rannysweis/fast-api-docker-poetry) - Project structure inspiration
