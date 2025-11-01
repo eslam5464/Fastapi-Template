@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from sqlalchemy import MetaData
@@ -25,16 +26,17 @@ meta = MetaData(
     },
 )
 
+async_session_factory = async_sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    expire_on_commit=False,
+    bind=engine,
+    class_=AsyncSession,
+)
 
+
+@asynccontextmanager
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    async_session_factory = async_sessionmaker(
-        autocommit=False,
-        autoflush=False,
-        expire_on_commit=False,
-        bind=engine,
-        class_=AsyncSession,
-    )
-
     async with async_session_factory() as session:
         try:
             yield session

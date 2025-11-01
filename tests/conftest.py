@@ -79,10 +79,11 @@ async def faker() -> Faker:
 async def db_session(test_app: FastAPI) -> AsyncGenerator[AsyncSession, None]:
     """Create a new database session for a test."""
     test_engine = create_async_engine(settings.db_test_url.human_repr())
-    test_async_session = async_sessionmaker(test_engine, expire_on_commit=False)
+    test_async_session = async_sessionmaker(bind=test_engine, expire_on_commit=False)
 
     async with test_async_session() as session:
         yield session
+        await session.rollback()
 
 
 @pytest_asyncio.fixture
