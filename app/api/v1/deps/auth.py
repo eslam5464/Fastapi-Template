@@ -1,6 +1,6 @@
+import uuid
 from datetime import UTC, datetime
 from typing import Annotated
-import uuid
 
 from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
@@ -12,6 +12,7 @@ from app import repos
 from app.core import exceptions
 from app.core.config import settings
 from app.core.db import get_session
+from app.core.utils import parse_user_id
 from app.models.user import User
 from app.schemas.token import TokenData
 
@@ -53,7 +54,9 @@ async def get_current_user(
 
     try:
         payload = jwt.decode(
-            token=token, key=settings.secret_key, algorithms=[settings.jwt_algorithm]
+            token=token,
+            key=settings.secret_key,
+            algorithms=settings.jwt_algorithm,
         )
 
         user_id: str | int | uuid.UUID | None = payload.get("sub")
@@ -63,7 +66,7 @@ async def get_current_user(
             raise credentials_exception
 
         token_data = TokenData(
-            user_id=str(user_id),
+            user_id=parse_user_id(user_id),
             issued_at=payload.get("iat"),
             expires_at=expires_at,
         )
@@ -81,6 +84,7 @@ async def get_current_user(
         raise credentials_expired
 
     user = await repos.UserRepo(db).get_by_id(token_data.user_id)
+
     if user is None:
         raise credentials_exception
 

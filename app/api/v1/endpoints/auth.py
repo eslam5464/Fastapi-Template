@@ -1,10 +1,10 @@
-from typing import Annotated
 import uuid
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlalchemy.ext.asyncio import AsyncSession
 from jose import JWTError, jwt
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import repos
 from app.core import exceptions, responses
@@ -16,6 +16,7 @@ from app.core.auth import (
 )
 from app.core.config import settings
 from app.core.db import get_session
+from app.core.utils import parse_user_id
 from app.schemas import (
     Token,
     TokenPayload,
@@ -80,13 +81,13 @@ async def signup(
         )
 
     user_hashed_password = get_password_hash(user_in.password.get_secret_value())
-    user = await repos.UserRepo(db).create_user(
-        user_in=UserCreate(
+    user = await repos.UserRepo(db).create_one(
+        schema=UserCreate(
             first_name="",
             last_name="",
             username=user_in.username,
             email=user_in.email,
-            password=user_hashed_password,
+            hashed_password=user_hashed_password,
         ),
     )
     access_token = create_access_token(subject=str(user.id))
@@ -116,7 +117,7 @@ async def refresh_token(
         payload = jwt.decode(
             token_payload.refresh_token,
             settings.secret_key,
-            algorithms=[settings.jwt_algorithm],
+            algorithms=settings.jwt_algorithm,
         )
         user_id: str | int | uuid.UUID | None = payload.get("sub")
         if user_id is None:
@@ -124,6 +125,7 @@ async def refresh_token(
                 "Invalid refresh token",
                 headers={"WWW-Authenticate": "Bearer"},
             )
+        user_id = parse_user_id(user_id)
     except JWTError:
         raise exceptions.UnauthorizedException(
             "Invalid refresh token",

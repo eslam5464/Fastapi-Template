@@ -1,4 +1,3 @@
-from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from sqlalchemy import MetaData
@@ -35,7 +34,6 @@ async_session_factory = async_sessionmaker(
 )
 
 
-@asynccontextmanager
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_factory() as session:
         try:

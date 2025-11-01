@@ -10,16 +10,17 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
+PROJECT_TOML_PATH = PROJECT_DIR / "pyproject.toml"
 
-with open(f"{PROJECT_DIR}{os.sep}pyproject.toml", "rb") as f:
+with open(PROJECT_TOML_PATH, "rb") as f:
     PYPROJECT_CONTENT = tomllib.load(f)["project"]
 
 
 class Environment(StrEnum):
     LOCAL = "local"
     DEV = "dev"
-    STAGING = "staging"
-    PROD = "prod"
+    STG = "stg"
+    PRD = "prd"
 
 
 def convert_app_name(s: str) -> str:
@@ -61,6 +62,7 @@ class Settings(BaseSettings):
     # Current working environment
     current_environment: Environment
     log_level: int = logging.INFO
+    debug: bool = False
 
     # Variables for the database
     postgres_host: str
@@ -143,7 +145,7 @@ class Settings(BaseSettings):
             port=self.postgres_port,
             user=self.postgres_user,
             password=self.postgres_password,
-            path=f"/{self.postgres_db}-test",
+            path=f"/{self.postgres_db}_test",
         )
 
 

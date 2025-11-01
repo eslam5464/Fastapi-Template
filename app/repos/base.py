@@ -1,10 +1,10 @@
 import uuid
-from sqlalchemy import insert, select, text, update, delete
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.engine import Result
+from typing import Any, Generic, Sequence, Type, TypeVar
 
-from typing import Generic, Type, TypeVar, Any, Sequence
 from pydantic import BaseModel
+from sqlalchemy import delete, insert, select, text, update
+from sqlalchemy.engine import Result
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Base
 
@@ -52,12 +52,13 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
                 f"Column '{column_name}' is not a valid SQLAlchemy column on model {self.model.__name__}"
             )
 
-    async def create_one(self, schema: CreateSchema) -> Model:
+    async def create_one(self, schema: CreateSchema, exclude_none: bool = True) -> Model:
         """
         Create a new object in the database.
 
         Args:
             schema (CreateSchema): The data to create the object.
+            exclude_none (bool): Whether to exclude None values from the creation.
 
         Returns:
             Model: The created object.
@@ -67,19 +68,22 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         """
         stmt = (
             insert(self.model)
-            .values(**schema.model_dump(exclude_none=True))
+            .values(**schema.model_dump(exclude_none=exclude_none))
             .returning(self.model)
         )
         result = await self.session.execute(stmt)
         await self.session.commit()
         return result.scalar_one()
 
-    async def create_bulk(self, schemas: Sequence[CreateSchema]) -> Sequence[Model]:
+    async def create_bulk(
+        self, schemas: Sequence[CreateSchema], exclude_none: bool = True
+    ) -> Sequence[Model]:
         """
         Create multiple objects in the database.
 
         Args:
             schemas (Sequence[CreateSchema]): The list of data to create objects.
+            exclude_none (bool): Whether to exclude None values from the creation.
 
         Returns:
             Sequence[Model]: The Sequence of created objects.
@@ -90,7 +94,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         if not schemas:
             return []
 
-        values = [schema.model_dump(exclude_none=True) for schema in schemas]
+        values = [schema.model_dump(exclude_none=exclude_none) for schema in schemas]
         stmt = insert(self.model).values(values).returning(self.model)
         result = await self.session.execute(stmt)
         await self.session.commit()
@@ -121,10 +125,12 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
 
         return result.scalar_one_or_none()
 
-    async def get_multi(
+    async def get_multi_by_ids(
         self,
         skip: int = 0,
         limit: int = 100,
+        id_column_name: str = "id",
+        obj_ids: Sequence[str | int | uuid.UUID] = [],
     ) -> Sequence[Model]:
         """
         Retrieve multiple objects from the database.
@@ -132,40 +138,18 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         Args:
             skip (int): The number of records to skip.
             limit (int): The maximum number of records to retrieve.
-
-        Returns:
-            Sequence[Model]: A Sequence of retrieved objects.
-        """
-        stmt = select(self.model).offset(skip).limit(limit)
-        result = await self.session.execute(stmt)
-
-        return result.scalars().all()
-
-    async def get_by_ids(
-        self,
-        obj_ids: Sequence[int | uuid.UUID],
-        id_column_name: str = "id",
-    ) -> Sequence[Model]:
-        """
-        Retrieve multiple objects by their IDs.
-
-        Args:
-            obj_ids (Sequence[int | uuid.UUID]): The IDs of the objects to retrieve.
             id_column_name (str): The name of the ID column in the model.
+            obj_ids (Sequence[str | int | uuid.UUID]): The IDs of the objects to retrieve
 
         Returns:
             Sequence[Model]: A Sequence of retrieved objects.
-
-        Raises:
-            ValueError: If the id_column_name doesn't exist on the model.
         """
-        if not obj_ids:
-            return []
-
         self._validate_column_exists(id_column_name)
-
-        stmt = select(self.model).where(
-            getattr(self.model, id_column_name).in_(obj_ids)
+        stmt = (
+            select(self.model)
+            .where(getattr(self.model, id_column_name).in_(obj_ids))
+            .offset(skip)
+            .limit(limit)
         )
         result = await self.session.execute(stmt)
 
@@ -173,9 +157,10 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
 
     async def update_by_id(
         self,
-        obj_id: int | uuid.UUID,
+        obj_id: str | int | uuid.UUID,
         schema: UpdateSchema,
         id_column_name: str = "id",
+        exclude_none: bool = True,
     ) -> Model | None:
         """
         Update an object by its ID.
@@ -184,6 +169,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             obj_id (int | uuid.UUID): The ID of the object to update.
             schema (UpdateSchema): The data to update the object.
             id_column_name (str): The name of the ID column in the model.
+            exclude_none (bool): Whether to exclude None values from the update.
 
         Returns:
             Model | None: The updated object or None if not found.
@@ -200,7 +186,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         stmt = (
             update(self.model)
             .where(getattr(self.model, id_column_name) == obj_id)
-            .values(**schema.model_dump(exclude_none=True))
+            .values(**schema.model_dump(exclude_none=exclude_none))
             .returning(self.model)
         )
         result = await self.session.execute(stmt)
@@ -210,15 +196,17 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
 
     async def update_bulk(
         self,
-        updates: Sequence[tuple[int | uuid.UUID, UpdateSchema]],
+        updates: Sequence[tuple[str | int | uuid.UUID, UpdateSchema]],
         id_column_name: str = "id",
+        exclude_none: bool = True,
     ) -> list[Model]:
         """
         Update multiple objects by their IDs.
 
         Args:
-            updates (Sequence[tuple[int | uuid.UUID, UpdateSchema]]): List of tuples containing (id, update_data).
+            updates (Sequence[tuple[str | int | uuid.UUID, UpdateSchema]]): List of tuples containing (id, update_data).
             id_column_name (str): The name of the ID column in the model.
+            exclude_none (bool): Whether to exclude None values from the update.
 
         Returns:
             list[Model]: A list of updated objects.
@@ -236,7 +224,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             stmt = (
                 update(self.model)
                 .where(getattr(self.model, id_column_name) == obj_id)
-                .values(**update_schema.model_dump(exclude_none=True))
+                .values(**update_schema.model_dump(exclude_none=exclude_none))
                 .returning(self.model)
             )
             result = await self.session.execute(stmt)
@@ -250,14 +238,14 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
 
     async def delete_by_id(
         self,
-        obj_id: int | uuid.UUID,
+        obj_id: str | int | uuid.UUID,
         id_column_name: str = "id",
     ) -> bool:
         """
         Delete an object by its ID.
 
         Args:
-            obj_id (int | uuid.UUID): The ID of the object to delete.
+            obj_id (str | int | uuid.UUID): The ID of the object to delete.
             id_column_name (str): The name of the ID column in the model.
 
         Returns:
@@ -275,7 +263,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
 
     async def delete_by_ids(
         self,
-        obj_ids: Sequence[int | uuid.UUID],
+        obj_ids: Sequence[str | int | uuid.UUID],
         id_column_name: str = "id",
     ) -> int:
         """
@@ -295,9 +283,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             return 0
 
         self._validate_column_exists(id_column_name)
-        stmt = delete(self.model).where(
-            getattr(self.model, id_column_name).in_(obj_ids)
-        )
+        stmt = delete(self.model).where(getattr(self.model, id_column_name).in_(obj_ids))
         result = await self.session.execute(stmt)
         await self.session.commit()
 
@@ -313,6 +299,4 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         Returns:
             Result: The result of the executed query.
         """
-        result = await self.session.execute(text(query))
-
-        return result
+        return await self.session.execute(text(query))

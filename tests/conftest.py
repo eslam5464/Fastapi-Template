@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_asyn
 from sqlalchemy.sql import text
 
 from app import repos
+from app.core.auth import get_password_hash
 from app.core.config import settings
 from app.core.db import get_session
 from app.main import app
@@ -92,11 +93,11 @@ async def user(db_session: AsyncSession, faker: Faker) -> User:
     user_data = UserCreate(
         email=faker.safe_email(),
         username=faker.user_name(),
-        password=DEFAULT_PASSWORD,
+        hashed_password=get_password_hash(DEFAULT_PASSWORD),
         first_name=faker.first_name(),
         last_name=faker.last_name(),
     )
-    user_db = await repos.UserRepo(db_session).create_user(user_data)
+    user_db = await repos.UserRepo(db_session).create_one(user_data)
     return user_db
 
 
@@ -109,11 +110,11 @@ async def other_user(
     user_data = UserCreate(
         email=faker.safe_email(),
         username=faker.user_name(),
-        password=DEFAULT_PASSWORD,
+        hashed_password=get_password_hash(DEFAULT_PASSWORD),
         first_name=faker.first_name(),
         last_name=faker.last_name(),
     )
-    user_db = await repos.UserRepo(db_session).create_user(user_data)
+    user_db = await repos.UserRepo(db_session).create_one(user_data)
     return user_db
 
 

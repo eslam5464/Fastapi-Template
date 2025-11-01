@@ -377,6 +377,7 @@ dependencies = [
     { name = "email-validator" },
     { name = "fastapi" },
     { name = "gunicorn" },
+    { name = "httptools", marker = "sys_platform == 'linux'" },
     { name = "loguru" },
     { name = "passlib", extra = ["bcrypt"] },
     { name = "pre-commit" },
@@ -389,6 +390,7 @@ dependencies = [
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "tzdata" },
     { name = "uvicorn", extra = ["standard"] },
+    { name = "uvloop", marker = "sys_platform == 'linux'" },
     { name = "yarl" },
 ]
 
@@ -414,6 +416,7 @@ requires-dist = [
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "fastapi", specifier = ">=0.116.2" },
     { name = "gunicorn", specifier = ">=23.0.0" },
+    { name = "httptools", marker = "sys_platform == 'linux'", specifier = ">=0.6.4" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "passlib", extras = ["bcrypt"], specifier = ">=1.7.4" },
     { name = "pre-commit", specifier = ">=4.3.0" },
@@ -426,6 +429,7 @@ requires-dist = [
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.43" },
     { name = "tzdata", specifier = ">=2025.2" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.35.0" },
+    { name = "uvloop", marker = "sys_platform == 'linux'", specifier = ">=0.21.0" },
     { name = "yarl", specifier = ">=1.20.1" },
 ]
 
