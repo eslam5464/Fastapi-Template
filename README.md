@@ -86,7 +86,7 @@ The API will be available at `http://localhost:8000` with interactive documentat
 
 ## 📖 Documentation
 
-Detailed documentation is available in the `docs/` folder:
+Detailed documentation is available in the [docs/](docs/) folder:
 
 - **[Architecture](docs/architecture.md)** - Project structure and design patterns
 - **[API Reference](docs/api.md)** - Endpoint documentation and examples
