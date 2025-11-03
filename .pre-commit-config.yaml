@@ -21,7 +21,7 @@ repos:
         exclude: (__init__.py$|migrations/)
 
   - repo: https://github.com/pycqa/isort
-    rev: 6.0.1
+    rev: 7.0.0
     hooks:
       - id: isort
         args: [--profile=black, --line-length=100]
