@@ -2,7 +2,6 @@ import re
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import Form
 from pydantic import EmailStr, Field, SecretStr, field_validator
 
 from app.core.field_sizes import FieldSizes
@@ -53,8 +52,19 @@ class UserUpdate(BaseSchema):
 class UserLogin(BaseSchema):
     """User login schema"""
 
-    email: Annotated[EmailStr, Form()]
-    password: Annotated[SecretStr, Form()]
+    username: Annotated[
+        str,
+        Field(
+            min_length=3,
+            max_length=FieldSizes.USERNAME,
+        ),
+    ]
+    password: Annotated[
+        SecretStr,
+        Field(
+            max_length=FieldSizes.PASSWORD,
+        ),
+    ]
 
 
 class UserSignup(BaseSchema):
@@ -67,8 +77,8 @@ class UserSignup(BaseSchema):
             max_length=FieldSizes.USERNAME,
             description=USER_USERNAME_DESCRIPTION,
         ),
-    ] = Form()
-    email: Annotated[EmailStr, Form()]
+    ] = Field()
+    email: Annotated[EmailStr, Field()]
     password: Annotated[
         SecretStr,
         Field(
@@ -76,7 +86,7 @@ class UserSignup(BaseSchema):
             max_length=FieldSizes.PASSWORD,
             description=USER_PASSWORD_DESCRIPTION,
         ),
-    ] = Form()
+    ] = Field()
 
     @field_validator("username")
     def validate_username(cls, value: str) -> str:

@@ -1,321 +1,471 @@
-import asyncio
+import atexit
 import logging
 import os
+import queue
 import sys
-from typing import Any
+import threading
+import time
+import uuid
+from contextvars import ContextVar
+from pathlib import Path
+from typing import Any, Optional
 
-import aiohttp
 from loguru import logger
 
-from app.core.config import settings
+from app.core.config import Environment, settings
+
+# ============================================
+# CONTEXT VARIABLES FOR REQUEST TRACKING
+# ============================================
+request_id_var: ContextVar[Optional[str]] = ContextVar("request_id", default=None)
 
 
-def safe_serialize(obj):
-    """Safely serialize objects to JSON-compatible types"""
-    if obj is None:
-        return None
-    elif isinstance(obj, (str, int, float, bool)):
-        return obj
-    elif isinstance(obj, (list, tuple)):
-        return [safe_serialize(item) for item in obj]
-    elif isinstance(obj, dict):
-        return {key: safe_serialize(value) for key, value in obj.items()}
-    else:
-        # For any other type, convert to string
-        return str(obj)
+# ============================================
+# LOG DIRECTORY AND FILE PATHS
+# ============================================
+LOG_DIR = Path("logs")
+LOG_DIR.mkdir(exist_ok=True)
+
+# Single unified log file for all workers
+LOG_FILE = LOG_DIR / "app.log"
 
 
-class AsyncOpenObserveSink:
+# ============================================
+# OPENOBSERVE ASYNC HANDLER
+# ============================================
+
+
+class OpenObserveHandler:
+    """
+    Thread-safe, non-blocking handler for sending logs to OpenObserve.
+
+    Features:
+    - Background thread for HTTP requests (doesn't block FastAPI event loop)
+    - Batching for efficiency (reduces HTTP calls)
+    - Queue-based to avoid blocking main application
+    - Automatic retry with exponential backoff
+    - Graceful shutdown with pending log flush
+    - Connection pooling for performance
+    """
+
     def __init__(
         self,
         url: str,
-        org_id: str,
-        stream_name: str,
-        access_key: str,
+        token: str,
+        org: str = "default",
+        stream: str = "default",
         batch_size: int = 10,
-        flush_interval: int = 5,
+        flush_interval: float = 5.0,
+        max_retries: int = 3,
     ):
-        self.url = f"{url.rstrip('/')}/api/{org_id}/{stream_name}/_json"
-        self.headers = {"Content-Type": "application/json", "Authorization": f"Basic {access_key}"}
+        self.url = url
+        self.token = token
+        self.org = org
+        self.stream = stream
         self.batch_size = batch_size
         self.flush_interval = flush_interval
-        self.log_queue = asyncio.Queue()
-        self.session = None
-        self._task = None
-        self._shutdown_event = asyncio.Event()
+        self.max_retries = max_retries
 
-    async def start(self):
-        """Start the async sink"""
-        self.session = aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=10),
-            connector=aiohttp.TCPConnector(limit=100, limit_per_host=30),
+        # Queue for log messages (thread-safe)
+        self.log_queue: queue.Queue = queue.Queue(maxsize=1000)
+
+        # Background thread
+        self.worker_thread: Optional[threading.Thread] = None
+        self.shutdown_event = threading.Event()
+
+        # HTTP client (lazy initialization)
+        self._client = None
+        self._client_lock = threading.Lock()
+
+        # Start background worker
+        self._start_worker()
+
+        # Register shutdown handler
+        atexit.register(self.shutdown)
+
+    def _get_client(self):
+        """Lazy initialization of HTTP client with connection pooling"""
+        if self._client is None:
+            with self._client_lock:
+                if self._client is None:  # Double-check locking
+                    try:
+                        import httpx
+
+                        self._client = httpx.Client(
+                            timeout=10.0,
+                            limits=httpx.Limits(max_keepalive_connections=5, max_connections=10),
+                        )
+                    except ImportError:
+                        print(
+                            "WARNING: httpx not installed. OpenObserve logging disabled.",
+                            file=sys.stderr,
+                        )
+                        print("Install with: pip install httpx", file=sys.stderr)
+                        return None
+        return self._client
+
+    def _start_worker(self):
+        """Start background thread for processing logs"""
+        self.worker_thread = threading.Thread(
+            target=self._worker_loop, daemon=True, name="OpenObserveWorker"
         )
-        self._task = asyncio.create_task(self._worker())
+        self.worker_thread.start()
 
-    async def stop(self):
-        """Stop the async sink and cleanup resources"""
-        self._shutdown_event.set()
-        if self._task:
-            await self._task
-        if self.session:
-            await self.session.close()
+    def _worker_loop(self):
+        """Background worker that batches and sends logs"""
+        batch: list[dict[str, Any]] = []
+        last_flush = time.time()
 
-    async def _worker(self):
-        """Background worker to process logs in batches"""
-        while not self._shutdown_event.is_set():
+        while not self.shutdown_event.is_set():
             try:
-                logs_to_send = []
-
-                # Try to collect logs for batch processing
+                # Try to get a log with timeout
                 try:
-                    # Wait for at least one log or timeout
-                    first_log = await asyncio.wait_for(
-                        self.log_queue.get(), timeout=self.flush_interval
-                    )
-                    logs_to_send.append(first_log)
+                    log_entry = self.log_queue.get(timeout=1.0)
+                    batch.append(log_entry)
+                except queue.Empty:
+                    pass
 
-                    # Get additional logs up to batch_size
-                    for _ in range(self.batch_size - 1):
-                        try:
-                            log = await asyncio.wait_for(self.log_queue.get(), timeout=0.1)
-                            logs_to_send.append(log)
-                        except asyncio.TimeoutError:
-                            break
+                # Flush if batch is full or time interval elapsed
+                current_time = time.time()
+                should_flush = len(batch) >= self.batch_size or (
+                    batch and (current_time - last_flush) >= self.flush_interval
+                )
 
-                except asyncio.TimeoutError:
-                    # No logs received within timeout, continue loop
-                    continue
-
-                # Send logs if we have any
-                if logs_to_send:
-                    await self._send_logs(logs_to_send)
+                if should_flush:
+                    self._flush_batch(batch)
+                    batch.clear()
+                    last_flush = current_time
 
             except Exception as e:
-                print(f"Error in AsyncOpenObserve worker: {e}")
+                print(f"OpenObserve worker error: {e}", file=sys.stderr)
 
-    async def _send_logs(self, logs: list[dict[str, Any]]):
-        """Send logs to OpenObserve asynchronously"""
-        if not self.session:
-            print("Session not initialized")
+        # Flush remaining logs on shutdown
+        if batch:
+            self._flush_batch(batch)
+
+    def _flush_batch(self, batch: list[dict[str, Any]]):
+        """Send batch of logs to OpenObserve with retry logic"""
+        if not batch:
             return
 
-        try:
-            async with self.session.post(self.url, headers=self.headers, json=logs) as response:
-                if response.status != 200:
-                    text = await response.text()
+        client = self._get_client()
+        if client is None:
+            return
+
+        endpoint = f"{self.url}/api/{self.org}/{self.stream}/_json"
+        headers = {"Authorization": f"Basic {self.token}", "Content-Type": "application/json"}
+
+        for attempt in range(self.max_retries):
+            try:
+                response = client.post(endpoint, json=batch, headers=headers)
+                response.raise_for_status()
+                return  # Success
+
+            except Exception as e:
+                if attempt == self.max_retries - 1:
                     print(
-                        f"Failed to send logs to OpenObserve. "
-                        f"Status: {response.status}, Response: {text}"
+                        f"Failed to send {len(batch)} logs to OpenObserve after {self.max_retries} attempts: {e}",
+                        file=sys.stderr,
                     )
-        except aiohttp.ClientError as e:
-            print(f"Error sending logs to OpenObserve: {e}")
-        except Exception as e:
-            print(f"Unexpected error sending logs: {e}")
+                else:
+                    # Exponential backoff
+                    time.sleep(2**attempt)
 
-    def __call__(self, message):
-        """Loguru sink function - puts log into async queue"""
-        record = message.record
-
-        # Extract file information more thoroughly
-        file_info = record.get("file")
-        if file_info and hasattr(file_info, "name"):
-            file_name = file_info.name
-            file_path = str(file_info.path) if hasattr(file_info, "path") else file_name
-        else:
-            file_name = str(file_info) if file_info else ""
-            file_path = file_name
-
-        # Extract process information
-        process_info = record.get("process")
-        if process_info and hasattr(process_info, "name"):
-            process_name = process_info.name
-            process_id = getattr(process_info, "id", 0)
-        else:
-            process_name = str(process_info) if process_info else "MainProcess"
-            process_id = 0
-
-        # Extract thread information
-        thread_info = record.get("thread")
-        if thread_info and hasattr(thread_info, "name"):
-            thread_name = thread_info.name
-            thread_id = getattr(thread_info, "id", 0)
-        else:
-            thread_name = str(thread_info) if thread_info else "MainThread"
-            thread_id = 0
-
-        # Extract log data with enhanced fields
-        log_entry = {
-            "@timestamp": safe_serialize(record["time"].isoformat()),
-            "level": safe_serialize(record["level"].name),
-            "message": safe_serialize(record["message"]),
-            "logger": safe_serialize(record["name"]),
-            "module": safe_serialize(record["name"]),
-            "function": safe_serialize(record["function"]),
-            "line": safe_serialize(record["line"]),
-            "file": os.path.basename(file_name) if file_name else "",
-            "file_path": safe_serialize(file_path),
-            "process": safe_serialize(process_name),
-            "process_id": safe_serialize(process_id),
-            "thread": safe_serialize(thread_name),
-            "thread_id": safe_serialize(thread_id),
-        }
-
-        # Add exception info if present
-        if record["exception"]:
-            log_entry["exception"] = {
-                "type": record["exception"].type.__name__ if record["exception"].type else None,
-                "value": str(record["exception"].value) if record["exception"].value else None,
-                "traceback": (
-                    str(record["exception"].traceback) if record["exception"].traceback else None
-                ),
-            }
-
-        # Add extra fields
-        if record["extra"]:
-            for key, value in record["extra"].items():
-                log_entry[f"extra_{key}"] = safe_serialize(value)
-
-        # Add to queue for batch processing (non-blocking)
+    def send_log(self, log_data: dict[str, Any]):
+        """
+        Add log to queue for async sending.
+        Non-blocking call - returns immediately.
+        """
         try:
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # If we're in an async context, schedule the put
-                asyncio.create_task(self.log_queue.put(log_entry))
-            else:
-                # If no event loop is running, use the synchronous approach
-                # This handles cases where logging happens outside async context
-                loop.run_until_complete(self.log_queue.put(log_entry))
-        except RuntimeError:
-            # Fallback: if no event loop exists, we'll need to handle this differently
-            # You might want to use a thread-safe queue as fallback
-            print(f"Warning: Could not add log to async queue: {log_entry['message']}")
+            self.log_queue.put_nowait(log_data)
+        except queue.Full:
+            print("OpenObserve queue full, dropping log", file=sys.stderr)
+
+    def shutdown(self):
+        """Gracefully shutdown the handler and flush pending logs"""
+        if self.shutdown_event.is_set():
+            return
+
+        print("Shutting down OpenObserve handler...", file=sys.stderr)
+        self.shutdown_event.set()
+
+        # Wait for worker to finish (max 10 seconds)
+        if self.worker_thread and self.worker_thread.is_alive():
+            self.worker_thread.join(timeout=10.0)
+
+        # Close HTTP client
+        if self._client:
+            self._client.close()
+
+        print("OpenObserve handler shutdown complete", file=sys.stderr)
+
+
+# Global OpenObserve handler instance
+_openobserve_handler: Optional[OpenObserveHandler] = None
+
+
+# ============================================
+# CUSTOM FILTER FOR CORRELATION AND PROCESS ID
+# ============================================
+
+
+def correlation_filter(record):
+    """
+    Add correlation ID and process ID to log records.
+    This allows tracking requests across the application and
+    differentiating between different worker processes.
+    """
+    record["extra"]["request_id"] = request_id_var.get() or str(uuid.uuid4())[:8]
+    record["extra"]["process_id"] = os.getpid()
+    return record
+
+
+# ============================================
+# INTERCEPT HANDLER FOR STANDARD LOGGING
+# ============================================
 
 
 class InterceptHandler(logging.Handler):
     """
-    Intercept standard logging messages toward loguru sinks.
+    Intercepts standard logging and redirects to Loguru.
+    Used to replace Uvicorn's default loggers with our Loguru configuration.
     """
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord):
+        """
+        Process a log record and redirect it to Loguru.
+
+        This method is called by the logging framework for each log record.
+        We extract the log level and message, then pass it to Loguru.
+        """
         # Get corresponding Loguru level if it exists
         try:
             level = logger.level(record.levelname).name
         except ValueError:
             level = record.levelno
 
-        # Find caller from where originated the logged message
-        frame, depth = logging.currentframe(), 2
-
+        # Find the caller from where the logging call originated
+        frame = logging.currentframe()
+        depth = 2
         while frame and frame.f_code.co_filename == logging.__file__:
             frame = frame.f_back
             depth += 1
 
+        # Log to Loguru with the appropriate level and context
         logger.opt(depth=depth, exception=record.exc_info).log(level, record.getMessage())
 
 
-# Global reference to the async sink for cleanup
-_async_sink = None
+# ============================================
+# MAIN LOGGER SETUP FUNCTION
+# ============================================
 
 
-async def configure_async_logging() -> None:
+def setup_logger():
     """
-    Configure the async logging system for the application
-    """
-    global _async_sink
+    Configure Loguru logger for multi-worker FastAPI application.
 
-    # Remove default logger
+    Features:
+    - Thread and process safe with enqueue=True
+    - Single unified log file with process IDs for worker differentiation
+    - 3 months retention, 10MB rotation
+    - Compression for old logs (gzip)
+    - Different outputs for console vs file
+    - OpenObserve integration (optional, non-blocking)
+
+    This should be called once during application startup,
+    preferably in the FastAPI lifespan startup event.
+    """
+    global _openobserve_handler
+
+    # Remove default handler to avoid duplicate logs
     logger.remove()
 
-    if settings.log_to_openobserve is True:
-        _async_sink = AsyncOpenObserveSink(
-            url=settings.openobserve_url,
-            org_id=settings.openobserve_org_id,
-            stream_name=settings.openobserve_stream_name,
-            access_key=settings.openobserve_access_key,
-            batch_size=10,  # Send logs in batches of 10
-            flush_interval=5,  # Send every 5 seconds
-        )
+    # Get log level based on environment
+    log_level = settings.log_level
 
-        # Start the async sink
-        await _async_sink.start()
-
-    # Log format for console output
-    log_format = (
-        "<green>{time:YYYY-MM-DD HH:mm:ss!UTC}</green> | "
-        "<magenta>{process: <6}</magenta> | "
+    # ============================================
+    # CONSOLE OUTPUT: Simplified, colored format
+    # ============================================
+    # Purpose: Quick debugging and monitoring
+    # Format: Timestamp | Level | PID | RequestID | Message
+    console_format = (
+        "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
         "<level>{level: <8}</level> | "
-        "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> | "
+        "<cyan>PID:{extra[process_id]}</cyan> | "
+        "<yellow>ReqID:{extra[request_id]}</yellow> | "
         "<level>{message}</level>"
     )
-    log_file_format = (
+
+    logger.add(
+        sys.stdout,
+        format=console_format,
+        level=logging.DEBUG if settings.current_environment == Environment.DEV else logging.INFO,
+        colorize=True,
+        enqueue=True,  # Thread-safe queue-based logging
+        filter=correlation_filter,
+    )
+
+    # ============================================
+    # FILE OUTPUT: Detailed format with full context
+    # ============================================
+    # Purpose: Detailed logging for analysis and debugging
+    # Format: Timestamp | Level | PID | RequestID | Module:Function:Line | Message
+    file_format = (
         "{time:YYYY-MM-DD HH:mm:ss!UTC} | "
         "{level: <8} | "
+        "PID:{extra[process_id]} | "
+        "ReqID:{extra[request_id]} | "
         "{name}:{function}:{line} | "
         "{message}"
     )
 
-    # Add console handler
     logger.add(
-        sys.stdout,
-        format=log_format,
-        level=settings.log_level,
-        colorize=True,
+        LOG_FILE,
+        format=file_format,
+        level=log_level,
+        rotation="10 MB",  # Rotate when file reaches 10MB
+        retention="3 months",  # Keep logs for 3 months
+        compression="gz",  # Compress rotated files to .gz
+        enqueue=True,  # Process-safe queue for multi-worker safety
+        serialize=False,  # Plain text format (.log file)
+        filter=correlation_filter,
+        backtrace=True,  # Enable full traceback on exceptions
+        diagnose=True,  # Show variable values in exceptions
     )
 
-    # Add a file handler for more detailed logs
-    logger.add(
-        f"logs{os.sep}app.log",
-        rotation="10 MB",
-        retention="1 month",
-        compression="zip",
-        format=log_file_format,
-        level=logging.NOTSET,
-        backtrace=True,
-        diagnose=True,
-        enqueue=True,
-    )
+    # ============================================
+    # OPENOBSERVE SINK (Optional, Non-Blocking)
+    # ============================================
+    # Configure via environment variables:
+    # OPENOBSERVE_URL: Your OpenObserve instance URL
+    # OPENOBSERVE_TOKEN: Authentication token (Basic auth base64)
+    # OPENOBSERVE_ORG: Organization name (default: "default")
+    # OPENOBSERVE_STREAM: Stream name (default: "default")
+    # OPENOBSERVE_BATCH_SIZE: Number of logs to batch (default: 10)
+    # OPENOBSERVE_FLUSH_INTERVAL: Seconds between flushes (default: 5.0)
 
-    logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+    openobserve_url = os.getenv("OPENOBSERVE_URL")
+    openobserve_token = os.getenv("OPENOBSERVE_TOKEN")
 
-    # Set up loggers for FastAPI, Uvicorn, and other libraries
-    loggers_to_intercept = [
-        "fastapi",
-        "uvicorn",
-        "uvicorn.access",
-        "uvicorn.error",
-        "sqlalchemy.engine",
-        "sqlalchemy.pool",
-        "httpx",
-        "redis",
-    ]
+    if openobserve_url and openobserve_token:
+        openobserve_org = os.getenv("OPENOBSERVE_ORG", "default")
+        openobserve_stream = os.getenv("OPENOBSERVE_STREAM", "default")
+        batch_size = int(os.getenv("OPENOBSERVE_BATCH_SIZE", "10"))
+        flush_interval = float(os.getenv("OPENOBSERVE_FLUSH_INTERVAL", "5.0"))
 
-    for logger_name in loggers_to_intercept:
-        logging_logger = logging.getLogger(logger_name)
-        logging_logger.handlers = [InterceptHandler()]
-        logging_logger.propagate = False
-
-    if settings.log_to_openobserve is True and _async_sink:
-        logger.add(
-            sink=_async_sink,
-            level=logging.INFO,
-            backtrace=True,
-            diagnose=True,
+        # Initialize OpenObserve handler
+        _openobserve_handler = OpenObserveHandler(
+            url=openobserve_url,
+            token=openobserve_token,
+            org=openobserve_org,
+            stream=openobserve_stream,
+            batch_size=batch_size,
+            flush_interval=flush_interval,
         )
 
-    # Log the start of the application
-    logger.info(f"Async logging configured with level {settings.log_level}")
+        def openobserve_sink(message):
+            """
+            Non-blocking sink that queues logs for OpenObserve.
+            This function is called by Loguru for each log entry.
+            It immediately queues the log and returns, avoiding any blocking I/O.
+            """
+            if _openobserve_handler is None:
+                return
+
+            record = message.record
+
+            # Prepare payload for OpenObserve
+            payload = {
+                "timestamp": record["time"].isoformat(),
+                "level": record["level"].name,
+                "message": record["message"],
+                "process_id": record["extra"].get("process_id"),
+                "request_id": record["extra"].get("request_id"),
+                "module": record["name"],
+                "function": record["function"],
+                "line": record["line"],
+                "environment": settings.current_environment.value,
+            }
+
+            # Add exception info if present
+            if record["exception"]:
+                payload["exception"] = str(record["exception"])
+
+            # Non-blocking: just queue the log
+            _openobserve_handler.send_log(payload)
+
+        logger.add(
+            openobserve_sink,
+            level=log_level,
+            enqueue=True,  # Additional thread safety
+            filter=correlation_filter,
+        )
+
+        logger.info(
+            f"OpenObserve logging enabled (non-blocking) | "
+            f"URL: {openobserve_url} | "
+            f"Batch: {batch_size} | "
+            f"Flush: {flush_interval}s"
+        )
+
+    logger.info(
+        f"Logger initialized | "
+        f"Environment: {settings.current_environment.value} | "
+        f"Level: {log_level} | "
+        f"Workers: Multi-process safe"
+    )
 
 
-async def cleanup_logging():
-    """Cleanup async logging resources"""
-    global _async_sink
-    if _async_sink:
-        await _async_sink.stop()
+# ============================================
+# UVICORN LOGGER CONFIGURATION
+# ============================================
 
 
-# Main async logging configuration function
-async def configure_logging() -> None:
+def configure_uvicorn_logging():
     """
-    Configure the async logging system for the application
+    Replace Uvicorn's default logging with Loguru.
+
+    This intercepts all standard library logging calls from Uvicorn
+    and redirects them through our Loguru configuration, ensuring
+    consistent log formatting across the entire application.
+
+    Call this during FastAPI app startup, after setup_logger().
     """
-    await configure_async_logging()
+    import logging
+
+    # Intercept all loggers and set to lowest level
+    # Loguru will handle the actual filtering
+    logging.basicConfig(handlers=[InterceptHandler()], level=0, force=True)
+
+    # Update existing loggers, especially Uvicorn loggers
+    for name in logging.root.manager.loggerDict.keys():
+        if name.startswith("uvicorn"):
+            logging.getLogger(name).handlers = [InterceptHandler()]
+            logging.getLogger(name).propagate = False
+
+    logger.debug("Uvicorn logging configured to use Loguru")
+
+
+# ============================================
+# SHUTDOWN HANDLER
+# ============================================
+
+
+def shutdown_logger():
+    """
+    Gracefully shutdown logger and flush all pending logs.
+    Call this in FastAPI shutdown event.
+    """
+    global _openobserve_handler
+
+    logger.info("Shutting down logger...")
+
+    # Shutdown OpenObserve handler
+    if _openobserve_handler:
+        _openobserve_handler.shutdown()
+        _openobserve_handler = None
+
+    # Let Loguru finish processing queued logs
+    logger.complete()
+
+    logger.info("Logger shutdown complete")

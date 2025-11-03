@@ -5,7 +5,7 @@ from starlette.middleware.cors import CORSMiddleware
 
 from app.api.routes import api_router
 from app.core.config import Environment, settings
-from app.core.logger import cleanup_logging, configure_logging
+from app.core.logger import configure_uvicorn_logging, setup_logger, shutdown_logger
 from app.middleware.logging import LoggingMiddleware
 
 
@@ -14,13 +14,14 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
 
     logger.info("Initializing resources...")
-    await configure_logging()
+    setup_logger()
+    configure_uvicorn_logging()
     logger.success("Resources initialized.")
 
     yield  # Application runs here
 
     logger.info("Cleaning up resources...")
-    await cleanup_logging()
+    shutdown_logger()
     logger.success("Resources cleaned up.")
 
 

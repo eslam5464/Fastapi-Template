@@ -1,5 +1,5 @@
 from .base import BaseSchema, BaseTimestampSchema
-from .healthcheck import HealthCheckResponse
+from .health_check import HealthCheckResponse
 from .user import UserResponse, UserCreate, UserUpdate, UserLogin, UserSignup
 from .token import Token, TokenPayload, TokenData
 

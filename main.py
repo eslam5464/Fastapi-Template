@@ -1,4 +1,5 @@
 import os
+import sys
 
 import anyio
 import uvicorn
@@ -18,6 +19,8 @@ async def monitor_thread_limiter():
 
 
 def main():
+    is_linux = sys.platform.startswith("linux")
+
     if settings.debug:
         os.environ["PYTHONASYNCIODEBUG"] = "1"
         config = uvicorn.Config(
@@ -37,13 +40,23 @@ def main():
 
         anyio.run(main_monitor)
     else:
-        uvicorn.run(
-            app="app.main:app",
-            host=settings.backend_host,
-            port=settings.backend_port,
-            reload=settings.reload_uvicorn,
-            workers=settings.workers_count,
-        )
+        if is_linux:
+            from app.web import GunicornApplication
+
+            options = {
+                "bind": f"{settings.backend_host}:{settings.backend_port}",
+                "workers": settings.workers_count,
+                "worker_class": "uvicorn.workers.UvicornWorker",
+            }
+            GunicornApplication("app.main:app", options).run()
+        else:
+            uvicorn.run(
+                app="app.main:app",
+                host=settings.backend_host,
+                port=settings.backend_port,
+                reload=settings.reload_uvicorn,
+                workers=settings.workers_count,
+            )
 
 
 if __name__ == "__main__":

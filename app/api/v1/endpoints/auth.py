@@ -2,7 +2,6 @@ import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Form, status
-from fastapi.security import OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,6 +20,7 @@ from app.schemas import (
     Token,
     TokenPayload,
     UserCreate,
+    UserLogin,
     UserSignup,
 )
 
@@ -36,15 +36,15 @@ router = APIRouter()
     },
 )
 async def login_for_access_token(
-    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    user_data: Annotated[UserLogin, Form()],
     db: AsyncSession = Depends(get_session),
 ):
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    user = await repos.UserRepo(db).get_by_username(username=form_data.username)
+    user = await repos.UserRepo(db).get_by_username(username=user_data.username)
 
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    if not user or not verify_password(user_data.password.get_secret_value(), user.hashed_password):
         raise exceptions.UnauthorizedException(
             "Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
