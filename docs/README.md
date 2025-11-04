@@ -120,6 +120,7 @@ This template is built with:
 - **JWT** - Authentication
 - **Loguru** - Structured logging
 - **uvicorn/gunicorn** - ASGI server
+- **B2SDK** - BackBlaze B2 cloud storage integration
 
 ---
 

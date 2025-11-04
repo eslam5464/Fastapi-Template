@@ -26,7 +26,7 @@ This FastAPI template follows clean architecture principles with a focus on main
 
 ## Project Structure
 
-```
+```text
 app/
 ├── main.py                 # Application entry point
 ├── api/                    # API layer
@@ -52,10 +52,13 @@ app/
 ├── schemas/                # Data schemas (Pydantic)
 │   ├── base.py             # Base schema classes
 │   ├── user.py             # User schemas
-│   └── token.py            # Token schemas
+│   ├── token.py            # Token schemas
+│   └── back_blaze_bucket.py # BackBlaze B2 schemas
 ├── repos/                  # Repository layer
 │   ├── base.py             # Base repository class
 │   └── user.py             # User repository
+├── services/               # Business logic and external services
+│   └── back_blaze_b2.py    # BackBlaze B2 cloud storage service
 ├── middleware/             # Custom middleware
 │   └── logging.py          # Request logging middleware
 └── alembic/                # Database migrations
@@ -165,29 +168,82 @@ class UserRepository(BaseRepository[User]):
         return result.scalar_one_or_none()
 ```
 
+### 6. Services Layer (`app/services/`)
+
+**Responsibility**: External integrations and business services
+
+- **External Service Integration**: Third-party API clients
+- **Business Logic Services**: Complex operations spanning multiple repositories
+- **Cloud Services**: Cloud storage, messaging, etc.
+
+```python
+# BackBlaze B2 service example
+class BackBlaze:
+    def __init__(self, app_data: ApplicationData) -> None:
+        self._authorize(app_data)
+
+    def select_bucket(self, bucket_name: str) -> Self:
+        """Select a bucket for operations"""
+        self._bucket = self._b2_api.get_bucket_by_name(bucket_name)
+        return self
+
+    def upload_file(
+        self,
+        local_file_path: str,
+        b2_file_name: str,
+        file_info: UploadedFileInfo | None = None,
+    ) -> FileVersion:
+        """Upload file to selected bucket"""
+        bucket = self._b2_api.get_bucket_by_name(self._bucket.name)
+        return bucket.upload_local_file(
+            local_file=local_file_path,
+            file_name=b2_file_name,
+            file_info=file_info.model_dump(),
+        )
+```
+
+**Key Features**:
+
+- **BackBlaze B2 Integration**: Cloud storage service client
+  - Bucket management (create, delete, update, list, select)
+  - File operations (upload, download, delete)
+  - URL generation (public, private, temporary auth links)
+  - File metadata and details retrieval
+- **Method Chaining**: Fluent interface for bucket operations
+- **Error Handling**: Comprehensive exception handling with logging
+- **Type Safety**: Full type hints and Pydantic schema validation
+
 ## Data Flow
 
 ### 1. Request Flow
 
-```
-HTTP Request → API Router → Endpoint → Repository → Database
+```text
+HTTP Request → API Router → Endpoint → Service/Repository → Database
                     ↓            ↓           ↓
                Dependencies  Validation  Transaction
 ```
 
 ### 2. Response Flow
 
+```text
+Database → Repository → Service → Business Logic → Schema → HTTP Response
+                          ↓            ↓              ↓
+                    External API  Processing    Serialization
 ```
-Database → Repository → Business Logic → Schema → HTTP Response
-                            ↓              ↓
-                      Processing    Serialization
+
+### 3. Service Integration Flow
+
+```
+Endpoint → Service Client → External API → Process Response → Return Data
+              ↓                  ↓              ↓
+         Initialize      Authenticate    Error Handling
 ```
 
 ## Authentication Architecture
 
 ### JWT Token System
 
-```
+```text
 User Login → Verify Credentials → Generate Tokens → Return Response
                     ↓                    ↓
             Password Hash Check    Access + Refresh Tokens
@@ -195,7 +251,7 @@ User Login → Verify Credentials → Generate Tokens → Return Response
 
 ### Protected Routes
 
-```
+```text
 Request → Extract Token → Validate Token → Get User → Execute Handler
               ↓               ↓              ↓
          Authorization    JWT Decode    Database Query
@@ -247,7 +303,7 @@ class Settings(BaseSettings):
 
 ### Request Processing Pipeline
 
-```
+```text
 Request → CORS Middleware → Logging Middleware → Route Handler
                 ↓               ↓                    ↓
          Cross-Origin      Request Logging    Business Logic

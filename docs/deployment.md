@@ -67,7 +67,45 @@ LOG_FILE=/var/log/fastapi-app/app.log
 REDIS_URL=redis://localhost:6379/0
 SMTP_SERVER=smtp.gmail.com
 SMTP_PORT=587
+
+# BackBlaze B2 Configuration (Optional)
+B2_APPLICATION_KEY_ID=your_backblaze_key_id
+B2_APPLICATION_KEY=your_backblaze_application_key
+B2_BUCKET_NAME=your_bucket_name
 ```
+
+### BackBlaze B2 Setup for Production
+
+If your application uses BackBlaze B2 cloud storage:
+
+1. **Create Application Keys**
+
+   - Log in to BackBlaze account
+   - Navigate to App Keys section
+   - Create a new application key with appropriate permissions
+   - Store `keyID` as `B2_APPLICATION_KEY_ID`
+   - Store `applicationKey` as `B2_APPLICATION_KEY`
+
+2. **Bucket Configuration**
+
+   - Create bucket(s) for production use
+   - Set appropriate bucket type (allPrivate recommended for sensitive data)
+   - Configure bucket lifecycle rules if needed
+   - Set up CORS rules if accessing from web browsers
+
+3. **Security Best Practices**
+
+   - Use separate application keys for different environments
+   - Limit key capabilities to only what's needed
+   - Rotate keys periodically
+   - Monitor bucket access logs
+   - Implement file scanning for uploaded content
+
+4. **Performance Optimization**
+   - Use appropriate bucket regions close to your users
+   - Enable CDN if serving public files
+   - Implement file size limits
+   - Use multipart uploads for large files
 
 ### Security Considerations
 
@@ -163,10 +201,14 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/fastapi_app
+      - B2_APPLICATION_KEY_ID=${B2_APPLICATION_KEY_ID}
+      - B2_APPLICATION_KEY=${B2_APPLICATION_KEY}
+      - B2_BUCKET_NAME=${B2_BUCKET_NAME}
     env_file:
       - .env.prod
     volumes:
       - ./logs:/var/log/fastapi-app
+      - ./uploads:/app/uploads # Temporary storage for file uploads before B2 sync
     depends_on:
       - db
       - redis
@@ -725,7 +767,38 @@ find $BACKUP_DIR -name "backup_*.sql.gz" -mtime +30 -delete
 
 # Upload to S3 (optional)
 aws s3 cp $BACKUP_DIR/backup_$DATE.sql.gz s3://your-backup-bucket/postgresql/
+
+# Or upload to BackBlaze B2
+b2 upload-file your-bucket-name $BACKUP_DIR/backup_$DATE.sql.gz backups/postgresql/backup_$DATE.sql.gz
 ```
+
+### BackBlaze B2 for Backups
+
+Using BackBlaze B2 for application backups:
+
+```bash
+# Install B2 CLI
+pip install b2
+
+# Authorize account
+b2 authorize-account $B2_APPLICATION_KEY_ID $B2_APPLICATION_KEY
+
+# Upload backup to B2
+b2 upload-file your-backup-bucket /path/to/backup.sql.gz backups/backup_$DATE.sql.gz
+
+# List backups
+b2 ls your-backup-bucket backups/
+
+# Download backup
+b2 download-file-by-name your-backup-bucket backups/backup_$DATE.sql.gz /path/to/restore/
+```
+
+**Lifecycle Rules for B2 Backups**:
+
+- Keep daily backups for 7 days
+- Keep weekly backups for 4 weeks
+- Keep monthly backups for 12 months
+- Configure via BackBlaze web console
 
 ### Automated Backup Cron Job
 

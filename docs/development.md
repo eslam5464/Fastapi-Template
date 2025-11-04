@@ -673,6 +673,147 @@ uv sync --reinstall
 
 ## Advanced Development
 
+### BackBlaze B2 Cloud Storage Integration
+
+The template includes integration with BackBlaze B2 cloud storage service for file management.
+
+#### Setup
+
+1. **Create BackBlaze Account**
+
+   - Sign up at [backblaze.com](https://www.backblaze.com/b2/cloud-storage.html)
+   - Create an application key in account settings
+
+2. **Configure Credentials**
+
+Add to your `.env` file (optional - can be provided at runtime):
+
+```env
+# BackBlaze B2 Configuration (Optional)
+B2_APPLICATION_KEY_ID=your_key_id_here
+B2_APPLICATION_KEY=your_application_key_here
+B2_BUCKET_NAME=your_bucket_name
+```
+
+#### Usage Example
+
+```python
+from app.services.back_blaze_b2 import BackBlaze, B2BucketTypeEnum
+from app.schemas import ApplicationData, UploadedFileInfo
+
+# Initialize BackBlaze client
+app_data = ApplicationData(
+    app_id="your_application_key_id",
+    app_key="your_application_key"
+)
+b2_client = BackBlaze(app_data)
+
+# List available buckets
+buckets = b2_client.list_buckets()
+
+# Create a new bucket
+b2_client.create_bucket("my-new-bucket", B2BucketTypeEnum.ALL_PRIVATE)
+
+# Select a bucket for operations
+b2_client.select_bucket("my-bucket-name")
+
+# Upload a file
+file_version = b2_client.upload_file(
+    local_file_path="/path/to/local/file.pdf",
+    b2_file_name="documents/file.pdf",
+    file_info=UploadedFileInfo(scanned=True)
+)
+
+# Get download URL
+download_link = b2_client.get_download_url_by_name("documents/file.pdf")
+print(download_link.download_url)
+
+# Get temporary download link (with auth token)
+from pydantic import AnyUrl
+temp_link = b2_client.get_temporary_download_link(
+    url=AnyUrl(download_link.download_url),
+    valid_duration_in_seconds=3600  # 1 hour
+)
+
+# Delete a file
+b2_client.delete_file(
+    file_id=file_version.id_,
+    file_name="documents/file.pdf"
+)
+
+# Update bucket settings
+b2_client.update_selected_bucket(
+    bucket_type=B2BucketTypeEnum.ALL_PUBLIC
+)
+
+# Delete bucket
+b2_client.delete_selected_bucket()
+```
+
+#### BackBlaze B2 Features
+
+- **Bucket Management**: Create, delete, update, list, and select buckets
+- **File Operations**: Upload, download, and delete files
+- **URL Generation**:
+  - Public download URLs for public buckets
+  - File ID-based URLs
+  - Temporary authenticated URLs for private files
+- **Method Chaining**: Fluent interface for bucket selection
+- **Metadata**: Custom file information with `UploadedFileInfo`
+- **Error Handling**: Comprehensive exception handling with detailed logging
+
+#### Bucket Types
+
+- `ALL_PUBLIC`: Files are publicly accessible
+- `ALL_PRIVATE`: Files require authentication
+- `SNAPSHOT`: Snapshot storage
+- `SHARE`: Shared access
+- `RESTRICTED`: Restricted access with authorization rules
+
+#### Integration in Endpoints
+
+```python
+from fastapi import APIRouter, Depends, UploadFile, File
+from app.services.back_blaze_b2 import BackBlaze
+from app.schemas import ApplicationData
+
+router = APIRouter()
+
+def get_b2_client() -> BackBlaze:
+    """Dependency to get BackBlaze client"""
+    app_data = ApplicationData(
+        app_id=settings.b2_app_id,
+        app_key=settings.b2_app_key
+    )
+    return BackBlaze(app_data).select_bucket(settings.b2_bucket_name)
+
+@router.post("/upload-document")
+async def upload_document(
+    file: UploadFile = File(...),
+    b2_client: BackBlaze = Depends(get_b2_client)
+):
+    # Save uploaded file temporarily
+    temp_path = f"/tmp/{file.filename}"
+    with open(temp_path, "wb") as buffer:
+        content = await file.read()
+        buffer.write(content)
+
+    # Upload to BackBlaze
+    result = b2_client.upload_file(
+        local_file_path=temp_path,
+        b2_file_name=f"uploads/{file.filename}"
+    )
+
+    # Get download URL
+    download_link = b2_client.get_download_url_by_file_id(result.id_)
+
+    return {
+        "file_id": result.id_,
+        "file_name": result.file_name,
+        "download_url": download_link.download_url
+    }
+```
+
 ### Custom Middleware
 
 ```python

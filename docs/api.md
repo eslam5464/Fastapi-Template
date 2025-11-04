@@ -15,6 +15,21 @@ When running in development mode, you can access:
 - **ReDoc**: `http://localhost:8000/redoc`
 - **OpenAPI Schema**: `http://localhost:8000/openapi.json`
 
+## Available Services
+
+This API template includes the following services:
+
+### Core Services
+
+- **Authentication** - JWT-based user authentication
+- **User Management** - User registration and profile management
+
+### Integrated Services
+
+- **BackBlaze B2 Cloud Storage** - File storage and management service (available as a service layer, can be integrated into custom endpoints)
+
+For BackBlaze B2 integration examples, see the [Development Guide](./development.md#backblaze-b2-cloud-storage-integration).
+
 ## Authentication
 
 The API uses JWT (JSON Web Token) authentication with the following flow:

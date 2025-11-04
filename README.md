@@ -14,6 +14,7 @@ A production-ready FastAPI project template with modern best practices, async su
 - **📊 Logging** - Structured logging with Loguru
 - **⚡ Environment Management** - Multi-environment configuration
 - **🧪 Development Tools** - Pre-commit hooks, code formatting with Black
+- **☁️ Cloud Storage Integration** - BackBlaze B2 cloud storage service support
 
 ## 🚀 Quick Start
 
@@ -109,6 +110,7 @@ Detailed documentation is available in the [docs/](docs/) folder:
 │   ├── models/             # SQLAlchemy models
 │   ├── schemas/            # Pydantic schemas
 │   ├── repos/              # Repository pattern implementations
+│   ├── services/           # Business logic and external services
 │   ├── middleware/         # Custom middleware
 │   └── alembic/            # Database migrations
 ├── docs/                   # Detailed documentation
@@ -221,6 +223,7 @@ Key dependencies include:
 - **PostgreSQL** - Database driver (asyncpg)
 - **JWT** - Token authentication
 - **Loguru** - Logging
+- **B2SDK** - BackBlaze B2 cloud storage integration
 
 ## 🤝 Contributing
 
