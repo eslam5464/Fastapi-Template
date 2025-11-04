@@ -1,4 +1,3 @@
-import logging
 import os
 from dataclasses import dataclass, field
 from enum import StrEnum
@@ -9,6 +8,7 @@ from b2sdk._internal.file_version import FileVersion
 from b2sdk.v2 import B2Api, B2RawHTTPApi, FileIdAndName
 from b2sdk.v2.b2http import B2Http
 from b2sdk.v2.exception import NonExistentBucket
+from loguru import logger
 from pydantic import AnyUrl
 
 from app.core import exceptions
@@ -25,9 +25,6 @@ class B2BucketTypeEnum(StrEnum):
     SNAPSHOT = "snapshot"
     SHARE = "share"
     RESTRICTED = "restricted"
-
-
-logger = logging.getLogger(__name__)
 
 
 @dataclass(init=False)
