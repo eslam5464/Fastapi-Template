@@ -1,0 +1,72 @@
+services:
+  backend:
+    image: python:3.13-alpine
+    restart: unless-stopped
+    container_name: fastapi_template_backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8799:8799"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - CURRENT_ENVIRONMENT
+      - DEBUG
+      - BACKEND_HOST
+      - BACKEND_PORT
+      - CORS_ORIGINS
+      - ALLOWED_HOSTS
+      - WORKERS_COUNT
+      - POSTGRES_HOST
+      - POSTGRES_PORT
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - POSTGRES_DB_SCHEMA
+      - SECRET_KEY
+      - ACCESS_TOKEN_EXPIRE_SECONDS
+      - REFRESH_TOKEN_EXPIRE_SECONDS
+      - LOG_TO_OPENOBSERVE
+      - OPENOBSERVE_URL
+      - OPENOBSERVE_ORG_ID
+      - OPENOBSERVE_STREAM_NAME
+      - OPENOBSERVE_ACCESS_KEY
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 3s
+        max_attempts: 3
+        window: 10s
+    networks:
+      - fastapi_template_network
+  db:
+    image: postgres:18-alpine
+    restart: unless-stopped
+    container_name: fastapi_template_db
+    environment:
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+      - POSTGRES_DB
+      - POSTGRES_DB_SCHEMA
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "${POSTGRES_DB}"]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+    volumes:
+      - fastapi_template_db_data:/var/lib/postgresql/data
+    networks:
+      - fastapi_template_network
+
+networks:
+  fastapi_template:
+    name: fastapi_template_network
+    driver: bridge
+
+volumes:
+  fastapi_template_db_data:
+    name: fastapi_template_db_data
+    driver: local

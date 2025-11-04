@@ -56,7 +56,7 @@ COPY --chown=uvicorn:uvicorn ./ ./
 # Switch to non-privileged user
 USER uvicorn
 
-EXPOSE 8080
+EXPOSE 8799
 
 # Use exec form for better signal handling
 CMD ["/bin/sh", "-c", "alembic upgrade head && python main.py"]
