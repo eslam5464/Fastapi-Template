@@ -11,7 +11,13 @@ from b2sdk.v2.exception import NonExistentBucket
 from loguru import logger
 from pydantic import AnyUrl
 
-from app.core import exceptions
+from app.core.exceptions.back_blaze_exceptions import (
+    B2AuthorizationError,
+    B2BucketNotFoundError,
+    B2BucketNotSelectedError,
+    B2BucketOperationError,
+    B2FileOperationError,
+)
 from app.schemas import (
     ApplicationData,
     FileDownloadLink,
@@ -50,7 +56,7 @@ class BackBlaze:
             app_data: Application data containing app_id and app_key
 
         Raises:
-            InternalServerErrorException: If authorization fails
+            B2AuthorizationError: If authorization fails
         """
         self._authorize(app_data)
 
@@ -70,11 +76,12 @@ class BackBlaze:
             Self for method chaining
 
         Raises:
-            InternalServerErrorException: If bucket selection fails or bucket does not exist or name is empty
+            B2BucketOperationError: If bucket selection fails
+            B2BucketNotFoundError: If the bucket does not exist
+            ValueError: If bucket name is empty
         """
         if not bucket_name.strip():
-            logger.error("Bucket name cannot be empty")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise ValueError("Bucket name cannot be empty")
 
         try:
             self._bucket = self._b2_api.get_bucket_by_name(bucket_name)
@@ -84,12 +91,12 @@ class BackBlaze:
             error_msg = f"Bucket '{bucket_name}' does not exist"
             logger.error(error_msg)
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2BucketNotFoundError(error_msg, ex) from ex
         except Exception as ex:
             error_msg = f"Failed to select bucket '{bucket_name}'"
             logger.error(error_msg)
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2BucketNotSelectedError(error_msg, ex) from ex
 
     def list_buckets(self) -> list[Bucket]:
         """
@@ -99,7 +106,7 @@ class BackBlaze:
             List of Bucket objects
 
         Raises:
-            InternalServerErrorException: If listing buckets fails
+            B2FileOperationError: If bucket listing fails
         """
         try:
             buckets = self._b2_api.list_buckets()
@@ -109,9 +116,9 @@ class BackBlaze:
             error_msg = "Failed to list buckets"
             logger.error(error_msg)
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2FileOperationError(error_msg, ex) from ex
 
-    def create_bucket(self, bucket_name: str, bucket_type: B2BucketTypeEnum) -> Self:
+    def create_bucket(self, bucket_name: str, bucket_type: B2BucketTypeEnum | None = None) -> Self:
         """
         Create a new bucket.
 
@@ -123,12 +130,14 @@ class BackBlaze:
             Self for method chaining
 
         Raises:
-            InternalServerErrorException: If bucket creation fails or name is empty
-
+            B2BucketOperationError: If bucket creation fails
+            ValueError: If bucket name is empty
         """
         if not bucket_name.strip():
-            logger.error("Bucket name cannot be empty")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise ValueError("Bucket name cannot be empty")
+
+        if bucket_type is None:
+            bucket_type = B2BucketTypeEnum.ALL_PRIVATE
 
         try:
             self._b2_api.create_bucket(name=bucket_name, bucket_type=bucket_type.value)
@@ -138,7 +147,7 @@ class BackBlaze:
             error_msg = f"Failed to create bucket '{bucket_name}'"
             logger.error(error_msg)
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2FileOperationError(error_msg, ex) from ex
 
     def delete_selected_bucket(self) -> Self:
         """
@@ -148,15 +157,16 @@ class BackBlaze:
             Self for method chaining
 
         Raises:
-            InternalServerErrorException: If no bucket is selected or deletion fails
+            B2BucketNotSelectedError: If no bucket is selected
+            B2BucketOperationError: If deletion fails
+            B2BucketNotFoundError: If the bucket does not exist
         """
         if not self._bucket:
-            logger.error("No bucket is selected for deletion")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2BucketNotSelectedError("No bucket is selected for this operation")
 
         bucket_name = self._bucket.name
         if not bucket_name:
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2BucketNotSelectedError("Selected bucket has no name")
 
         try:
             bucket = self._b2_api.get_bucket_by_name(bucket_name)
@@ -168,12 +178,12 @@ class BackBlaze:
             error_msg = f"Bucket '{bucket_name}' does not exist"
             logger.error(error_msg)
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2BucketNotFoundError(error_msg, ex) from ex
         except Exception as ex:
             error_msg = f"Failed to delete bucket '{bucket_name}'"
             logger.error(error_msg)
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2BucketOperationError(error_msg, ex) from ex
 
     def update_selected_bucket(
         self,
@@ -191,14 +201,14 @@ class BackBlaze:
             Self for method chaining
 
         Raises:
-            InternalServerErrorException: If no bucket is selected or update fails
+            B2BucketNotSelectedError: If no bucket is selected
+            B2BucketOperationError: If update fails
         """
         if not self._bucket:
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2BucketNotSelectedError("No bucket is selected for this operation")
 
         if not self._bucket.name:
-            logger.error("Selected bucket has no name")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2BucketNotSelectedError("Selected bucket has no name")
 
         try:
             bucket = self._b2_api.get_bucket_by_name(self._bucket.name)
@@ -210,7 +220,7 @@ class BackBlaze:
             error_msg = f"Failed to update bucket '{self._bucket.name}'"
             logger.error(error_msg)
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2BucketOperationError(error_msg, ex) from ex
 
     def upload_file(
         self,
@@ -230,26 +240,28 @@ class BackBlaze:
             FileVersion object of uploaded file
 
         Raises:
-            InternalServerErrorException: If no bucket is selected or upload fails
+            B2BucketNotSelectedError: If no bucket is selected
+            B2FileOperationError: If upload fails
+            ValueError: If local file path or B2 file name is empty
+            FileNotFoundError: If local file does not exist
         """
 
         if not self._bucket:
-            logger.error("No bucket is selected for file upload")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
-
-        if not b2_file_name.strip():
-            logger.error("B2 file name cannot be empty")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2BucketNotSelectedError("No bucket is selected for this operation")
 
         self._validate_file_path(local_file_path)
+
+        if not b2_file_name.strip():
+            raise ValueError("B2 file name cannot be empty")
+
         file_info = file_info or UploadedFileInfo(scanned=False)
 
-        if not self._bucket.name:
-            logger.error("Selected bucket has no name")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+        bucket_name = self._bucket.name
+        if not bucket_name:
+            raise B2BucketNotSelectedError("Selected bucket has no name")
 
         try:
-            bucket = self._b2_api.get_bucket_by_name(self._bucket.name)
+            bucket = self._b2_api.get_bucket_by_name(bucket_name)
             result = bucket.upload_local_file(
                 local_file=local_file_path,
                 file_name=b2_file_name,
@@ -262,7 +274,7 @@ class BackBlaze:
             error_msg = f"Failed to upload file '{local_file_path}'"
             logger.error(error_msg)
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2FileOperationError(error_msg, ex) from ex
 
     def get_download_url_by_name(self, file_name: str) -> FileDownloadLink:
         """
@@ -275,29 +287,29 @@ class BackBlaze:
             FileDownloadLink object
 
         Raises:
-            InternalServerErrorException: If no bucket is selected or URL generation fails or file name is empty or bucket has no name
+            B2BucketNotSelectedError: If no bucket is selected
+            B2FileOperationError: If URL generation fails
+            ValueError: If file name is empty
         """
         if not self._bucket:
-            logger.error("No bucket is selected for file download")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2BucketNotSelectedError("No bucket is selected for this operation")
 
         if not file_name.strip():
-            logger.error("File name cannot be empty in download URL request for BackBlaze B2")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise ValueError("File name cannot be empty")
 
-        if not self._bucket.name:
-            logger.error("Selected bucket has no name")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+        bucket_name = self._bucket.name
+        if not bucket_name:
+            raise B2BucketNotSelectedError("Selected bucket has no name")
 
         try:
-            bucket = self._b2_api.get_bucket_by_name(self._bucket.name)
+            bucket = self._b2_api.get_bucket_by_name(bucket_name)
             download_url = bucket.get_download_url(file_name)
             return FileDownloadLink(download_url=download_url)
         except Exception as ex:
             error_msg = f"Failed to get download URL for file '{file_name}'"
             logger.error(error_msg)
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2FileOperationError(error_msg, ex) from ex
 
     def get_download_url_by_file_id(self, file_id: str) -> FileDownloadLink:
         """
@@ -310,11 +322,12 @@ class BackBlaze:
             FileDownloadLink object
 
         Raises:
-            InternalServerErrorException: If URL generation fails or file ID is empty or bucket has no name
+            B2BucketNotSelectedError: If no bucket is selected
+            B2FileOperationError: If URL generation fails
+            ValueError: If file ID is empty
         """
         if not file_id.strip():
-            logger.error("File ID cannot be empty")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise ValueError("File ID cannot be empty")
 
         try:
             download_url = self._b2_api.get_download_url_for_fileid(file_id)
@@ -323,7 +336,7 @@ class BackBlaze:
             error_msg = f"Failed to get download URL for file ID '{file_id}'"
             logger.error(error_msg)
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2FileOperationError(error_msg, ex) from ex
 
     def delete_file(self, file_id: str, file_name: str) -> FileIdAndName:
         """
@@ -337,15 +350,15 @@ class BackBlaze:
             FileIdAndName object of deleted file
 
         Raises:
-            InternalServerErrorException: If no bucket is selected or deletion fails or file ID/name is empty
+            B2BucketNotSelectedError: If no bucket is selected
+            B2FileOperationError: If deletion fails
+            ValueError: If file ID or name is empty
         """
         if not self._bucket:
-            logger.error("No bucket is selected for deletion")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2BucketNotSelectedError("No bucket is selected for this operation")
 
         if not file_id.strip() or not file_name.strip():
-            logger.error("File ID and name cannot be empty")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise ValueError("File ID and name cannot be empty")
 
         try:
             result = self._b2_api.delete_file_version(file_id=file_id, file_name=file_name)
@@ -355,7 +368,7 @@ class BackBlaze:
             error_msg = f"Failed to delete file '{file_name}' (ID: {file_id})"
             logger.error(error_msg)
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2FileOperationError(error_msg, ex) from ex
 
     def get_temporary_download_link(
         self,
@@ -373,11 +386,13 @@ class BackBlaze:
             FileDownloadLink with auth token
 
         Raises:
-            InternalServerErrorException: If no bucket is selected or link generation fails or duration is non-positive
+            B2BucketNotSelectedError: If no bucket is selected
+            B2FileOperationError: If link generation fails
+            ValueError: If duration is not positive
+            ValueError: If URL does not contain file ID parameter
         """
         if not self._bucket:
-            logger.error("No bucket is selected for temporary download link generation")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2BucketNotSelectedError("No bucket is selected for this operation")
 
         if valid_duration_in_seconds <= 0:
             raise ValueError("Duration must be positive")
@@ -397,7 +412,7 @@ class BackBlaze:
             error_msg = f"Failed to get temporary download link for file ID '{file_id}'"
             logger.error(error_msg)
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2FileOperationError(error_msg, ex) from ex
 
     def get_file_details(self, file_id: str) -> FileVersion:
         """
@@ -410,11 +425,11 @@ class BackBlaze:
             FileVersion object with file details
 
         Raises:
-            InternalServerErrorException: If URL generation fails or file ID is empty
+            B2FileOperationError: If retrieval fails
+            ValueError: If file ID is empty
         """
         if not file_id.strip():
-            logger.error("File ID cannot be empty")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise ValueError("File ID cannot be empty")
 
         try:
             return self._b2_api.get_file_info(file_id)
@@ -422,17 +437,15 @@ class BackBlaze:
             error_msg = f"Failed to get file details for ID '{file_id}'"
             logger.error(error_msg)
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2FileOperationError(error_msg, ex) from ex
 
     def _authorize(self, app_data: ApplicationData) -> None:
         """
         Authorize with BackBlaze B2 service.
-
         Args:
             app_data: Application data containing app_id and app_key
-
         Raises:
-            InternalServerErrorException: If authorization fails
+            B2AuthorizationError: If authorization fails
         """
         try:
             self._b2_api.authorize_account(
@@ -444,30 +457,27 @@ class BackBlaze:
         except Exception as ex:
             logger.error("Failed to authorize BackBlaze account")
             logger.debug(str(ex))
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
+            raise B2AuthorizationError("Failed to authorize BackBlaze account", ex) from ex
 
-    def _validate_file_path(self, file_path: str) -> None:
+    @staticmethod
+    def _validate_file_path(file_path: str) -> None:
         """
         Validate the local file path.
-
         Args:
             file_path: Path to the local file
-
         Raises:
-            InternalServerErrorException: If file path is empty or file does not exist
+            ValueError: If file path is empty
+            FileNotFoundError: If file does not exist
         """
         if not file_path.strip():
-            logger.error("File path cannot be empty")
-            raise exceptions.InternalServerErrorException("Unexpected error occurred")
-
+            raise ValueError("File path cannot be empty")
         if not os.path.exists(file_path):
-            logger.error(f"File not found: {file_path}")
-            raise exceptions.InternalServerErrorException("Unexpected error occurred")
+            raise FileNotFoundError(f"File not found: {file_path}")
 
-    def _cleanup_failed_upload(self, local_file_path: str) -> None:
+    @staticmethod
+    def _cleanup_failed_upload(local_file_path: str) -> None:
         """
         Clean up local file after failed upload.
-
         Args:
             local_file_path: Path to the local file
         """
@@ -479,23 +489,18 @@ class BackBlaze:
             logger.warning(f"Failed to clean up local file: {local_file_path}")
             logger.debug(str(ex))
 
-    def _extract_file_id_from_url(self, url: AnyUrl) -> str:
+    @staticmethod
+    def _extract_file_id_from_url(url: AnyUrl) -> str:
         """
         Extract file ID from URL.
-
         Args:
             url: Download URL containing file ID
-
         Returns:
             Extracted file ID as string
-
         Raises:
             ValueError: If URL does not contain file ID parameter
         """
         url_str = str(url)
-
         if "fileId=" not in url_str:
-            logger.error("URL does not contain file ID parameter")
-            raise exceptions.InternalServerErrorException("An unexpected error occurred")
-
+            raise ValueError("URL does not contain file ID parameter")
         return url_str.split("fileId=")[-1]

@@ -1,23 +1,8 @@
 from typing import Any, Optional
 
-from fastapi import HTTPException as FastAPIHTTPException
 from starlette import status
 
-
-class HTTPException(FastAPIHTTPException):
-    def __init__(
-        self,
-        status_code: int,
-        detail: Any = None,
-        headers: Optional[dict[str, str]] = None,
-    ) -> None:
-        """
-        Initializes the HTTPException with the provided status code, detail, and headers.
-        :param status_code: The HTTP status code for the exception.
-        :param detail: Optional message or data providing details about the exception.
-        :param headers: Optional headers to include in the HTTP response.
-        """
-        super().__init__(status_code=status_code, detail=detail, headers=headers)
+from app.core.exceptions.base import HTTPException
 
 
 class BadRequestException(HTTPException):

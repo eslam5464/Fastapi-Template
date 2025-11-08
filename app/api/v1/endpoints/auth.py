@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import repos
-from app.core import exceptions, responses
+from app.core import http_exceptions, responses
 from app.core.auth import (
     create_access_token,
     create_refresh_token,
@@ -45,7 +45,7 @@ async def login_for_access_token(
     user = await repos.UserRepo(db).get_by_username(username=user_data.username)
 
     if not user or not verify_password(user_data.password.get_secret_value(), user.hashed_password):
-        raise exceptions.UnauthorizedException(
+        raise http_exceptions.UnauthorizedException(
             "Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
@@ -76,7 +76,7 @@ async def signup(
     """
     user = await repos.UserRepo(db).get_by_email(email=user_in.email)
     if user:
-        raise exceptions.BadRequestException(
+        raise http_exceptions.BadRequestException(
             detail="A user with this email already exists.",
         )
 
@@ -121,20 +121,20 @@ async def refresh_token(
         )
         user_id: str | int | uuid.UUID | None = payload.get("sub")
         if user_id is None:
-            raise exceptions.UnauthorizedException(
+            raise http_exceptions.UnauthorizedException(
                 "Invalid refresh token",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         user_id = parse_user_id(user_id)
     except JWTError:
-        raise exceptions.UnauthorizedException(
+        raise http_exceptions.UnauthorizedException(
             "Invalid refresh token",
             headers={"WWW-Authenticate": "Bearer"},
         )
 
     user = await repos.UserRepo(db).get_by_id(user_id)
     if not user:
-        raise exceptions.UnauthorizedException(
+        raise http_exceptions.UnauthorizedException(
             "Invalid user",
             headers={"WWW-Authenticate": "Bearer"},
         )

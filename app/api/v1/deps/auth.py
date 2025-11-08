@@ -9,7 +9,7 @@ from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import repos
-from app.core import exceptions
+from app.core import http_exceptions
 from app.core.config import settings
 from app.core.db import get_session
 from app.core.utils import parse_user_id
@@ -37,17 +37,17 @@ async def get_current_user(
     Raises:
         HTTPException: If token is invalid or user not found
     """
-    credentials_exception = exceptions.UnauthorizedException(
+    credentials_exception = http_exceptions.UnauthorizedException(
         detail="Could not validate credentials",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    credentials_expired = exceptions.UnauthorizedException(
+    credentials_expired = http_exceptions.UnauthorizedException(
         detail="Token has expired",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
-    credentials_claims_error = exceptions.UnauthorizedException(
+    credentials_claims_error = http_exceptions.UnauthorizedException(
         detail="Token has invalid claims",
         headers={"WWW-Authenticate": "Bearer"},
     )

@@ -736,7 +736,7 @@ class TestGetCurrentUser:
         db_session: AsyncSession,
     ):
         """Test get_current_user with invalid token format"""
-        from app.core.exceptions import UnauthorizedException
+        from app.core.exceptions.http_exceptions import UnauthorizedException
 
         with pytest.raises(UnauthorizedException) as exc_info:
             await get_current_user(token="invalid.token.format", db=db_session)
@@ -751,7 +751,7 @@ class TestGetCurrentUser:
         user: User,
     ):
         """Test get_current_user with expired token"""
-        from app.core.exceptions import UnauthorizedException
+        from app.core.exceptions.http_exceptions import UnauthorizedException
 
         # Create an expired token
         expired_token = jwt.encode(
@@ -776,7 +776,7 @@ class TestGetCurrentUser:
         db_session: AsyncSession,
     ):
         """Test get_current_user with token missing 'sub' claim"""
-        from app.core.exceptions import UnauthorizedException
+        from app.core.exceptions.http_exceptions import UnauthorizedException
 
         # Create a token without 'sub'
         token_no_sub = jwt.encode(
@@ -801,7 +801,7 @@ class TestGetCurrentUser:
         user: User,
     ):
         """Test get_current_user with token missing 'exp' claim"""
-        from app.core.exceptions import UnauthorizedException
+        from app.core.exceptions.http_exceptions import UnauthorizedException
 
         # Create a token without 'exp'
         token_no_exp = jwt.encode(
@@ -825,7 +825,7 @@ class TestGetCurrentUser:
         db_session: AsyncSession,
     ):
         """Test get_current_user with token for non-existent user"""
-        from app.core.exceptions import UnauthorizedException
+        from app.core.exceptions.http_exceptions import UnauthorizedException
 
         # Create a token with fake user ID
         fake_user_id = 99999
@@ -852,7 +852,7 @@ class TestGetCurrentUser:
         user: User,
     ):
         """Test get_current_user with token signed with wrong secret"""
-        from app.core.exceptions import UnauthorizedException
+        from app.core.exceptions.http_exceptions import UnauthorizedException
 
         # Create a token with wrong secret
         wrong_token = jwt.encode(
@@ -878,7 +878,7 @@ class TestGetCurrentUser:
         user: User,
     ):
         """Test get_current_user with manually expired token (exp in past)"""
-        from app.core.exceptions import UnauthorizedException
+        from app.core.exceptions.http_exceptions import UnauthorizedException
 
         # Create token with exp timestamp in the past but not yet expired by JWT library
         # This tests the manual expiry check in get_current_user
@@ -904,7 +904,7 @@ class TestGetCurrentUser:
     ):
         """Test get_current_user with malformed JWT claims"""
 
-        from app.core.exceptions import UnauthorizedException
+        from app.core.exceptions.http_exceptions import UnauthorizedException
 
         # Use a token that will trigger JWTClaimsError
         # Create a token with invalid claims structure
