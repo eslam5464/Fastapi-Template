@@ -9,6 +9,8 @@ from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
+from app.schemas import FirebaseServiceAccount
+
 PROJECT_DIR = Path(__file__).parent.parent.parent
 PROJECT_TOML_PATH = PROJECT_DIR / "pyproject.toml"
 
@@ -37,7 +39,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_ignore_empty=True,
+        env_ignore_empty=False,
         extra="ignore",
     )
 
@@ -72,6 +74,14 @@ class Settings(BaseSettings):
     postgres_db: str
     postgres_db_schema: str
     db_echo: bool = False
+
+    # firebase
+    firebase_project_id: str
+    firebase_private_key_id: str
+    firebase_private_key: str
+    firebase_private_key_path: Path | None = None
+    firebase_client_email: str
+    firebase_client_id: str
 
     # Token security settings
     secret_key: str
@@ -146,6 +156,26 @@ class Settings(BaseSettings):
             user=self.postgres_user,
             password=self.postgres_password,
             path=f"/{self.postgres_db}_test",
+        )
+
+    @computed_field
+    @property
+    def firebase_credentials(self) -> FirebaseServiceAccount:
+        """
+        Assemble Firebase credentials from settings.
+        """
+        # Check if the private key path is provided and exists
+        # If it does, read the private key from the file
+        if self.firebase_private_key_path is not None:
+            if self.firebase_private_key_path.is_file():
+                self.firebase_private_key = self.firebase_private_key_path.read_text()
+
+        return FirebaseServiceAccount(
+            project_id=self.firebase_project_id,
+            private_key_id=self.firebase_private_key_id,
+            private_key=self.firebase_private_key.replace("\\", "\\\\"),
+            client_email=self.firebase_client_email,
+            client_id=self.firebase_client_id,
         )
 
 

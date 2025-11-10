@@ -7,6 +7,12 @@ from .back_blaze_bucket import (
     FileDownloadLink,
     UploadedFileInfo,
 )
+from .firebase import (
+    FirebaseTokenData,
+    FirebaseServiceAccount,
+    FirebaseSignInResponse,
+    FirebaseSignUpResponse,
+)
 
 __all__ = [
     "BaseSchema",
@@ -23,4 +29,8 @@ __all__ = [
     "ApplicationData",
     "FileDownloadLink",
     "UploadedFileInfo",
+    "FirebaseTokenData",
+    "FirebaseServiceAccount",
+    "FirebaseSignInResponse",
+    "FirebaseSignUpResponse",
 ]
