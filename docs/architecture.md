@@ -202,16 +202,43 @@ class BackBlaze:
         )
 ```
 
-**Key Features**:
+**Available Services**:
 
-- **BackBlaze B2 Integration**: Cloud storage service client
-  - Bucket management (create, delete, update, list, select)
-  - File operations (upload, download, delete)
-  - URL generation (public, private, temporary auth links)
-  - File metadata and details retrieval
+#### BackBlaze B2 Cloud Storage
+
+Cloud storage integration for file management:
+
+- **Bucket Management**: Create, delete, update, list, and select buckets
+- **File Operations**: Upload, download, and delete files
+- **URL Generation**: Public, private, and temporary authenticated download links
+- **File Metadata**: Retrieve file details and information
 - **Method Chaining**: Fluent interface for bucket operations
 - **Error Handling**: Comprehensive exception handling with logging
 - **Type Safety**: Full type hints and Pydantic schema validation
+
+#### Firebase Authentication & Messaging
+
+Firebase integration for user authentication and push notifications:
+
+- **User Management**: Get users by ID, email, or phone number
+- **User Listing**: Fetch all users with pagination support
+- **Custom Tokens**: Create custom ID tokens with additional claims
+- **Token Verification**: Verify and validate ID tokens with expiration/revocation checks
+- **Push Notifications**: Send notifications to single or multiple devices
+- **FCM Token Validation**: Validate Firebase Cloud Messaging tokens
+- **Batch Notifications**: Send up to 500 notifications per batch with automatic chunking
+- **Singleton Pattern**: Single Firebase app initialization across application
+
+#### Firestore Database
+
+NoSQL document database integration:
+
+- **Document Operations**: Add, update, get, and remove documents
+- **Collection Queries**: Fetch all documents from collections
+- **Error Handling**: Custom exceptions for document-not-found scenarios
+- **Type Safety**: Fully typed responses with dictionary return types
+- **Automatic Initialization**: Singleton pattern with service account credentials
+- **Logging**: Comprehensive debug and error logging for all operations
 
 ## Data Flow
 

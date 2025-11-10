@@ -27,8 +27,15 @@ This API template includes the following services:
 ### Integrated Services
 
 - **BackBlaze B2 Cloud Storage** - File storage and management service (available as a service layer, can be integrated into custom endpoints)
+- **Firebase Authentication** - User authentication and management via Firebase (available as a service layer)
+- **Firebase Cloud Messaging** - Push notification service for mobile and web applications (available as a service layer)
+- **Firestore Database** - NoSQL document database for flexible data storage (available as a service layer)
 
-For BackBlaze B2 integration examples, see the [Development Guide](./development.md#backblaze-b2-cloud-storage-integration).
+For integration examples:
+
+- [BackBlaze B2 Integration](./development.md#backblaze-b2-cloud-storage-integration)
+- [Firebase Integration](./development.md#firebase-authentication--messaging-integration)
+- [Firestore Integration](./development.md#firestore-nosql-database-integration)
 
 ## Authentication
 
@@ -157,7 +164,7 @@ Get current authenticated user information.
 
 **Headers**:
 
-```
+```text
 Authorization: Bearer <access_token>
 ```
 
@@ -331,26 +338,26 @@ allow_headers: List[str] = ["*"]
 
 1. **Register a new user**:
 
-```bash
-curl -X POST "http://localhost:8000/api/v1/auth/signup" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=testuser&email=test@example.com&password=testpass123&first_name=Test&last_name=User"
-```
+    ```bash
+    curl -X POST "http://localhost:8000/api/v1/auth/signup" \
+      -H "Content-Type: application/x-www-form-urlencoded" \
+      -d "username=testuser&email=test@example.com&password=testpass123&first_name=Test&last_name=User"
+    ```
 
 2. **Login with credentials**:
 
-```bash
-curl -X POST "http://localhost:8000/api/v1/auth/login" \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "username=testuser&password=testpass123"
-```
+    ```bash
+    curl -X POST "http://localhost:8000/api/v1/auth/login" \
+      -H "Content-Type: application/x-www-form-urlencoded" \
+      -d "username=testuser&password=testpass123"
+    ```
 
 3. **Use access token**:
 
-```bash
-curl -X GET "http://localhost:8000/api/v1/users/me" \
-  -H "Authorization: Bearer <access_token_from_login>"
-```
+    ```bash
+    curl -X GET "http://localhost:8000/api/v1/users/me" \
+      -H "Authorization: Bearer <access_token_from_login>"
+    ```
 
 ### Error Handling Examples
 

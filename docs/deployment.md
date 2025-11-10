@@ -32,49 +32,11 @@ The FastAPI Template supports multiple deployment strategies:
 
 ### Production Environment Variables
 
-Create a production `.env` file:
+Create a production `.env` file from the `.env.example` template
 
-```env
-# Application Settings
-CURRENT_ENVIRONMENT=prod
-APP_TITLE=Your FastAPI Application
-DEBUG=false
+### External Services Configuration
 
-# Database Configuration
-DATABASE_URL=postgresql+asyncpg://user:password@db-host:5432/database_name
-DATABASE_POOL_SIZE=20
-DATABASE_MAX_OVERFLOW=10
-
-# Security Settings
-SECRET_KEY=your-super-secure-secret-key-with-64-characters-minimum
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=7
-
-# Server Configuration
-BACKEND_HOST=0.0.0.0
-BACKEND_PORT=8000
-WORKERS_COUNT=4
-RELOAD_UVICORN=false
-
-# CORS Settings
-CORS_ORIGINS=["https://yourdomain.com", "https://www.yourdomain.com"]
-
-# Logging
-LOG_LEVEL=INFO
-LOG_FILE=/var/log/fastapi-app/app.log
-
-# External Services (if applicable)
-REDIS_URL=redis://localhost:6379/0
-SMTP_SERVER=smtp.gmail.com
-SMTP_PORT=587
-
-# BackBlaze B2 Configuration (Optional)
-B2_APPLICATION_KEY_ID=your_backblaze_key_id
-B2_APPLICATION_KEY=your_backblaze_application_key
-B2_BUCKET_NAME=your_bucket_name
-```
-
-### BackBlaze B2 Setup for Production
+#### BackBlaze B2 Setup for Production
 
 If your application uses BackBlaze B2 cloud storage:
 
@@ -106,6 +68,73 @@ If your application uses BackBlaze B2 cloud storage:
    - Enable CDN if serving public files
    - Implement file size limits
    - Use multipart uploads for large files
+
+#### Firebase Setup for Production
+
+If your application uses Firebase for authentication or push notifications:
+
+1. **Firebase Project Setup**
+
+   - Create production Firebase project (separate from development)
+   - Navigate to Project Settings → Service Accounts
+   - Generate production service account key
+   - Download JSON credentials file
+   - Convert to environment variables or store securely
+
+2. **Security Best Practices**
+
+   - Use separate Firebase projects for dev/staging/production
+   - Restrict service account permissions to minimum required
+   - Enable Firebase App Check for API protection
+   - Set up Firebase Security Rules for Firestore
+   - Rotate service account keys periodically
+   - Monitor Firebase usage and quotas
+
+3. **Firestore Configuration**
+
+   - Set up Firestore security rules:
+
+   ```javascript
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       // Example: Authenticated users can read/write their own data
+       match /user_preferences/{userId} {
+         allow read, write: if request.auth != null && request.auth.uid == userId;
+       }
+
+       // Example: Only server can write to certain collections
+       match /analytics/{document=**} {
+         allow read: if request.auth != null;
+         allow write: if false; // Server-side only
+       }
+     }
+   }
+   ```
+
+4. **Push Notification Setup**
+
+   - Configure Firebase Cloud Messaging (FCM)
+   - Set up APNs certificates for iOS (if applicable)
+   - Configure notification channels for Android
+   - Implement token refresh logic in clients
+   - Monitor delivery success rates
+
+5. **Performance Optimization**
+
+   - Use Firestore indexes for complex queries
+   - Implement pagination for large collections
+   - Use Firebase SDK caching where appropriate
+   - Monitor read/write operations to optimize costs
+   - Batch notification sends (automatically handled up to 500 per batch)
+
+6. **Cost Management**
+
+   - Monitor Firebase usage dashboard
+   - Set up budget alerts
+   - Optimize Firestore queries to reduce reads
+   - Clean up expired FCM tokens regularly
+   - Use appropriate Firebase pricing plan
 
 ### Security Considerations
 

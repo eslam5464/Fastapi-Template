@@ -947,6 +947,295 @@ async def upload_document(
     }
 ```
 
+### Firebase Authentication & Messaging Integration
+
+The template includes Firebase integration for user authentication, user management, and push notifications.
+
+#### Firebase Setup
+
+1. **Create Firebase Project**
+
+   - Go to [Firebase Console](https://console.firebase.google.com/)
+   - Create a new project or use existing one
+   - Navigate to Project Settings → Service Accounts
+   - Generate new private key (downloads JSON file)
+
+2. **Configure Credentials**
+
+Add to your `.env` file or provide at runtime from `.env.example`
+
+#### Firebase Authentication Usage
+
+```python
+from app.services.firebase import Firebase
+from app.schemas.firebase import FirebaseServiceAccount
+
+# Initialize Firebase (uses singleton pattern)
+firebase_service = Firebase()
+
+# Get user by ID
+user = firebase_service.get_user_by_id("user_uid_123")
+print(f"User: {user.email}, Display Name: {user.display_name}")
+
+# Get user by email
+user = firebase_service.get_user_by_email("user@example.com")
+
+# Get user by phone number
+user = firebase_service.get_user_by_phone_number("+1234567890")
+
+# List all users with pagination
+users_page = firebase_service.get_all_users(max_results=1000)
+for user in users_page.iterate_all():
+    print(f"UID: {user.uid}, Email: {user.email}")
+
+# Create custom token for user
+custom_token = firebase_service.create_custom_id_token(
+    uid="user_uid_123",
+    additional_claims={"role": "admin", "premium": True}
+)
+
+# Verify ID token from client
+try:
+    decoded_token = firebase_service.verify_id_token(id_token="client_token_here")
+    uid = decoded_token['uid']
+    print(f"Token verified for user: {uid}")
+except ConnectionAbortedError as e:
+    print(f"Token invalid or expired: {e}")
+```
+
+#### Firebase Push Notifications
+
+```python
+from app.services.firebase import Firebase
+
+firebase_service = Firebase()
+
+# Validate FCM token
+device_token = "fcm_device_token_here"
+is_valid = firebase_service.validate_fcm_token(device_token)
+
+# Send notification to single device
+success = firebase_service.notify_a_device(
+    device_token=device_token,
+    title="Welcome!",
+    content="Thank you for signing up"
+)
+
+# Send notification to multiple devices (automatically batches in chunks of 500)
+device_tokens = ["token1", "token2", "token3", ...]  # Can be thousands
+success_count = firebase_service.notify_multiple_devices(
+    device_tokens=device_tokens,
+    title="New Update Available",
+    content="Version 2.0 is now available"
+)
+print(f"Successfully sent to {success_count} devices")
+```
+
+#### Firebase Integration in Endpoints
+
+```python
+from fastapi import APIRouter, Depends, HTTPException
+from app.services.firebase import Firebase
+
+router = APIRouter()
+
+def get_firebase_service() -> Firebase:
+    """Dependency to get Firebase service"""
+    return Firebase()
+
+@router.post("/auth/verify-token")
+async def verify_user_token(
+    token: str,
+    firebase: Firebase = Depends(get_firebase_service)
+):
+    try:
+        decoded_token = firebase.verify_id_token(token)
+        return {
+            "uid": decoded_token['uid'],
+            "email": decoded_token.get('email'),
+            "verified": True
+        }
+    except ConnectionAbortedError:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+@router.post("/notifications/send")
+async def send_push_notification(
+    user_id: str,
+    title: str,
+    message: str,
+    firebase: Firebase = Depends(get_firebase_service)
+):
+    # Get user's device tokens from your database
+    device_tokens = await get_user_device_tokens(user_id)
+
+    success_count = firebase.notify_multiple_devices(
+        device_tokens=device_tokens,
+        title=title,
+        content=message
+    )
+
+    return {
+        "sent": success_count,
+        "total": len(device_tokens)
+    }
+```
+
+### Firestore NoSQL Database Integration
+
+Firestore integration for document-based data storage alongside your PostgreSQL database.
+
+#### Firestore Setup
+
+Uses the same Firebase service account credentials as Firebase Authentication.
+
+#### Firestore Usage
+
+```python
+from app.services.firestore import Firestore
+from app.schemas.firebase import FirebaseServiceAccount
+
+# Initialize Firestore (uses singleton pattern)
+service_account = FirebaseServiceAccount(
+    type="service_account",
+    project_id="your-project-id",
+    # ... other credentials
+)
+firestore_service = Firestore(service_account)
+
+# Add a document
+firestore_service.add_document(
+    collection_name="users",
+    document_id="user123",
+    data={
+        "name": "John Doe",
+        "email": "john@example.com",
+        "preferences": {
+            "theme": "dark",
+            "notifications": True
+        }
+    }
+)
+
+# Get a document
+user_data = firestore_service.get_document(
+    collection_name="users",
+    document_id="user123"
+)
+if user_data:
+    print(f"User: {user_data['name']}")
+
+# Update a document
+firestore_service.update_document(
+    collection_name="users",
+    document_id="user123",
+    data={
+        "preferences.theme": "light",  # Nested field update
+        "last_login": "2025-01-19T10:30:00Z"
+    }
+)
+
+# Fetch all documents from collection
+all_users = firestore_service.fetch_all_documents("users")
+for user in all_users:
+    print(f"User: {user['name']}")
+
+# Remove a document
+firestore_service.remove_document(
+    collection_name="users",
+    document_id="user123"
+)
+```
+
+#### Error Handling
+
+```python
+from app.core.exceptions.firebase_exceptions import FirebaseDocumentNotFoundError
+
+try:
+    firestore_service.update_document(
+        collection_name="users",
+        document_id="nonexistent",
+        data={"status": "active"}
+    )
+except FirebaseDocumentNotFoundError as e:
+    print(f"Document not found: {e}")
+```
+
+#### Firestore Integration in Endpoints
+
+```python
+from fastapi import APIRouter, Depends, HTTPException
+from app.services.firestore import Firestore
+from app.core.exceptions.firebase_exceptions import FirebaseDocumentNotFoundError
+
+router = APIRouter()
+
+def get_firestore_service() -> Firestore:
+    """Dependency to get Firestore service"""
+    from app.core.config import settings
+    return Firestore(settings.firebase_credentials)
+
+@router.post("/user-preferences")
+async def save_user_preferences(
+    user_id: str,
+    preferences: dict,
+    firestore: Firestore = Depends(get_firestore_service)
+):
+    firestore.add_document(
+        collection_name="user_preferences",
+        document_id=user_id,
+        data=preferences
+    )
+    return {"status": "saved"}
+
+@router.get("/user-preferences/{user_id}")
+async def get_user_preferences(
+    user_id: str,
+    firestore: Firestore = Depends(get_firestore_service)
+):
+    prefs = firestore.get_document(
+        collection_name="user_preferences",
+        document_id=user_id
+    )
+    if not prefs:
+        raise HTTPException(status_code=404, detail="Preferences not found")
+    return prefs
+
+@router.put("/user-preferences/{user_id}")
+async def update_user_preferences(
+    user_id: str,
+    preferences: dict,
+    firestore: Firestore = Depends(get_firestore_service)
+):
+    try:
+        firestore.update_document(
+            collection_name="user_preferences",
+            document_id=user_id,
+            data=preferences
+        )
+        return {"status": "updated"}
+    except FirebaseDocumentNotFoundError:
+        raise HTTPException(status_code=404, detail="User preferences not found")
+```
+
+#### Use Cases for Firestore
+
+**When to use Firestore alongside PostgreSQL:**
+
+- **User Preferences**: Store user settings, UI state, personalization
+- **Real-time Data**: Chat messages, notifications, activity feeds
+- **Session Data**: Temporary data that doesn't need relational integrity
+- **Device Tokens**: FCM tokens for push notifications
+- **Analytics Events**: User behavior tracking, event logging
+- **Cache Layer**: Frequently accessed data to reduce database load
+
+**When to use PostgreSQL:**
+
+- **Transactional Data**: Orders, payments, critical business data
+- **Relational Data**: Data with complex relationships and foreign keys
+- **Data Integrity**: When ACID compliance is required
+- **Complex Queries**: JOINs, aggregations, full-text search
+
 ### Custom Middleware
 
 ```python
