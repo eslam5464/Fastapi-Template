@@ -232,7 +232,7 @@ python -m app.core.seeders
 
 ### Test Structure
 
-```
+```text
 tests/
 ├── __init__.py
 ├── conftest.py              # Test configuration and fixtures
@@ -332,9 +332,11 @@ async def async_session():
 
 ## Debugging
 
-### Logging
+### Logging System
 
-The application uses Loguru for structured logging:
+The application uses a production-grade logging system built with Loguru, providing structured, traceable logs across all environments.
+
+#### Basic Usage
 
 ```python
 from loguru import logger
@@ -346,8 +348,118 @@ logger.warning("Warning message")
 logger.error("Error occurred")
 logger.critical("Critical error")
 
-# Structured logging
+# Structured logging with context
 logger.info("User created", user_id=user.id, username=user.username)
+
+# Exception logging with full traceback
+try:
+    risky_operation()
+except Exception as e:
+    logger.exception("Operation failed")  # Automatically includes traceback
+```
+
+#### Log Output Locations
+
+**Console Output (Development)**:
+
+- Colored output for quick visual scanning
+- Shows timestamp, log level, process ID, request ID, and message
+- Simplified format for rapid debugging
+
+**File Output (Always Active)**:
+
+- Located in `logs/app.log`
+- Includes full context: module, function, line number
+- UTC timestamps for consistency across time zones
+- Automatically rotates at 10MB, compresses with gzip
+- Retains logs for 3 months
+
+#### Request Tracing
+
+Every HTTP request automatically gets a unique request ID that appears in all related logs:
+
+```python
+# All logs within a request context automatically include the request ID
+logger.info("Processing user registration")
+# Output: ... | ReqID:abc123 | Processing user registration
+
+logger.info("Database query executed")
+# Output: ... | ReqID:abc123 | Database query executed
+```
+
+To find all logs for a specific request:
+
+```bash
+# Search logs for specific request ID
+grep "ReqID:abc123" logs/app.log
+
+# Or use log viewer tools to filter by request_id field
+```
+
+#### Log Levels by Environment
+
+- **Local/Development**: DEBUG and above
+- **Staging/Production**: INFO and above
+
+Configure via `.env`:
+
+```bash
+LOG_LEVEL=DEBUG  # or INFO, WARNING, ERROR, CRITICAL
+```
+
+#### Centralized Log Aggregation (Optional)
+
+For production deployments, configure remote log shipping:
+
+```bash
+# Add to .env for centralized logging
+OPENOBSERVE_URL=https://observe.example.com
+OPENOBSERVE_TOKEN=your_base64_token
+OPENOBSERVE_ORG=your_organization
+OPENOBSERVE_STREAM=fastapi_logs
+OPENOBSERVE_BATCH_SIZE=10
+OPENOBSERVE_FLUSH_INTERVAL=5.0
+```
+
+Benefits:
+
+- Non-blocking: doesn't slow down your application
+- Batched: reduces network overhead
+- Resilient: continues local logging if remote service unavailable
+- Searchable: query logs across all application instances
+
+#### Multi-Worker Considerations
+
+When running with multiple workers (`--workers 4`):
+
+- Each log entry includes process ID (PID) to identify which worker generated it
+- Thread-safe queue-based writing prevents log corruption
+- All workers write to same unified log file safely
+
+```bash
+# Run with multiple workers
+uvicorn app.main:app --workers 4 --host 0.0.0.0 --port 8000
+
+# Logs will show:
+# ... | PID:12345 | ReqID:abc123 | Message from worker 1
+# ... | PID:12346 | ReqID:def456 | Message from worker 2
+```
+
+#### Viewing Logs
+
+```bash
+# Tail logs in real-time
+tail -f logs/app.log
+
+# Search for errors
+grep "ERROR" logs/app.log
+
+# View logs with timestamps in specific range
+grep "2025-01-19" logs/app.log
+
+# Decompress old logs
+gunzip logs/app.2025-01-01.log.gz
+cat logs/app.2025-01-01.log
 ```
 
 ### VS Code Debug Configuration
@@ -584,7 +696,7 @@ result = await session.execute(
 
 Use conventional commit format:
 
-```
+```text
 feat: add user authentication
 fix: resolve database connection issue
 docs: update API documentation
@@ -612,6 +724,27 @@ refactor: improve error handling
 - [ ] Security implications reviewed
 
 ## Troubleshooting
+
+### Using Logs for Debugging
+
+The logging system is your first line of defense when troubleshooting issues:
+
+```bash
+# Check recent errors
+grep "ERROR" logs/app.log | tail -20
+
+# Find all logs for a specific request (if you have the request ID)
+grep "ReqID:abc123" logs/app.log
+
+# Monitor logs in real-time
+tail -f logs/app.log
+
+# Check logs from specific worker process
+grep "PID:12345" logs/app.log
+
+# View logs with full exception details
+grep -A 10 "ERROR" logs/app.log  # Shows 10 lines after each error
+```
 
 ### Common Issues
 

@@ -291,8 +291,9 @@ def setup_logger():
     console_format = (
         "<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
         "<level>{level: <8}</level> | "
-        "<cyan>PID:{extra[process_id]}</cyan> | "
+        "<magenta>PID:{extra[process_id]}</magenta> | "
         "<yellow>ReqID:{extra[request_id]}</yellow> | "
+        "<cyan>{name}:{function}:{line}</cyan> | "
         "<level>{message}</level>"
     )
 

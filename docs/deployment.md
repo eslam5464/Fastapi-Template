@@ -513,27 +513,27 @@ sudo chmod 600 /etc/ssl/private/yourdomain.key
 
 1. **Prepare Application**:
 
-```python
-# requirements.txt (generated from pyproject.toml)
-# Procfile
-web: gunicorn app.main:app -w 4 -k uvicorn.workers.UnicornWorker --bind 0.0.0.0:8000
-```
+    ```python
+    # requirements.txt (generated from pyproject.toml)
+    # Procfile
+    web: gunicorn app.main:app -w 4 -k uvicorn.workers.UnicornWorker --bind 0.0.0.0:8000
+    ```
 
 2. **Deploy**:
 
-```bash
-# Install EB CLI
-pip install awsebcli
+    ```bash
+    # Install EB CLI
+    pip install awsebcli
 
-# Initialize EB application
-eb init
+    # Initialize EB application
+    eb init
 
-# Create environment
-eb create production
+    # Create environment
+    eb create production
 
-# Deploy
-eb deploy
-```
+    # Deploy
+    eb deploy
+    ```
 
 #### Using EC2 + RDS
 
@@ -660,6 +660,108 @@ def cache_result(expiration=300):
 
 ## Monitoring and Logging
 
+### Production Logging System
+
+The template includes a production-grade logging infrastructure designed for multi-worker deployments and centralized log aggregation.
+
+#### Log Configuration for Production
+
+Add to production `.env`:
+
+```env
+# Basic logging
+LOG_LEVEL=INFO
+
+# Centralized log aggregation (Optional - OpenObserve, Grafana Loki, etc.)
+OPENOBSERVE_URL=https://observe.yourdomain.com
+OPENOBSERVE_TOKEN=your_base64_encoded_token
+OPENOBSERVE_ORG=production
+OPENOBSERVE_STREAM=fastapi-app
+OPENOBSERVE_BATCH_SIZE=50
+OPENOBSERVE_FLUSH_INTERVAL=5.0
+```
+
+#### Log Features in Production
+
+**Multi-Worker Safety**:
+
+- Queue-based writing prevents log corruption across multiple workers
+- Process ID (PID) tracking to identify which worker handled each request
+- Thread-safe operations for concurrent log writes
+
+**Request Tracing**:
+
+- Every request gets a unique correlation ID
+- Track request flow across services and layers
+- Essential for debugging distributed systems
+
+**Automatic Management**:
+
+- Files rotate at 10MB to keep sizes manageable
+- Logs compress with gzip (saves ~90% disk space)
+- Automatic deletion after 3 months retention period
+- No manual cleanup required
+
+**Centralized Aggregation (Optional)**:
+
+- Non-blocking background shipping to remote log services
+- Batched sends reduce network overhead by 90%
+- Resilient with automatic retry on failures
+- Local files remain source of truth if remote service unavailable
+
+#### Log File Locations
+
+```bash
+# Main application log
+/var/log/fastapi-app/app.log
+
+# Rotated/compressed logs
+/var/log/fastapi-app/app.2025-01-15.log.gz
+/var/log/fastapi-app/app.2025-01-14.log.gz
+```
+
+#### Log Analysis Commands
+
+```bash
+# View real-time logs
+tail -f /var/log/fastapi-app/app.log
+
+# Search for errors
+grep "ERROR" /var/log/fastapi-app/app.log
+
+# Find logs for specific request
+grep "ReqID:abc123" /var/log/fastapi-app/app.log
+
+# View logs from specific worker
+grep "PID:12345" /var/log/fastapi-app/app.log
+
+# Count errors in last hour
+grep "ERROR" /var/log/fastapi-app/app.log | grep "$(date -d '1 hour ago' +'%Y-%m-%d %H')" | wc -l
+
+# View logs with context (10 lines before/after error)
+grep -C 10 "ERROR" /var/log/fastapi-app/app.log
+```
+
+#### Log Rotation with Logrotate (Backup)
+
+While the application handles rotation automatically, you can add system-level logrotate as additional safeguard:
+
+```bash
+# /etc/logrotate.d/fastapi-app
+/var/log/fastapi-app/*.log {
+    daily
+    rotate 90
+    compress
+    delaycompress
+    notifempty
+    create 0640 appuser appuser
+    sharedscripts
+    postrotate
+        systemctl reload fastapi-app > /dev/null 2>&1 || true
+    endscript
+}
+```
+
 ### Application Monitoring
 
 #### Health Check Endpoint
@@ -690,33 +792,69 @@ async def health_check():
         }
 ```
 
+### Centralized Log Aggregation Options
+
+#### OpenObserve (Recommended)
+
+Open-source observability platform with excellent performance:
+
+```bash
+# Deploy OpenObserve (Docker)
+docker run -d \
+  --name openobserve \
+  -p 5080:5080 \
+  -v /data/openobserve:/data \
+  public.ecr.aws/zinclabs/openobserve:latest
+
+# Generate auth token (base64 encode: username:password)
+echo -n "admin:ComplexPassword123" | base64
+
+# Configure in application .env
+OPENOBSERVE_URL=https://observe.yourdomain.com
+OPENOBSERVE_TOKEN=YWRtaW46Q29tcGxleFBhc3N3b3JkMTIz
+```
+
+#### Grafana Loki
+
+Alternative log aggregation with Grafana integration:
+
+```yaml
+# loki-config.yaml
+auth_enabled: false
+
+server:
+  http_listen_port: 3100
+
+ingester:
+  lifecycler:
+    ring:
+      kvstore:
+        store: inmemory
+      replication_factor: 1
+
+schema_config:
+  configs:
+    - from: 2020-10-24
+      store: boltdb-shipper
+      object_store: filesystem
+      schema: v11
+      index:
+        prefix: index_
+        period: 24h
+```
+
+Benefits of centralized logging:
+
+- Search logs across all application instances
+- Correlation between services
+- Long-term log retention without local disk usage
+- Advanced queries and filtering
+- Alerting on log patterns
+- Integration with dashboards
+
 #### Logging Configuration
 
-```python
-# Enhanced logging setup
-from loguru import logger
-import sys
-
-def setup_logging():
-    logger.remove()
-
-    # Console logging
-    logger.add(
-        sys.stdout,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>",
-        level="INFO"
-    )
-
-    # File logging
-    logger.add(
-        "/var/log/fastapi-app/app.log",
-        rotation="10 MB",
-        retention="30 days",
-        compression="gzip",
-        format="{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {name}:{function}:{line} - {message}",
-        level="INFO"
-    )
-```
+The application's logging system is pre-configured and production-ready. No additional setup required beyond environment variables.
 
 ### External Monitoring
 
@@ -853,30 +991,65 @@ sudo systemctl enable fail2ban
 
 ## Troubleshooting
 
+### Using Logs for Production Debugging
+
+Logs are your primary tool for troubleshooting production issues:
+
+```bash
+# Check application startup issues
+grep "ERROR\|CRITICAL" /var/log/fastapi-app/app.log | tail -50
+
+# Monitor application in real-time
+tail -f /var/log/fastapi-app/app.log
+
+# Find all logs related to a failed request (if you have request ID from error response)
+grep "ReqID:xyz789" /var/log/fastapi-app/app.log
+
+# Check logs from specific time period
+grep "2025-01-19 14:" /var/log/fastapi-app/app.log
+
+# Analyze error patterns
+grep "ERROR" /var/log/fastapi-app/app.log | cut -d'|' -f6 | sort | uniq -c | sort -rn
+
+# Check which worker is having issues
+grep "ERROR" /var/log/fastapi-app/app.log | grep -o "PID:[0-9]*" | sort | uniq -c
+```
+
 ### Common Issues
 
 1. **Database Connection Issues**:
 
    - Check PostgreSQL service status
-   - Verify connection string
+   - Verify connection string in logs
    - Check firewall rules
+   - Look for connection errors in logs: `grep "database\|connection" /var/log/fastapi-app/app.log`
 
 2. **High Memory Usage**:
 
    - Monitor with `htop` or `ps`
    - Check for memory leaks
    - Optimize database queries
+   - Review logs for repeated error patterns that might indicate resource leaks
 
 3. **Slow Response Times**:
 
    - Enable query logging
    - Use APM tools
    - Check server resources
+   - Search logs for requests taking too long: `grep "duration\|took" /var/log/fastapi-app/app.log`
 
 4. **SSL Certificate Issues**:
+
    - Check certificate expiration
    - Verify certificate chain
    - Test with SSL Labs
+
+5. **Worker Process Crashes**:
+
+   - Check system logs: `journalctl -u fastapi-app`
+   - Review application logs for exceptions before crash
+   - Verify worker count matches server resources
+   - Check for out-of-memory errors: `dmesg | grep -i kill`
 
 ### Performance Monitoring
 

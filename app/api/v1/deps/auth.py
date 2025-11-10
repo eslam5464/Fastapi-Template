@@ -9,9 +9,9 @@ from jose.exceptions import ExpiredSignatureError, JWTClaimsError, JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import repos
-from app.core import http_exceptions
 from app.core.config import settings
 from app.core.db import get_session
+from app.core.exceptions import http_exceptions
 from app.core.utils import parse_user_id
 from app.models.user import User
 from app.schemas.token import TokenData

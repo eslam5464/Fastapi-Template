@@ -17,6 +17,7 @@ Learn about the clean architecture principles, layer organization, and design pa
 - Authentication & authorization architecture
 - Database and migration strategy
 - Error handling and middleware
+- Logging architecture (multi-worker safe, distributed tracing, centralized aggregation)
 - Security architecture
 - Performance considerations
 

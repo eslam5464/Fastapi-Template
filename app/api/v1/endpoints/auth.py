@@ -6,7 +6,7 @@ from jose import JWTError, jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import repos
-from app.core import http_exceptions, responses
+from app.core import responses
 from app.core.auth import (
     create_access_token,
     create_refresh_token,
@@ -15,6 +15,7 @@ from app.core.auth import (
 )
 from app.core.config import settings
 from app.core.db import get_session
+from app.core.exceptions import http_exceptions
 from app.core.utils import parse_user_id
 from app.schemas import (
     Token,
