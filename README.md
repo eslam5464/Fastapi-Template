@@ -60,6 +60,12 @@ A production-ready FastAPI project template with modern best practices, async su
    pre-commit install
    ```
 
+   **Note:** If you are facing SSL issues on Windows, use:
+
+   ```bash
+   uv sync --all-groups --native-tls
+   ```
+
 3. **Set up environment variables**
 
    ```bash

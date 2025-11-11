@@ -5,26 +5,22 @@ description = "A FastAPI project template"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "aiohttp>=3.12.15",
     "alembic>=1.16.5",
     "asyncpg>=0.30.0",
     "b2sdk>=2.10.1",
-    "bcrypt==4.0.1",
-    "black>=25.9.0",
     "email-validator>=2.3.0",
     "fastapi>=0.116.2",
     "firebase-admin>=7.1.0",
     "gunicorn>=23.0.0",
     "httptools>=0.6.4 ; sys_platform == 'linux'",
     "loguru>=0.7.3",
-    "passlib[bcrypt]>=1.7.4",
     "pre-commit>=4.3.0",
+    "pwdlib[argon2]>=0.3.0",
     "pydantic>=2.11.9",
     "pydantic-settings>=2.10.1",
     "pyjwt>=2.10.1",
     "python-jose>=3.5.0",
     "python-multipart>=0.0.20",
-    "requests>=2.32.5",
     "sqlalchemy[asyncio]>=2.0.43",
     "tzdata>=2025.2",
     "uvicorn[standard]>=0.35.0",
@@ -42,6 +38,9 @@ test = [
 ]
 security = [
     "bandit>=1.8.6",
+]
+dev = [
+    "black>=25.9.0",
 ]
 
 [tool.black]
