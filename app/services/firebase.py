@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass, field
 
 import firebase_admin
@@ -68,7 +69,7 @@ class Firebase:
 
         return self._default_app
 
-    def get_user_by_id(self, user_id: str) -> UserRecord:
+    async def get_user_by_id(self, user_id: str) -> UserRecord:
         """
         Fetch user by ID
 
@@ -83,11 +84,15 @@ class Firebase:
             ConnectionAbortedError: If the user is not found
             ConnectionError: If there is an error getting the user
         """
-        try:
+
+        def _get_user():
             return auth.get_user(
                 uid=user_id,
                 app=self._default_app,
             )
+
+        try:
+            return await asyncio.to_thread(_get_user)
         except ValueError as err:
             logger.error("Error getting user by ID, user ID is malformed")
             logger.debug(str(err))
@@ -101,7 +106,7 @@ class Firebase:
             logger.debug(str(err))
             raise ConnectionError("Unknown error getting user by ID")
 
-    def get_user_by_email(self, email: str) -> UserRecord:
+    async def get_user_by_email(self, email: str) -> UserRecord:
         """
         Fetch user by email address
 
@@ -116,11 +121,15 @@ class Firebase:
             ConnectionAbortedError: If the user is not found
             ConnectionError: If there is an error getting the user
         """
-        try:
+
+        def _get_user():
             return auth.get_user_by_email(
                 email=email,
                 app=self._default_app,
             )
+
+        try:
+            return await asyncio.to_thread(_get_user)
         except ValueError as err:
             logger.error("Error getting user by email, email is malformed")
             logger.debug(str(err))
@@ -134,7 +143,7 @@ class Firebase:
             logger.debug(str(err))
             raise ConnectionError("Unknown error getting user by email")
 
-    def get_user_by_phone_number(self, phone_number: str) -> UserRecord:
+    async def get_user_by_phone_number(self, phone_number: str) -> UserRecord:
         """
         Fetch user by phone number
 
@@ -149,11 +158,15 @@ class Firebase:
             ConnectionAbortedError: If the user is not found
             ConnectionError: If there is an error getting the user
         """
-        try:
+
+        def _get_user():
             return auth.get_user_by_phone_number(
                 phone_number=phone_number,
                 app=self._default_app,
             )
+
+        try:
+            return await asyncio.to_thread(_get_user)
         except ValueError as err:
             logger.error("Error getting user by phone number, phone number is malformed")
             logger.debug(str(err))
@@ -167,7 +180,7 @@ class Firebase:
             logger.debug(str(err))
             raise ConnectionError("Unknown error getting user by phone number")
 
-    def get_all_users(self, max_results: int = 1000) -> ListUsersPage:
+    async def get_all_users(self, max_results: int = 1000) -> ListUsersPage:
         """
         Fetch all users
 
@@ -181,8 +194,12 @@ class Firebase:
             ValueError: If max_results is malformed
             ConnectionError: If there is an error getting all users
         """
-        try:
+
+        def _list_users():
             return auth.list_users(app=self._default_app, max_results=max_results)
+
+        try:
+            return await asyncio.to_thread(_list_users)
         except ValueError as err:
             logger.error("Error getting all users, max_results is malformed")
             logger.debug(str(err))
@@ -192,7 +209,9 @@ class Firebase:
             logger.debug(str(err))
             raise ConnectionError("Unknown error getting all users")
 
-    def create_custom_id_token(self, uid: str, additional_claims: dict | None = None) -> bytes:
+    async def create_custom_id_token(
+        self, uid: str, additional_claims: dict | None = None
+    ) -> bytes:
         """
         Create a custom ID token for a user
 
@@ -207,12 +226,16 @@ class Firebase:
             ValueError: If UID is malformed
             ConnectionError: If there is an error creating the custom ID token
         """
-        try:
+
+        def _create_token():
             return auth.create_custom_token(
                 uid=uid,
                 developer_claims=additional_claims,
                 app=self._default_app,
             )
+
+        try:
+            return await asyncio.to_thread(_create_token)
         except ValueError as err:
             logger.error("Error creating custom ID token, UID is malformed")
             logger.debug(str(err))
@@ -222,7 +245,7 @@ class Firebase:
             logger.debug(str(err))
             raise ConnectionError("Unknown error creating custom ID token")
 
-    def verify_id_token(self, id_token: str) -> dict:
+    async def verify_id_token(self, id_token: str) -> dict:
         """
         Verify ID token
 
@@ -237,11 +260,15 @@ class Firebase:
             ConnectionError: If there is an error verifying the ID token
             ConnectionAbortedError: If the ID token has expired or been revoked
         """
-        try:
+
+        def _verify_token():
             return auth.verify_id_token(
                 id_token=id_token,
                 app=self._default_app,
             )
+
+        try:
+            return await asyncio.to_thread(_verify_token)
         except ValueError as err:
             logger.error("Error verifying ID token, ID token is malformed")
             logger.debug(str(err))
@@ -263,7 +290,7 @@ class Firebase:
             logger.debug(str(err))
             raise ConnectionError("Error verifying ID token")
 
-    def validate_fcm_token(self, registration_token: str):
+    async def validate_fcm_token(self, registration_token: str):
         """
         validate FCM token (Firebase Cloud Messaging token / device token)
 
@@ -273,12 +300,16 @@ class Firebase:
         Returns:
             bool: True if the token is valid, False otherwise
         """
-        try:
-            messaging.send(
+
+        def _validate_token():
+            return messaging.send(
                 messaging.Message(token=registration_token, data={"test": "validation"}),
                 dry_run=True,
                 app=self._default_app,
             )
+
+        try:
+            await asyncio.to_thread(_validate_token)
             return True
         except FirebaseError as err:
             logger.error("Firebase error validating token")
@@ -293,7 +324,7 @@ class Firebase:
             logger.debug(str(e))
             return False
 
-    def notify_a_device(
+    async def notify_a_device(
         self,
         device_token: str,
         title: str,
@@ -313,7 +344,8 @@ class Firebase:
         Raises:
             Exception: If there is an error sending the notification
         """
-        try:
+
+        def _send_notification():
             message = messaging.Message(
                 notification=messaging.Notification(
                     title=title,
@@ -321,11 +353,13 @@ class Firebase:
                 ),
                 token=device_token,
             )
-
-            response = messaging.send(
+            return messaging.send(
                 message=message,
                 app=self._default_app,
             )
+
+        try:
+            response = await asyncio.to_thread(_send_notification)
             logger.info(f"Push notification sent successfully: {response}")
             return True
         except Exception as e:
@@ -333,7 +367,7 @@ class Firebase:
             logger.debug(str(e))
             return False
 
-    def notify_multiple_devices(
+    async def notify_multiple_devices(
         self,
         device_tokens: list[str],
         title: str,
@@ -355,7 +389,7 @@ class Firebase:
         for tokens_chunk_index in range(0, len(device_tokens), 500):
             tokens_chunk = device_tokens[tokens_chunk_index : tokens_chunk_index + 500]
 
-            try:
+            def _send_multicast():
                 message = messaging.MulticastMessage(
                     notification=messaging.Notification(
                         title=title,
@@ -363,10 +397,13 @@ class Firebase:
                     ),
                     tokens=tokens_chunk,
                 )
-                response: messaging.BatchResponse = messaging.send_each_for_multicast(
+                return messaging.send_each_for_multicast(
                     multicast_message=message,
                     app=self._default_app,
                 )
+
+            try:
+                response: messaging.BatchResponse = await asyncio.to_thread(_send_multicast)
                 success_count += response.success_count
 
                 for result in response.responses:
