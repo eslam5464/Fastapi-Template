@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
-from starlette.middleware.cors import CORSMiddleware
 
 from app.api.routes import api_router
 from app.core.config import Environment, settings
