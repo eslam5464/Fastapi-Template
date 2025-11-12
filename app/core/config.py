@@ -100,6 +100,8 @@ class Settings(BaseSettings):
     openobserve_org_id: str
     openobserve_stream_name: str
     openobserve_access_key: str
+    openobserve_batch_size: int = 10
+    openobserve_flush_interval: float = 5.0
 
     @computed_field
     @property

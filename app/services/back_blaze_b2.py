@@ -1,6 +1,6 @@
-import os
 from dataclasses import dataclass, field
 from enum import StrEnum
+from pathlib import Path
 from typing import Self
 
 from b2sdk._internal.bucket import Bucket
@@ -471,7 +471,7 @@ class BackBlaze:
         """
         if not file_path.strip():
             raise ValueError("File path cannot be empty")
-        if not os.path.exists(file_path):
+        if not Path(file_path).exists():
             raise FileNotFoundError(f"File not found: {file_path}")
 
     @staticmethod
@@ -482,8 +482,8 @@ class BackBlaze:
             local_file_path: Path to the local file
         """
         try:
-            if os.path.exists(local_file_path):
-                os.remove(local_file_path)
+            if Path(local_file_path).exists():
+                Path(local_file_path).unlink()
                 logger.info(f"Cleaned up local file after failed upload: {local_file_path}")
         except OSError as ex:
             logger.warning(f"Failed to clean up local file: {local_file_path}")

@@ -214,9 +214,23 @@ def correlation_filter(record):
     Add correlation ID and process ID to log records.
     This allows tracking requests across the application and
     differentiating between different worker processes.
+    Removes OpenObserve HTTP logs to avoid redundancy.
+
+    Args:
+        record (dict): Log record dictionary from Loguru.
+
+    Returns:
+        dict: Modified log record with extra fields.
     """
+    if record.get("name", None):
+        message = record.get("message", "")
+
+        if settings.openobserve_url in message:
+            return False
+
     record["extra"]["request_id"] = request_id_var.get() or str(uuid.uuid4())[:8]
     record["extra"]["process_id"] = os.getpid()
+
     return record
 
 
@@ -337,31 +351,16 @@ def setup_logger():
     # ============================================
     # OPENOBSERVE SINK (Optional, Non-Blocking)
     # ============================================
-    # Configure via environment variables:
-    # OPENOBSERVE_URL: Your OpenObserve instance URL
-    # OPENOBSERVE_TOKEN: Authentication token (Basic auth base64)
-    # OPENOBSERVE_ORG: Organization name (default: "default")
-    # OPENOBSERVE_STREAM: Stream name (default: "default")
-    # OPENOBSERVE_BATCH_SIZE: Number of logs to batch (default: 10)
-    # OPENOBSERVE_FLUSH_INTERVAL: Seconds between flushes (default: 5.0)
 
-    openobserve_url = os.getenv("OPENOBSERVE_URL")
-    openobserve_token = os.getenv("OPENOBSERVE_TOKEN")
-
-    if openobserve_url and openobserve_token:
-        openobserve_org = os.getenv("OPENOBSERVE_ORG", "default")
-        openobserve_stream = os.getenv("OPENOBSERVE_STREAM", "default")
-        batch_size = int(os.getenv("OPENOBSERVE_BATCH_SIZE", "10"))
-        flush_interval = float(os.getenv("OPENOBSERVE_FLUSH_INTERVAL", "5.0"))
-
+    if settings.log_to_openobserve is True:
         # Initialize OpenObserve handler
         _openobserve_handler = OpenObserveHandler(
-            url=openobserve_url,
-            token=openobserve_token,
-            org=openobserve_org,
-            stream=openobserve_stream,
-            batch_size=batch_size,
-            flush_interval=flush_interval,
+            url=settings.openobserve_url,
+            token=settings.openobserve_access_key,
+            org=settings.openobserve_org_id,
+            stream=settings.openobserve_stream_name,
+            batch_size=settings.openobserve_batch_size,
+            flush_interval=settings.openobserve_flush_interval,
         )
 
         def openobserve_sink(message):
@@ -404,9 +403,9 @@ def setup_logger():
 
         logger.info(
             f"OpenObserve logging enabled (non-blocking) | "
-            f"URL: {openobserve_url} | "
-            f"Batch: {batch_size} | "
-            f"Flush: {flush_interval}s"
+            f"URL: {settings.openobserve_url} | "
+            f"Batch: {settings.openobserve_batch_size} | "
+            f"Flush: {settings.openobserve_flush_interval}s"
         )
 
     logger.info(
