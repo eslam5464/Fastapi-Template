@@ -8,11 +8,14 @@ import time
 import uuid
 from contextvars import ContextVar
 from pathlib import Path
-from typing import Any, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from loguru import logger
 
 from app.core.config import Environment, settings
+
+if TYPE_CHECKING:
+    from loguru import Record
 
 # ============================================
 # CONTEXT VARIABLES FOR REQUEST TRACKING
@@ -209,7 +212,7 @@ _openobserve_handler: Optional[OpenObserveHandler] = None
 # ============================================
 
 
-def correlation_filter(record):
+def correlation_filter(record: "Record") -> bool:
     """
     Add correlation ID and process ID to log records.
     This allows tracking requests across the application and
@@ -217,10 +220,10 @@ def correlation_filter(record):
     Removes OpenObserve HTTP logs to avoid redundancy.
 
     Args:
-        record (dict): Log record dictionary from Loguru.
+        record (Record): Log record from Loguru.
 
     Returns:
-        dict: Modified log record with extra fields.
+        bool: True to include the log, False to filter it out.
     """
     if record.get("name", None):
         message = record.get("message", "")
@@ -231,7 +234,7 @@ def correlation_filter(record):
     record["extra"]["request_id"] = request_id_var.get() or str(uuid.uuid4())[:8]
     record["extra"]["process_id"] = os.getpid()
 
-    return record
+    return True
 
 
 # ============================================
@@ -372,7 +375,7 @@ def setup_logger():
             if _openobserve_handler is None:
                 return
 
-            record = message.record
+            record: dict = message.record
 
             # Prepare payload for OpenObserve
             payload = {
