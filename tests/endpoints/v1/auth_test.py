@@ -15,7 +15,7 @@ from tests.utils import generate_user_credentials
 class TestLogin:
     """Test suite for POST /api/v1/auth/login endpoint"""
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_login_success(
         self,
         client: AsyncClient,
@@ -47,7 +47,7 @@ class TestLogin:
         assert "exp" in payload
         assert "iat" in payload
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_login_wrong_password(
         self,
         client: AsyncClient,
@@ -66,7 +66,7 @@ class TestLogin:
         data = response.json()
         assert data["detail"] == "Incorrect username or password"
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_login_nonexistent_user(
         self,
         client: AsyncClient,
@@ -84,7 +84,7 @@ class TestLogin:
         data = response.json()
         assert data["detail"] == "Incorrect username or password"
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_login_missing_fields(
         self,
         client: AsyncClient,
@@ -112,7 +112,7 @@ class TestLogin:
 class TestSignup:
     """Test suite for POST /api/v1/auth/signup endpoint"""
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_signup_success(
         self,
         client: AsyncClient,
@@ -144,7 +144,7 @@ class TestSignup:
         assert "exp" in payload
         assert "iat" in payload
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_signup_duplicate_email(
         self,
         client: AsyncClient,
@@ -165,7 +165,7 @@ class TestSignup:
         data = response.json()
         assert data["detail"] == "A user with this email already exists."
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_signup_invalid_username_format(
         self,
         client: AsyncClient,
@@ -216,7 +216,7 @@ class TestSignup:
         )
         assert response.status_code == 422
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_signup_invalid_password_format(
         self,
         client: AsyncClient,
@@ -278,7 +278,7 @@ class TestSignup:
         )
         assert response.status_code == 422
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_signup_invalid_email(
         self,
         client: AsyncClient,
@@ -296,7 +296,7 @@ class TestSignup:
 
         assert response.status_code == 422
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_signup_username_too_short(
         self,
         client: AsyncClient,
@@ -314,7 +314,7 @@ class TestSignup:
 
         assert response.status_code == 422
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_signup_username_too_long(
         self,
         client: AsyncClient,
@@ -333,7 +333,7 @@ class TestSignup:
 
         assert response.status_code == 422
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_signup_missing_required_fields(
         self,
         client: AsyncClient,
@@ -374,7 +374,7 @@ class TestSignup:
 class TestRefreshToken:
     """Test suite for POST /api/v1/auth/refresh-token endpoint"""
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_refresh_token_success(
         self,
         client: AsyncClient,
@@ -411,7 +411,7 @@ class TestRefreshToken:
         )
         assert new_access_payload["sub"] == str(user.id)
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_refresh_token_invalid_token(
         self,
         client: AsyncClient,
@@ -426,7 +426,7 @@ class TestRefreshToken:
         data = response.json()
         assert data["detail"] == "Invalid refresh token"
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_refresh_token_expired_token(
         self,
         client: AsyncClient,
@@ -453,7 +453,7 @@ class TestRefreshToken:
         data = response.json()
         assert data["detail"] == "Invalid refresh token"
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_refresh_token_without_sub(
         self,
         client: AsyncClient,
@@ -478,7 +478,7 @@ class TestRefreshToken:
         data = response.json()
         assert data["detail"] == "Invalid refresh token"
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_refresh_token_nonexistent_user(
         self,
         client: AsyncClient,
@@ -505,7 +505,7 @@ class TestRefreshToken:
         data = response.json()
         assert data["detail"] == "Invalid user"
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_refresh_token_wrong_secret_key(
         self,
         client: AsyncClient,
@@ -532,7 +532,7 @@ class TestRefreshToken:
         data = response.json()
         assert data["detail"] == "Invalid refresh token"
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_refresh_token_missing_field(
         self,
         client: AsyncClient,
@@ -545,7 +545,7 @@ class TestRefreshToken:
 
         assert response.status_code == 422  # Validation error
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_refresh_token_empty_string(
         self,
         client: AsyncClient,
@@ -562,7 +562,7 @@ class TestRefreshToken:
 class TestAuthenticationIntegration:
     """Integration tests for complete authentication flows"""
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_signup_login_refresh_flow(
         self,
         client: AsyncClient,
@@ -609,7 +609,7 @@ class TestAuthenticationIntegration:
         assert "access_token" in refresh_data
         assert "refresh_token" in refresh_data
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_multiple_users_independent_tokens(
         self,
         client: AsyncClient,
@@ -658,7 +658,7 @@ class TestAuthenticationIntegration:
         assert payload1["sub"] == str(user.id)
         assert payload2["sub"] == str(other_user.id)
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_token_expiration_times(
         self,
         client: AsyncClient,
@@ -706,7 +706,7 @@ class TestAuthenticationIntegration:
 class TestGetCurrentUser:
     """Test suite for get_current_user dependency"""
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_get_current_user_success(
         self,
         db_session: AsyncSession,
@@ -730,7 +730,7 @@ class TestGetCurrentUser:
         assert current_user.username == user.username
         assert current_user.email == user.email
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_get_current_user_invalid_token(
         self,
         db_session: AsyncSession,
@@ -744,7 +744,7 @@ class TestGetCurrentUser:
         assert exc_info.value.status_code == 401
         assert "Could not validate credentials" in str(exc_info.value.detail)
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_get_current_user_expired_token(
         self,
         db_session: AsyncSession,
@@ -770,7 +770,7 @@ class TestGetCurrentUser:
         assert exc_info.value.status_code == 401
         assert "Token has expired" in str(exc_info.value.detail)
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_get_current_user_missing_sub(
         self,
         db_session: AsyncSession,
@@ -794,7 +794,7 @@ class TestGetCurrentUser:
         assert exc_info.value.status_code == 401
         assert "Could not validate credentials" in str(exc_info.value.detail)
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_get_current_user_missing_exp(
         self,
         db_session: AsyncSession,
@@ -819,7 +819,7 @@ class TestGetCurrentUser:
         assert exc_info.value.status_code == 401
         assert "Could not validate credentials" in str(exc_info.value.detail)
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_get_current_user_nonexistent_user(
         self,
         db_session: AsyncSession,
@@ -845,7 +845,7 @@ class TestGetCurrentUser:
         assert exc_info.value.status_code == 401
         assert "Could not validate credentials" in str(exc_info.value.detail)
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_get_current_user_wrong_secret_key(
         self,
         db_session: AsyncSession,
@@ -871,7 +871,7 @@ class TestGetCurrentUser:
         assert exc_info.value.status_code == 401
         assert "Could not validate credentials" in str(exc_info.value.detail)
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_get_current_user_token_expiry_in_past(
         self,
         db_session: AsyncSession,
@@ -897,7 +897,7 @@ class TestGetCurrentUser:
 
         assert exc_info.value.status_code == 401
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_get_current_user_with_jwt_claims_error(
         self,
         db_session: AsyncSession,
@@ -927,7 +927,7 @@ class TestGetCurrentUser:
 class TestAuthenticatedEndpoints:
     """Test authentication flow with actual endpoint usage"""
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_use_access_token_on_protected_endpoint(
         self,
         client: AsyncClient,
@@ -956,7 +956,7 @@ class TestAuthenticatedEndpoints:
         # This should work if the endpoint exists and authentication works
         assert response.status_code in [200, 404]  # 404 if endpoint doesn't exist yet
 
-    @pytest.mark.asyncio
+    @pytest.mark.anyio
     async def test_complete_auth_workflow_with_token_usage(
         self,
         client: AsyncClient,

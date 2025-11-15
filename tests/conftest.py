@@ -30,6 +30,11 @@ def event_loop():
     loop.close()
 
 
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
+
+
 @pytest_asyncio.fixture(scope="function")  # Change to function scope
 async def test_app() -> AsyncGenerator[FastAPI, None]:
     """Create a FastAPI test application with an async database session."""
