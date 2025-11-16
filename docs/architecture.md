@@ -313,7 +313,7 @@ class Settings(BaseSettings):
 
     # Server
     backend_host: str = "0.0.0.0"
-    backend_port: int = 8000
+    backend_port: int = 8799
 
     # Environment
     current_environment: Environment = Environment.LOCAL

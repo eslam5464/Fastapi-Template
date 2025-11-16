@@ -75,7 +75,7 @@ REFRESH_TOKEN_EXPIRE_DAYS=7
 
 # Server Configuration
 BACKEND_HOST=0.0.0.0
-BACKEND_PORT=8000
+BACKEND_PORT=8799
 CURRENT_ENVIRONMENT=local
 
 # CORS Settings (for development)
@@ -114,7 +114,7 @@ alembic upgrade head
 python main.py
 
 # Check if it's working
-curl http://localhost:8000/docs
+curl http://localhost:8799/docs
 ```
 
 ## Development Workflow
@@ -128,14 +128,14 @@ curl http://localhost:8000/docs
 python main.py
 
 # Or directly with uvicorn
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8799
 ```
 
 #### Production Mode
 
 ```bash
 # Using gunicorn (production)
-gunicorn app.main:app -w 4 -k uvicorn.workers.UnicornWorker --bind 0.0.0.0:8000
+gunicorn app.main:app -w 4 -k uvicorn.workers.UnicornWorker --bind 0.0.0.0:8799
 ```
 
 ### Code Quality Tools
@@ -438,7 +438,7 @@ When running with multiple workers (`--workers 4`):
 
 ```bash
 # Run with multiple workers
-uvicorn app.main:app --workers 4 --host 0.0.0.0 --port 8000
+uvicorn app.main:app --workers 4 --host 0.0.0.0 --port 8799
 
 # Logs will show:
 # ... | PID:12345 | ReqID:abc123 | Message from worker 1

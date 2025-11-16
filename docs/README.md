@@ -187,9 +187,9 @@ When updating documentation:
 ### Project Resources
 
 - Main README: `../README.md`
-- API Schema: `http://localhost:8000/openapi.json`
-- Interactive Docs: `http://localhost:8000/docs`
-- ReDoc: `http://localhost:8000/redoc`
+- API Schema: `http://localhost:8799/openapi.json`
+- Interactive Docs: `http://localhost:8799/docs`
+- ReDoc: `http://localhost:8799/redoc`
 
 ---
 

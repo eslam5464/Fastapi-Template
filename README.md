@@ -89,7 +89,7 @@ A production-ready FastAPI project template with modern best practices, async su
       python main.py
    ```
 
-The API will be available at `http://localhost:8000` with interactive documentation at `http://localhost:8000/docs`.
+The API will be available at `http://localhost:8799` with interactive documentation at `http://localhost:8799/docs`.
 
 ## 📖 Documentation
 
@@ -214,7 +214,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 
 # Server
 BACKEND_HOST=0.0.0.0
-BACKEND_PORT=8000
+BACKEND_PORT=8799
 ```
 
 ## 📦 Dependencies

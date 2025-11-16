@@ -4,16 +4,16 @@ This document provides comprehensive information about the FastAPI Template API 
 
 ## Base URL
 
-- **Local Development**: `http://localhost:8000`
+- **Local Development**: `http://localhost:8799`
 - **API Base Path**: `/api/v1`
 
 ## Interactive Documentation
 
 When running in development mode, you can access:
 
-- **Swagger UI**: `http://localhost:8000/docs`
-- **ReDoc**: `http://localhost:8000/redoc`
-- **OpenAPI Schema**: `http://localhost:8000/openapi.json`
+- **Swagger UI**: `http://localhost:8799/docs`
+- **ReDoc**: `http://localhost:8799/redoc`
+- **OpenAPI Schema**: `http://localhost:8799/openapi.json`
 
 ## Available Services
 
@@ -87,7 +87,7 @@ Authenticate user and receive access tokens.
 **Example Request**:
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/auth/login" \
+curl -X POST "http://localhost:8799/api/v1/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=johndoe&password=secretpassword"
 ```
@@ -126,7 +126,7 @@ Register a new user and receive access tokens.
 **Example Request**:
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/auth/signup" \
+curl -X POST "http://localhost:8799/api/v1/auth/signup" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=johndoe&email=john@example.com&password=secretpassword&first_name=John&last_name=Doe"
 ```
@@ -190,7 +190,7 @@ Authorization: Bearer <access_token>
 **Example Request**:
 
 ```bash
-curl -X GET "http://localhost:8000/api/v1/users/me" \
+curl -X GET "http://localhost:8799/api/v1/users/me" \
   -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 ```
 
@@ -339,7 +339,7 @@ allow_headers: List[str] = ["*"]
 1. **Register a new user**:
 
     ```bash
-    curl -X POST "http://localhost:8000/api/v1/auth/signup" \
+    curl -X POST "http://localhost:8799/api/v1/auth/signup" \
       -H "Content-Type: application/x-www-form-urlencoded" \
       -d "username=testuser&email=test@example.com&password=testpass123&first_name=Test&last_name=User"
     ```
@@ -347,7 +347,7 @@ allow_headers: List[str] = ["*"]
 2. **Login with credentials**:
 
     ```bash
-    curl -X POST "http://localhost:8000/api/v1/auth/login" \
+    curl -X POST "http://localhost:8799/api/v1/auth/login" \
       -H "Content-Type: application/x-www-form-urlencoded" \
       -d "username=testuser&password=testpass123"
     ```
@@ -355,7 +355,7 @@ allow_headers: List[str] = ["*"]
 3. **Use access token**:
 
     ```bash
-    curl -X GET "http://localhost:8000/api/v1/users/me" \
+    curl -X GET "http://localhost:8799/api/v1/users/me" \
       -H "Authorization: Bearer <access_token_from_login>"
     ```
 
@@ -391,10 +391,10 @@ allow_headers: List[str] = ["*"]
 
 ```bash
 # Test health endpoint (if available)
-curl -X GET "http://localhost:8000/health"
+curl -X GET "http://localhost:8799/health"
 
 # Test authentication
-curl -X POST "http://localhost:8000/api/v1/auth/login" \
+curl -X POST "http://localhost:8799/api/v1/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=testuser&password=testpass"
 ```
@@ -405,7 +405,7 @@ curl -X POST "http://localhost:8000/api/v1/auth/login" \
 import requests
 
 # Base URL
-base_url = "http://localhost:8000/api/v1"
+base_url = "http://localhost:8799/api/v1"
 
 # Login
 response = requests.post(

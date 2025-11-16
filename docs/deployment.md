@@ -202,14 +202,14 @@ RUN mkdir -p /var/log/fastapi-app && chown appuser:appuser /var/log/fastapi-app
 USER appuser
 
 # Expose port
-EXPOSE 8000
+EXPOSE 8799
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health')" || exit 1
+    CMD python -c "import requests; requests.get('http://localhost:8799/health')" || exit 1
 
 # Run application
-CMD ["gunicorn", "app.main:app", "-w", "4", "-k", "uvicorn.workers.UnicornWorker", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "app.main:app", "-w", "4", "-k", "uvicorn.workers.UnicornWorker", "--bind", "0.0.0.0:8799"]
 ```
 
 ### Docker Compose
@@ -227,7 +227,7 @@ services:
     container_name: fastapi-app
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8799:8799"
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/fastapi_app
       - B2_APPLICATION_KEY_ID=${B2_APPLICATION_KEY_ID}
@@ -369,7 +369,7 @@ Create `/etc/supervisor/conf.d/fastapi-app.conf`:
 
 ```ini
 [program:fastapi-app]
-command=/opt/fastapi-app/.venv/bin/gunicorn app.main:app -w 4 -k uvicorn.workers.UnicornWorker --bind 0.0.0.0:8000
+command=/opt/fastapi-app/.venv/bin/gunicorn app.main:app -w 4 -k uvicorn.workers.UnicornWorker --bind 0.0.0.0:8799
 directory=/opt/fastapi-app
 user=fastapi
 autostart=true
@@ -394,7 +394,7 @@ User=fastapi
 Group=fastapi
 WorkingDirectory=/opt/fastapi-app
 Environment=PATH=/opt/fastapi-app/.venv/bin
-ExecStart=/opt/fastapi-app/.venv/bin/gunicorn app.main:app -w 4 -k uvicorn.workers.UnicornWorker --bind 0.0.0.0:8000
+ExecStart=/opt/fastapi-app/.venv/bin/gunicorn app.main:app -w 4 -k uvicorn.workers.UnicornWorker --bind 0.0.0.0:8799
 ExecReload=/bin/kill -HUP $MAINPID
 Restart=always
 RestartSec=3
@@ -459,7 +459,7 @@ server {
     location / {
         limit_req zone=api_limit burst=20 nodelay;
 
-        proxy_pass http://127.0.0.1:8000;
+        proxy_pass http://127.0.0.1:8799;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -475,7 +475,7 @@ server {
     location /api/v1/auth/ {
         limit_req zone=auth_limit burst=5 nodelay;
 
-        proxy_pass http://127.0.0.1:8000;
+        proxy_pass http://127.0.0.1:8799;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
@@ -492,7 +492,7 @@ server {
     # Health Check
     location /health {
         access_log off;
-        proxy_pass http://127.0.0.1:8000/health;
+        proxy_pass http://127.0.0.1:8799/health;
     }
 }
 ```
@@ -545,7 +545,7 @@ sudo chmod 600 /etc/ssl/private/yourdomain.key
     ```python
     # requirements.txt (generated from pyproject.toml)
     # Procfile
-    web: gunicorn app.main:app -w 4 -k uvicorn.workers.UnicornWorker --bind 0.0.0.0:8000
+    web: gunicorn app.main:app -w 4 -k uvicorn.workers.UnicornWorker --bind 0.0.0.0:8799
     ```
 
 2. **Deploy**:
@@ -632,7 +632,7 @@ def get_settings():
 
 ```nginx
 upstream fastapi_app {
-    server 127.0.0.1:8000;
+    server 127.0.0.1:8799;
     server 127.0.0.1:8001;
     server 127.0.0.1:8002;
     server 127.0.0.1:8003;
