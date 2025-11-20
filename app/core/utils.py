@@ -1,5 +1,9 @@
+import hashlib
+import time
 import uuid
+from pathlib import Path
 
+import aiohttp
 from fastapi import Request
 
 from app.core.config import Environment, settings
@@ -54,3 +58,63 @@ def get_client_ip(request: Request) -> str:
         return request.headers["X-Client-IP"].strip()
 
     return request.client.host if request.client else "unknown"
+
+
+def calculate_md5_hash(file_location: str) -> str:
+    """
+    Calculates the MD5 hash of a file.
+    :param file_location: The file path of the input file for which the MD5 hash is to be calculated.
+    :return: The computed MD5 hash of the file as a hexadecimal string.
+    :raises FileNotFoundError: If the specified file does not exist at the provided file location.
+    """
+    if not Path(file_location).exists():
+        raise FileNotFoundError(f"File not found in {file_location}")
+
+    hash_md5 = hashlib.md5()
+
+    with open(file_location, "rb") as file_binary:
+        for chunk in iter(lambda: file_binary.read(4096), b""):
+            hash_md5.update(chunk)
+
+    return hash_md5.hexdigest()
+
+
+async def estimate_upload_time(
+    url: str = "http://httpbin.org",
+    path: str = "/post",
+    port: int = 443,
+    file_size_mb: int | None = None,
+) -> float:
+    """
+    Asynchronously estimates the upload time or speed to a specified server endpoint.
+
+    Args:
+        url (str): The base URL of the server to which the data will be uploaded.
+        path (str): The specific path on the server for the upload endpoint.
+        port (int): The port number to use for the connection.
+        file_size_mb (int | None): The size of the file to be uploaded in megabytes. If None, the function returns upload speed.
+
+    Returns:
+        float: If file_size_mb is provided, returns the estimated time in seconds to upload the
+
+    Raises:
+        aiohttp.ClientError: If there is an error during the HTTP request.
+    """
+    async with aiohttp.ClientSession() as session:
+        full_url = f"https://{url}:{port}{path}"
+        sample_data = b"x" * (1024 * 1024)
+        headers = {
+            "Content-type": "application/octet-stream",
+        }
+        start_time = time.time()
+
+        async with session.post(url=full_url, headers=headers, data=sample_data):
+            end_time = time.time()
+
+    elapsed_time = end_time - start_time
+    upload_speed_mbps = len(sample_data) / (elapsed_time * 1024 * 1024)
+
+    if file_size_mb:
+        return file_size_mb / upload_speed_mbps
+    else:
+        return upload_speed_mbps

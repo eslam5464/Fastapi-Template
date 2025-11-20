@@ -5,12 +5,14 @@ description = "A FastAPI project template"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "aiohttp>=3.13.2",
     "alembic>=1.16.5",
     "asyncpg>=0.30.0",
     "b2sdk>=2.10.1",
     "email-validator>=2.3.0",
     "fastapi>=0.116.2",
     "firebase-admin>=7.1.0",
+    "gcloud-aio-storage>=9.6.1",
     "gunicorn>=23.0.0",
     "httptools>=0.6.4 ; sys_platform == 'linux'",
     "loguru>=0.7.3",

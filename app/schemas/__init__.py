@@ -13,6 +13,15 @@ from .firebase import (
     FirebaseSignInResponse,
     FirebaseSignUpResponse,
 )
+from .google_bucket import (
+    ServiceAccount,
+    DownloadBucketFile,
+    BucketFile,
+    BucketFolder,
+    CopyBlob,
+    MoveBlob,
+    BucketDetails,
+)
 
 __all__ = [
     "BaseSchema",
@@ -33,4 +42,11 @@ __all__ = [
     "FirebaseServiceAccount",
     "FirebaseSignInResponse",
     "FirebaseSignUpResponse",
+    "ServiceAccount",
+    "DownloadBucketFile",
+    "BucketFile",
+    "BucketFolder",
+    "CopyBlob",
+    "MoveBlob",
+    "BucketDetails",
 ]
