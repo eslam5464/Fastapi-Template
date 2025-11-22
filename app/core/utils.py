@@ -6,6 +6,7 @@ from pathlib import Path
 import aiofiles
 import aiohttp
 from fastapi import Request
+from loguru import logger
 
 from app.core.config import Environment, settings
 
@@ -78,6 +79,21 @@ async def calculate_md5_hash(file_location: str | Path) -> str:
         raise FileNotFoundError(f"File not found in {file_location}")
 
     hash_md5 = hashlib.md5()
+    file_size = Path(file_location).stat().st_size
+    chunks_count = file_size // 4096 + 1
+
+    # check if GB or MB or KB
+    if file_size >= 1024 * 1024 * 1024:
+        file_size_type = "GB"
+    elif file_size >= 1024 * 1024:
+        file_size_type = "MB"
+    else:
+        file_size_type = "KB"
+
+    file_size_display = file_size / (1024 ** {"KB": 1, "MB": 2, "GB": 3}[file_size_type])
+    logger.info(
+        f"Calculating MD5 hash for file of size {file_size_display:.2f} {file_size_type} in {chunks_count} chunks"
+    )
 
     async with aiofiles.open(file_location, "rb") as file_binary:
         while True:
