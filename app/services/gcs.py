@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import AsyncGenerator
 
 import aiofiles
-from gcloud.aio.storage import Bucket, Storage as AsyncStorage
+from gcloud.aio.storage import Bucket, Storage
 from loguru import logger
 from pydantic import HttpUrl, ValidationError
 
@@ -34,7 +34,7 @@ class GCS:
             await gcs_client.download_file(...)
     """
 
-    __storage: AsyncStorage | None = field(default=None)
+    __storage: Storage | None = field(default=None)
     __service_account_info: dict | str | None = field(default=None)
 
     def __init__(
@@ -74,7 +74,7 @@ class GCS:
 
     async def __aenter__(self):
         """Async context manager entry"""
-        self.__storage = AsyncStorage(service_file=json.dumps(self.__service_account_info))
+        self.__storage = Storage(service_file=json.dumps(self.__service_account_info))
 
         return self
 
@@ -84,7 +84,7 @@ class GCS:
             await self.__storage.close()
 
     @property
-    def storage(self) -> AsyncStorage:
+    def storage(self) -> Storage:
         if self.__storage is None:
             raise GCSError("GCS storage client is not initialized. Use async context manager.")
 
@@ -393,7 +393,10 @@ class GCS:
     async def delete_files(self, bucket_name: str, file_paths: list[str]) -> None:
         """
         Delete multiple files
-        :param file_paths: List of file paths to delete
+
+        Args:
+            bucket_name (str): Name of the GCS bucket
+            file_paths (list[str]): List of file paths to delete
         """
 
         tasks = [self.delete_file(bucket_name, file_path) for file_path in file_paths]
