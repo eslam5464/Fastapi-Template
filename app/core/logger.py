@@ -34,6 +34,20 @@ LOG_FILE = LOG_DIR / "app.log"
 
 
 # ============================================
+# LOG LEVEL MAPPING
+# ============================================
+
+LOG_LEVELs = {
+    50: "CRITICAL",
+    40: "ERROR",
+    30: "WARNING",
+    20: "INFO",
+    10: "DEBUG",
+    0: "NOTSET",
+}
+
+
+# ============================================
 # OPENOBSERVE ASYNC HANDLER
 # ============================================
 
@@ -298,7 +312,7 @@ def setup_logger():
     logger.remove()
 
     # Get log level based on environment
-    log_level = settings.log_level
+    log_level = LOG_LEVELs[settings.log_level]
 
     # ============================================
     # CONSOLE OUTPUT: Simplified, colored format
