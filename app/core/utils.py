@@ -80,31 +80,41 @@ def calculate_md5_hash(file_location: str) -> str:
 
 
 async def estimate_upload_time(
-    url: str = "http://httpbin.org",
+    url: str = "httpbin.org",
     path: str = "/post",
     port: int = 443,
-    file_size_mb: int | None = None,
+    file_size_mb: int = 1,
 ) -> float:
     """
-    Asynchronously estimates the upload time or speed to a specified server endpoint.
+    Asynchronously estimates the upload time to a specified server endpoint.
 
     Args:
-        url (str): The base URL of the server to which the data will be uploaded.
+        url (str): The base URL of the server (without protocol) to which data will be uploaded.
         path (str): The specific path on the server for the upload endpoint.
-        port (int): The port number to use for the connection.
-        file_size_mb (int | None): The size of the file to be uploaded in megabytes. If None, the function returns upload speed.
+        port (int): The port number to use for the connection (443 for HTTPS, 80 for HTTP).
+        file_size_mb (int): The size of the file to be uploaded in megabytes.
 
     Returns:
-        float: If file_size_mb is provided, returns the estimated time in seconds to upload the
+        float: The estimated time in seconds to upload the file.
 
     Raises:
         aiohttp.ClientError: If there is an error during the HTTP request.
     """
     async with aiohttp.ClientSession() as session:
-        full_url = f"https://{url}:{port}{path}"
-        sample_data = b"x" * (1024 * 1024)
+        # Determine protocol based on port
+        if url.startswith(("http://", "https://")):
+            full_url = f"{url}{path}"
+        else:
+            protocol = "https" if port == 443 else "http"
+            # Only include port if it's non-standard
+            if (protocol == "https" and port != 443) or (protocol == "http" and port != 80):
+                full_url = f"{protocol}://{url}:{port}{path}"
+            else:
+                full_url = f"{protocol}://{url}{path}"
+
+        sample_data = b"x" * (1024 * 1024)  # 1 MB of data
         headers = {
-            "Content-type": "application/octet-stream",
+            "Content-Type": "application/octet-stream",
         }
         start_time = time.time()
 
@@ -112,9 +122,6 @@ async def estimate_upload_time(
             end_time = time.time()
 
     elapsed_time = end_time - start_time
-    upload_speed_mbps = len(sample_data) / (elapsed_time * 1024 * 1024)
+    upload_speed_MBps = len(sample_data) / (elapsed_time * 1024 * 1024)  # MB/s
 
-    if file_size_mb:
-        return file_size_mb / upload_speed_mbps
-    else:
-        return upload_speed_mbps
+    return file_size_mb / upload_speed_MBps
