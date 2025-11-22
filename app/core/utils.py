@@ -3,6 +3,7 @@ import time
 import uuid
 from pathlib import Path
 
+import aiofiles
 import aiohttp
 from fastapi import Request
 
@@ -60,20 +61,32 @@ def get_client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-def calculate_md5_hash(file_location: str) -> str:
+async def calculate_md5_hash(file_location: str | Path) -> str:
     """
     Calculates the MD5 hash of a file.
-    :param file_location: The file path of the input file for which the MD5 hash is to be calculated.
-    :return: The computed MD5 hash of the file as a hexadecimal string.
-    :raises FileNotFoundError: If the specified file does not exist at the provided file location.
+
+    Args:
+        file_location (str | Path): The path to the file.
+
+    Returns:
+        str: The MD5 hash of the file in hexadecimal format.
+
+    Raises:
+        FileNotFoundError: If the file does not exist at the specified location or is not a file.
     """
-    if not Path(file_location).exists():
+    if not Path(file_location).exists() or not Path(file_location).is_file():
         raise FileNotFoundError(f"File not found in {file_location}")
 
     hash_md5 = hashlib.md5()
 
-    with open(file_location, "rb") as file_binary:
-        for chunk in iter(lambda: file_binary.read(4096), b""):
+    async with aiofiles.open(file_location, "rb") as file_binary:
+        while True:
+            # Read file in chunks to avoid memory issues with large files
+            chunk = await file_binary.read(4096)
+
+            if not chunk:
+                break
+
             hash_md5.update(chunk)
 
     return hash_md5.hexdigest()
