@@ -8,7 +8,7 @@ from app.core.config import settings
 # Create async database engine
 engine = create_async_engine(
     settings.db_url.human_repr(),
-    echo=settings.db_echo,
+    echo=True if settings.debug else False,
     future=True,
     pool_pre_ping=True,
 )

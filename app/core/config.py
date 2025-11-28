@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     # Current working environment
     current_environment: Environment
     log_level: int = logging.INFO
-    debug: bool = False
+    debug: bool
 
     # Variables for the database
     postgres_host: str
@@ -73,7 +73,6 @@ class Settings(BaseSettings):
     postgres_password: str
     postgres_db: str
     postgres_db_schema: str
-    db_echo: bool = False
 
     # firebase
     firebase_project_id: str
