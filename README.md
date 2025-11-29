@@ -15,6 +15,10 @@ A production-ready FastAPI project template with modern best practices, async su
 - **⚡ Environment Management** - Multi-environment configuration
 - **🧪 Development Tools** - Pre-commit hooks, code formatting with Black
 - **☁️ Cloud Storage Integration** - BackBlaze B2 cloud storage service support
+- **🔥 Firebase Integration** - Authentication, push notifications, and Firestore database
+- **⚡ Redis Caching** - High-performance caching with shared connection pooling
+- **🚦 Rate Limiting** - Sliding window rate limiting with microsecond precision
+- **🌩️ Google Cloud Storage** - GCS bucket integration for file management
 
 ## 🚀 Quick Start
 
@@ -215,6 +219,16 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 # Server
 BACKEND_HOST=0.0.0.0
 BACKEND_PORT=8799
+
+# Redis (for caching and rate limiting)
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASS=your-redis-password
+
+# Rate Limiting
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_DEFAULT=100
+RATE_LIMIT_WINDOW=60
 ```
 
 ## 📦 Dependencies
@@ -229,7 +243,10 @@ Key dependencies include:
 - **PostgreSQL** - Database driver (asyncpg)
 - **JWT** - Token authentication
 - **Loguru** - Logging
+- **Redis** - Caching and rate limiting backend
 - **B2SDK** - BackBlaze B2 cloud storage integration
+- **Firebase Admin** - Firebase authentication and messaging
+- **Google Cloud Storage** - GCS integration
 
 ## 🤝 Contributing
 
