@@ -18,17 +18,19 @@ async def _check_dependencies():
     # Check CacheManager health
     cache_healthy = await cache_manager.health_check()
 
-    if not cache_healthy:
+    if not cache_healthy and settings.cache_enabled:
         logger.error("CacheManager health check failed. Exiting application.")
         raise RuntimeError("CacheManager is not healthy.")
-    logger.success("CacheManager is healthy.")
+    else:
+        logger.success("CacheManager is healthy.")
+
     rate_limiter_healthy = await rate_limiter.health_check()
 
-    if not rate_limiter_healthy:
+    if not rate_limiter_healthy and settings.rate_limit_enabled:
         logger.error("RateLimiter health check failed. Exiting application.")
         raise RuntimeError("RateLimiter is not healthy.")
-
-    logger.success("RateLimiter is healthy.")
+    else:
+        logger.success("RateLimiter is healthy.")
 
 
 async def _shutdown_dependencies():
