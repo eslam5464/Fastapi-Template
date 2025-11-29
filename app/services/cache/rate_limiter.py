@@ -93,8 +93,8 @@ class RateLimiter(BaseRedisClient):
             )
 
         try:
-            now = int(time.time())
-            window_start = now - window
+            now = int(time.time() * 1000000)  # Current time in microseconds
+            window_start = now - (window * 1000000)  # Window start time in microseconds
 
             # Create pipeline for atomic operations
             pipe = self.redis_client.pipeline()
@@ -102,27 +102,28 @@ class RateLimiter(BaseRedisClient):
             # 1. Remove requests older than the window
             pipe.zremrangebyscore(key, 0, window_start)
 
-            # 2. Count requests in current window
-            pipe.zcard(key)
-
-            # 3. Add current request with unique timestamp-based member
+            # 2. Add current request with unique timestamp-based member
             # Format: "{timestamp}:{hash}" to ensure uniqueness
             member = (
                 f"{now}:{hashlib.md5(str(now).encode(), usedforsecurity=False).hexdigest()[:8]}"
             )
             pipe.zadd(key, {member: now})
 
+            # 3. Count requests in current window (AFTER adding current request)
+            pipe.zcard(key)
+
             # 4. Set expiration on key to auto-cleanup
             pipe.expire(key, window)
 
             # Execute pipeline
             results = await pipe.execute()
-            request_count = results[1]  # ZCARD result
+            request_count = results[2]  # ZCARD result (index 2 now, after ZADD)
 
             # Calculate rate limit info
+            # request_count already includes the current request
             remaining = max(0, limit - request_count)
             reset_time = now + window
-            is_allowed = request_count < limit
+            is_allowed = request_count <= limit  # Changed from < to <=
 
             rate_limit_info = RateLimitInfo(
                 limit=limit, remaining=remaining, reset_time=reset_time, window=window
