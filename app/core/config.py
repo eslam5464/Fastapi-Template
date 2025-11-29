@@ -95,6 +95,7 @@ class Settings(BaseSettings):
     cache_ttl_very_long: int
 
     # Rate limiting settings (requests per window)
+    rate_limit_enabled: bool
     rate_limit_default: int = 100  # Default limit for general API endpoints
     rate_limit_window: int = 60  # Default window in seconds (1 minute)
     rate_limit_strict: int = 10  # Strict limit for authentication endpoints

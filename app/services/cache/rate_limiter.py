@@ -4,7 +4,7 @@ from typing import TypedDict
 
 from loguru import logger
 
-from app.core.config import Environment, settings
+from app.core.config import settings
 from app.core.exceptions.rate_limiter import (
     RateLimitConfigurationError,
 )
@@ -69,7 +69,6 @@ class RateLimiter(BaseRedisClient):
 
         Note:
             This method is safe to call even if Redis is unavailable.
-            In LOCAL environment, always returns (True, info) without checking Redis.
         """
         # Validate configuration
         if limit <= 0:
@@ -77,8 +76,8 @@ class RateLimiter(BaseRedisClient):
         if window <= 0:
             raise RateLimitConfigurationError(f"Rate limit window must be positive, got {window}")
 
-        # Skip rate limiting in LOCAL environment
-        if settings.current_environment == Environment.LOCAL:
+        # Skip rate limiting if disabled
+        if not settings.rate_limit_enabled:
             return True, RateLimitInfo(
                 limit=limit, remaining=limit, reset_time=int(time.time()) + window, window=window
             )
@@ -157,7 +156,7 @@ class RateLimiter(BaseRedisClient):
             This method only reads the current state, it does NOT increment counters.
             Use check_rate_limit() for actual rate limiting with counter increment.
         """
-        if settings.current_environment == Environment.LOCAL or not self.redis_client:
+        if not settings.rate_limit_enabled or not self.redis_client:
             return RateLimitInfo(
                 limit=limit,
                 remaining=limit,
@@ -202,8 +201,8 @@ class RateLimiter(BaseRedisClient):
         Note:
             This is useful for testing or manual intervention (e.g., unblocking a user).
         """
-        if settings.current_environment == Environment.LOCAL or not self.redis_client:
-            logger.debug(f"Skipping rate limit reset for key {key} (LOCAL environment or no Redis)")
+        if not settings.rate_limit_enabled or not self.redis_client:
+            logger.debug(f"Skipping rate limit reset for key {key} (disabled or no Redis)")
             return True
 
         try:
