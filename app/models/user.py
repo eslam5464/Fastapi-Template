@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.core.field_sizes import FieldSizes
+from app.core.constants import FieldSizes
 from app.models.base import Base
 
 

@@ -1,9 +1,39 @@
 from abc import ABC
 
 from loguru import logger
-from redis.asyncio import Redis
+from redis.asyncio import ConnectionPool, Redis
 
 from app.core.config import Environment, settings
+
+# Global shared Redis connection pool
+_redis_pool: ConnectionPool | None = None
+
+
+def get_redis_pool() -> ConnectionPool:
+    """
+    Get or create the shared Redis connection pool.
+
+    Returns:
+        ConnectionPool: Shared Redis connection pool instance
+
+    Note:
+        This ensures all Redis clients share the same connection pool,
+        improving resource efficiency and connection management.
+    """
+    global _redis_pool
+
+    if _redis_pool is None:
+        _redis_pool = ConnectionPool.from_url(
+            settings.redis_url.human_repr(),
+            encoding="utf-8",
+            decode_responses=False,
+            max_connections=50,
+            retry_on_timeout=True,
+            socket_connect_timeout=5,
+            socket_timeout=5,
+        )
+        logger.info("Redis connection pool created with max_connections=50")
+    return _redis_pool
 
 
 class BaseRedisClient(ABC):
@@ -11,7 +41,7 @@ class BaseRedisClient(ABC):
     Abstract base class for Redis clients with shared connection handling.
 
     Provides core Redis connection initialization, health checks, and availability checks
-    that are inherited by all Redis-based services (CacheManager, SecurityCache, etc.).
+    that are inherited by all Redis-based services (CacheManager, RateLimiter, etc.).
     """
 
     def __init__(self):
@@ -22,15 +52,12 @@ class BaseRedisClient(ABC):
             self._initialize_redis()
 
     def _initialize_redis(self):
-        """Initialize Redis connection with retry and timeout settings"""
+        """Initialize Redis connection using shared connection pool"""
         try:
-            self.redis_client = Redis.from_url(
-                settings.redis_url.human_repr(),
-                encoding="utf-8",
-                decode_responses=False,
-                retry_on_timeout=True,
-                socket_connect_timeout=5,
-                socket_timeout=5,
+            pool = get_redis_pool()
+            self.redis_client = Redis(connection_pool=pool)
+            logger.debug(
+                f"Redis client initialized for {self.__class__.__name__} using shared pool"
             )
         except Exception as e:
             logger.error(f"Failed to initialize Redis for {self.__class__.__name__}: {e}")

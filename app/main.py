@@ -7,19 +7,28 @@ from app.api.routes import api_router
 from app.core.config import Environment, settings
 from app.core.logger import configure_uvicorn_logging, setup_logger, shutdown_logger
 from app.middleware.logging import LoggingMiddleware
+from app.middleware.rate_limit import RateLimitHeaderMiddleware
 from app.services.cache.manager import cache_manager
+from app.services.cache.rate_limiter import rate_limiter
 
 
 async def _check_dependencies():
     """Check essential dependencies before starting the app"""
 
-    is_healthy = await cache_manager.health_check()
+    # Check CacheManager health
+    cache_healthy = await cache_manager.health_check()
 
-    if not is_healthy:
+    if not cache_healthy:
         logger.error("CacheManager health check failed. Exiting application.")
         raise RuntimeError("CacheManager is not healthy.")
-
     logger.success("CacheManager is healthy.")
+    rate_limiter_healthy = await rate_limiter.health_check()
+
+    if not rate_limiter_healthy:
+        logger.error("RateLimiter health check failed. Exiting application.")
+        raise RuntimeError("RateLimiter is not healthy.")
+
+    logger.success("RateLimiter is healthy.")
 
 
 async def _shutdown_dependencies():
@@ -27,6 +36,9 @@ async def _shutdown_dependencies():
 
     await cache_manager.close()
     logger.success("CacheManager connection closed.")
+
+    await rate_limiter.close()
+    logger.success("RateLimiter connection closed.")
 
 
 @asynccontextmanager
@@ -69,6 +81,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Set rate limit header middleware
+app.add_middleware(RateLimitHeaderMiddleware)
 
 # Set logging middleware
 app.add_middleware(LoggingMiddleware)

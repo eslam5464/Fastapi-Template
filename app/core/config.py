@@ -94,6 +94,13 @@ class Settings(BaseSettings):
     cache_ttl_long: int
     cache_ttl_very_long: int
 
+    # Rate limiting settings (requests per window)
+    rate_limit_default: int = 100  # Default limit for general API endpoints
+    rate_limit_window: int = 60  # Default window in seconds (1 minute)
+    rate_limit_strict: int = 10  # Strict limit for authentication endpoints
+    rate_limit_lenient: int = 1000  # Lenient limit for public endpoints
+    rate_limit_user: int = 300  # Limit for authenticated user endpoints
+
     # Token security settings
     secret_key: str
     access_token_expire_seconds: int = int(

@@ -4,7 +4,7 @@ from typing import Annotated
 
 from pydantic import EmailStr, Field, SecretStr, field_validator
 
-from app.core.field_sizes import FieldSizes
+from app.core.constants import FieldSizes
 from app.schemas import BaseSchema, BaseTimestampSchema
 
 USER_PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
