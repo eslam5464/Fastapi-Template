@@ -522,13 +522,174 @@ async def get_users_paginated(
 ### Caching
 
 ```python
-# Example with Redis (if implemented)
-from functools import lru_cache
+# Using the CacheManager service
+from app.services.cache import cache_manager
 
-@lru_cache(maxsize=128)
-def get_user_by_id(user_id: str):
-    # Cached function
+async def get_user_profile(user_id: str):
+    # Try to get from cache first
+    cache_key = f"user:profile:{user_id}"
+    cached_data = await cache_manager.get(cache_key)
+
+    if cached_data:
+        return cached_data
+
+    # Fetch from database if not cached
+    user_data = await fetch_user_from_db(user_id)
+
+    # Store in cache with TTL
+    await cache_manager.set(cache_key, user_data, expire=300)
+
+    return user_data
+```
+
+### Rate Limiting
+
+The template includes a production-ready rate limiting system using Redis and sliding window algorithm.
+
+#### Quick Start
+
+Apply pre-configured rate limiters to endpoints using FastAPI dependencies:
+
+```python
+from fastapi import APIRouter, Depends
+from app.api.v1.deps.rate_limit import (
+    rate_limit_auth,    # Strict: 10 req/min (for login, signup)
+    rate_limit_api,     # Default: 100 req/min (for general API)
+    rate_limit_public,  # Lenient: 1000 req/min (for public data)
+    rate_limit_user,    # User-based: 300 req/min (for authenticated)
+)
+
+router = APIRouter()
+
+# IP-based rate limiting for authentication
+@router.post("/login", dependencies=[Depends(rate_limit_auth)])
+async def login(credentials: LoginForm):
+    # Limited to 10 requests per minute per IP
     pass
+
+# IP-based rate limiting for public API
+@router.get("/posts", dependencies=[Depends(rate_limit_api)])
+async def list_posts():
+    # Limited to 100 requests per minute per IP
+    pass
+
+# User-based rate limiting for authenticated endpoints
+@router.get("/profile", dependencies=[Depends(rate_limit_user)])
+async def get_profile(current_user: User = Depends(get_current_user)):
+    # Limited to 300 requests per minute per user
+    # Multiple users on same IP each get their own quota
+    pass
+```
+
+#### Custom Rate Limits
+
+Create custom rate limiters for specific endpoints:
+
+```python
+from app.api.v1.deps.rate_limit import create_rate_limit
+
+# Custom limit for heavy operations (5 requests per 5 minutes)
+heavy_limit = create_rate_limit(limit=5, window=300, prefix="heavy")
+
+@router.post("/export", dependencies=[Depends(heavy_limit)])
+async def export_large_file():
+    pass
+
+# Custom user-based limit (20 uploads per minute per user)
+upload_limit = create_rate_limit(
+    limit=20,
+    window=60,
+    prefix="upload",
+    use_user_id=True
+)
+
+@router.post("/upload", dependencies=[Depends(upload_limit)])
+async def upload_file(current_user: User = Depends(get_current_user)):
+    pass
+```
+
+#### Rate Limit Response Headers
+
+All rate-limited endpoints automatically include headers in responses:
+
+```http
+X-RateLimit-Limit: 100          # Maximum requests allowed
+X-RateLimit-Remaining: 73       # Requests remaining in window
+X-RateLimit-Reset: 1701234567   # Unix timestamp when limit resets
+```
+
+When limit is exceeded, clients receive HTTP 429:
+
+```http
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1701234567
+
+{
+  "detail": "Rate limit exceeded. Please slow down your requests."
+}
+```
+
+#### Environment Variables
+
+Configure rate limits in `.env`:
+
+```env
+# Rate limiting settings (requests per window)
+RATE_LIMIT_DEFAULT=100      # General API endpoints
+RATE_LIMIT_WINDOW=60        # Time window in seconds
+RATE_LIMIT_STRICT=10        # Authentication endpoints
+RATE_LIMIT_LENIENT=1000     # Public endpoints
+RATE_LIMIT_USER=300         # Authenticated user endpoints
+```
+
+#### Rate Limiting Strategies
+
+**IP-Based** (for unauthenticated endpoints):
+
+- Login, signup, password reset: 10 req/min per IP
+- Public API endpoints: 100 req/min per IP
+- Health checks, documentation: 1000 req/min per IP
+
+**User-Based** (for authenticated endpoints):
+
+- User profile, settings: 300 req/min per user
+- Solves shared IP problem (office/cafe networks)
+- Each user gets independent quota regardless of IP
+
+#### Available Prefixes
+
+Rate limit keys use prefixes to separate quotas by endpoint group:
+
+```python
+from app.core.constants import RateLimitPrefix
+
+# Pre-defined prefixes
+RateLimitPrefix.AUTH      # "ratelimit:auth:"    - Authentication
+RateLimitPrefix.USER      # "ratelimit:user:"    - User endpoints
+RateLimitPrefix.API       # "ratelimit:api:"     - General API
+RateLimitPrefix.PUBLIC    # "ratelimit:public:"  - Public endpoints
+RateLimitPrefix.EXPORT    # "ratelimit:export:"  - File exports
+RateLimitPrefix.UPLOAD    # "ratelimit:upload:"  - File uploads
+RateLimitPrefix.SEARCH    # "ratelimit:search:"  - Search queries
+RateLimitPrefix.ADMIN     # "ratelimit:admin:"   - Admin operations
+```
+
+Add custom prefixes to `app/core/constants.py` to avoid collisions.
+
+#### Local Development
+
+Rate limiting is automatically disabled in LOCAL environment:
+
+- No Redis connection required
+- All requests allowed (no limits enforced)
+- Useful for development and testing
+
+To test rate limiting locally, change environment in `.env`:
+
+```env
+CURRENT_ENVIRONMENT=dev  # Enable rate limiting
 ```
 
 ### Async Best Practices

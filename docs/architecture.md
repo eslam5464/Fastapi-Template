@@ -240,6 +240,45 @@ NoSQL document database integration:
 - **Automatic Initialization**: Singleton pattern with service account credentials
 - **Logging**: Comprehensive debug and error logging for all operations
 
+#### Cache & Rate Limiting Services
+
+Redis-based caching and rate limiting infrastructure:
+
+**CacheManager** - General-purpose caching service:
+
+- **Data Caching**: Store and retrieve any Python object using pickle serialization
+- **TTL Management**: Configurable expiration times (default, short, long, very long)
+- **Pattern Operations**: Delete multiple keys matching a pattern
+- **Key Management**: Check key existence and delete specific keys
+- **Graceful Degradation**: Continues operation even if Redis is unavailable
+- **Shared Connection Pool**: Efficient Redis connection management
+
+**RateLimiter** - Sliding window rate limiting:
+
+- **Sliding Window Algorithm**: Accurate request counting using Redis sorted sets
+- **IP-Based Limiting**: Rate limit by client IP for unauthenticated endpoints
+- **User-Based Limiting**: Rate limit by user ID for authenticated endpoints
+- **Custom Prefixes**: Separate rate limit quotas per endpoint group
+- **Configurable Limits**: Pre-configured presets (strict, default, lenient, user)
+- **Custom Rate Limits**: Factory function for endpoint-specific limits
+- **Rate Limit Headers**: Automatic `X-RateLimit-*` headers in responses
+- **Fail-Open Design**: Allows requests if Redis is unavailable
+- **Environment-Aware**: Automatically disabled in LOCAL environment
+
+**Rate Limiting Strategies**:
+
+- **Authentication Endpoints** (`/login`, `/signup`): 10 req/min per IP (strict)
+- **General API Endpoints**: 100 req/min per IP (default)
+- **Public Endpoints**: 1000 req/min per IP (lenient)
+- **Authenticated User Endpoints**: 300 req/min per user (user-based)
+- **Custom Endpoints**: Configurable limits with custom prefixes
+
+**Redis Connection Pooling**:
+
+- **Shared Pool**: All Redis clients (CacheManager, RateLimiter) share a connection pool
+- **Resource Efficiency**: Maximum 50 connections across all clients
+- **Automatic Management**: Connection pooling, health checks, and graceful shutdown
+
 ## Data Flow
 
 ### 1. Request Flow
