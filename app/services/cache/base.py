@@ -27,12 +27,14 @@ def get_redis_pool() -> ConnectionPool:
             settings.redis_url.human_repr(),
             encoding="utf-8",
             decode_responses=False,
-            max_connections=50,
+            max_connections=settings.redis_max_pool_connections,
             retry_on_timeout=True,
-            socket_connect_timeout=5,
-            socket_timeout=5,
+            socket_connect_timeout=settings.redis_socket_connect_timeout,
+            socket_timeout=settings.redis_socket_timeout,
         )
-        logger.info("Redis connection pool created with max_connections=50")
+        logger.info(
+            f"Redis connection pool created with max_connections={settings.redis_max_pool_connections}"
+        )
     return _redis_pool
 
 

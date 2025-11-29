@@ -88,6 +88,9 @@ class Settings(BaseSettings):
     redis_user: str | None = None
     redis_pass: str
     redis_base: int | None = None
+    redis_max_pool_connections: int  # Maximum number of connections in the Redis pool
+    redis_socket_connect_timeout: int  # Socket connect timeout in seconds
+    redis_socket_timeout: int  # Socket timeout in seconds
 
     cache_ttl_default: int
     cache_ttl_short: int
