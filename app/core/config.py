@@ -82,6 +82,18 @@ class Settings(BaseSettings):
     firebase_client_email: str
     firebase_client_id: str
 
+    # Variables for Redis
+    redis_host: str
+    redis_port: int
+    redis_user: str | None = None
+    redis_pass: str
+    redis_base: int | None = None
+
+    cache_ttl_default: int
+    cache_ttl_short: int
+    cache_ttl_long: int
+    cache_ttl_very_long: int
+
     # Token security settings
     secret_key: str
     access_token_expire_seconds: int = int(
@@ -177,6 +189,26 @@ class Settings(BaseSettings):
             private_key=self.firebase_private_key.replace("\\", "\\\\"),
             client_email=self.firebase_client_email,
             client_id=self.firebase_client_id,
+        )
+
+    @computed_field
+    @property
+    def redis_url(self) -> URL:
+        """
+        Assemble REDIS URL from settings.
+        """
+        path = ""
+
+        if self.redis_base is not None:
+            path = f"/{self.redis_base}"
+
+        return URL.build(
+            scheme="redis",
+            host=self.redis_host,
+            port=self.redis_port,
+            user=self.redis_user,
+            password=self.redis_pass,
+            path=path,
         )
 
 

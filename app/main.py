@@ -7,21 +7,44 @@ from app.api.routes import api_router
 from app.core.config import Environment, settings
 from app.core.logger import configure_uvicorn_logging, setup_logger, shutdown_logger
 from app.middleware.logging import LoggingMiddleware
+from app.services.cache.manager import cache_manager
+
+
+async def _check_dependencies():
+    """Check essential dependencies before starting the app"""
+
+    is_healthy = await cache_manager.health_check()
+
+    if not is_healthy:
+        logger.error("CacheManager health check failed. Exiting application.")
+        raise RuntimeError("CacheManager is not healthy.")
+
+    logger.success("CacheManager is healthy.")
+
+
+async def _shutdown_dependencies():
+    """Shutdown essential dependencies gracefully"""
+
+    await cache_manager.close()
+    logger.success("CacheManager connection closed.")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan manager"""
 
-    logger.info("Initializing resources...")
     setup_logger()
     configure_uvicorn_logging()
+
+    logger.info("Initializing resources...")
+    await _check_dependencies()
     logger.success("Resources initialized.")
 
     yield  # Application runs here
 
     logger.info("Cleaning up resources...")
     shutdown_logger()
+    await _shutdown_dependencies()
     logger.success("Resources cleaned up.")
 
 

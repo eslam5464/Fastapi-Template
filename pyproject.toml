@@ -24,6 +24,7 @@ dependencies = [
     "pyjwt>=2.10.1",
     "python-jose>=3.5.0",
     "python-multipart>=0.0.20",
+    "redis>=7.1.0",
     "sqlalchemy[asyncio]>=2.0.43",
     "tzdata>=2025.2",
     "uvicorn[standard]>=0.35.0",
