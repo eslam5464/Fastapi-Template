@@ -636,8 +636,9 @@ X-RateLimit-Reset: 1701234567
 Configure rate limits in `.env`:
 
 ```env
-# Rate limiting settings (requests per window)
-RATE_LIMIT_DEFAULT=100      # General API endpoints
+# Rate limiting settings
+RATE_LIMIT_ENABLED=true     # Enable/disable rate limiting (true/false)
+RATE_LIMIT_DEFAULT=100      # General API endpoints (requests per window)
 RATE_LIMIT_WINDOW=60        # Time window in seconds
 RATE_LIMIT_STRICT=10        # Authentication endpoints
 RATE_LIMIT_LENIENT=1000     # Public endpoints
@@ -680,17 +681,37 @@ Add custom prefixes to `app/core/constants.py` to avoid collisions.
 
 #### Local Development
 
-Rate limiting is automatically disabled in LOCAL environment:
+Rate limiting can be controlled via the `RATE_LIMIT_ENABLED` setting:
+
+**To disable rate limiting** (default for local development):
+
+```env
+RATE_LIMIT_ENABLED=false
+```
 
 - No Redis connection required
 - All requests allowed (no limits enforced)
-- Useful for development and testing
+- Useful for development without Redis setup
 
-To test rate limiting locally, change environment in `.env`:
+**To test rate limiting locally**:
 
 ```env
-CURRENT_ENVIRONMENT=dev  # Enable rate limiting
+RATE_LIMIT_ENABLED=true
+CURRENT_ENVIRONMENT=local
 ```
+
+- Requires Redis to be running
+- Full rate limiting functionality available
+- Test rate limits before deploying to production
+
+#### High-Frequency Requests
+
+The rate limiter uses **microsecond precision** for timestamp tracking:
+
+- Accurately counts multiple requests within the same second
+- Prevents duplicate member issues in Redis sorted sets
+- Supports high-frequency API usage (e.g., real-time applications)
+- Each request gets a unique identifier: `{microseconds}:{hash}`
 
 ### Async Best Practices
 

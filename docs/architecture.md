@@ -255,7 +255,8 @@ Redis-based caching and rate limiting infrastructure:
 
 **RateLimiter** - Sliding window rate limiting:
 
-- **Sliding Window Algorithm**: Accurate request counting using Redis sorted sets
+- **Sliding Window Algorithm**: Accurate request counting using Redis sorted sets with microsecond precision
+- **High-Frequency Support**: Handles multiple requests per second with unique timestamp tracking
 - **IP-Based Limiting**: Rate limit by client IP for unauthenticated endpoints
 - **User-Based Limiting**: Rate limit by user ID for authenticated endpoints
 - **Custom Prefixes**: Separate rate limit quotas per endpoint group
@@ -263,7 +264,7 @@ Redis-based caching and rate limiting infrastructure:
 - **Custom Rate Limits**: Factory function for endpoint-specific limits
 - **Rate Limit Headers**: Automatic `X-RateLimit-*` headers in responses
 - **Fail-Open Design**: Allows requests if Redis is unavailable
-- **Environment-Aware**: Automatically disabled in LOCAL environment
+- **Environment Control**: Toggle rate limiting via `RATE_LIMIT_ENABLED` setting
 
 **Rate Limiting Strategies**:
 
