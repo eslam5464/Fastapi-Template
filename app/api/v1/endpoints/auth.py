@@ -35,6 +35,8 @@ router = APIRouter()
         status.HTTP_401_UNAUTHORIZED: {"model": responses.UnauthorizedResponse},
         status.HTTP_400_BAD_REQUEST: {"model": responses.BadRequestResponse},
     },
+    summary="Login for access token",
+    description="Authenticate user and return access and refresh tokens.",
 )
 async def login_for_access_token(
     user_data: Annotated[OAuth2PasswordRequestForm, Depends()],
@@ -64,6 +66,8 @@ async def login_for_access_token(
     responses={
         status.HTTP_400_BAD_REQUEST: {"model": responses.BadRequestResponse},
     },
+    summary="User signup",
+    description="Create a new user and return access and refresh tokens.",
 )
 async def signup(
     user_in: Annotated[UserSignup, Form()],
@@ -103,6 +107,8 @@ async def signup(
     responses={
         status.HTTP_401_UNAUTHORIZED: {"model": responses.UnauthorizedResponse},
     },
+    summary="Refresh access token",
+    description="Refresh access token using the refresh token.",
 )
 async def refresh_token(
     token_payload: TokenPayload,

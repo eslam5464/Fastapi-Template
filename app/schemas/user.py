@@ -1,5 +1,4 @@
 import re
-from datetime import datetime
 from typing import Annotated
 
 from pydantic import EmailStr, Field, SecretStr, field_validator
@@ -111,8 +110,11 @@ class UserForgetPassword(BaseSchema):
     email: EmailStr
 
 
-class UserResponse(UserBase, BaseTimestampSchema):
+class UserResponse(BaseTimestampSchema):
     """User schema for API response"""
 
     id: int
-    created_at: datetime = Field()
+    username: str
+    email: EmailStr
+    first_name: str
+    last_name: str
