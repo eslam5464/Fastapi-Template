@@ -20,12 +20,12 @@ router = APIRouter()
             "model": responses.TooManyRequestsResponse,
             "headers": {
                 "X-RateLimit-Limit": {
-                    "description": "Maximum requests allowed (10/min)",
-                    "schema": {"type": "integer", "example": 10},
+                    "description": "Maximum requests allowed (60/min)",
+                    "schema": {"type": "integer", "example": 60},
                 },
                 "X-RateLimit-Remaining": {
                     "description": "Requests remaining in current window",
-                    "schema": {"type": "integer", "example": 9},
+                    "schema": {"type": "integer", "example": 59},
                 },
                 "X-RateLimit-Reset": {
                     "description": "Unix timestamp when limit resets",
@@ -35,7 +35,7 @@ router = APIRouter()
         },
     },
     dependencies=(
-        [Depends(create_rate_limit_user_and_ip(limit=10, window=60, prefix="users:me:get"))]
+        [Depends(create_rate_limit_user_and_ip(limit=60, window=60, prefix="users:me:get"))]
     ),
     summary="Read current user",
     description="Get the details of the currently authenticated user.",
