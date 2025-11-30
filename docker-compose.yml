@@ -11,6 +11,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - CURRENT_ENVIRONMENT
       - DEBUG
@@ -58,6 +60,16 @@ services:
       start_period: 80s
     volumes:
       - fastapi_template_db_data:/var/lib/postgresql/data
+    networks:
+      - fastapi_template_network
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    container_name: fastapi_template_redis
+    environment:
+      - REDIS_PASSWORD
+    ports:
+      - "6379:6379"
     networks:
       - fastapi_template_network
 
