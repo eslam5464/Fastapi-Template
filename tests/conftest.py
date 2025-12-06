@@ -23,6 +23,12 @@ DEFAULT_PASSWORD = "P@ssword123"
 
 
 @pytest.fixture(scope="session")
+def pre_hashed_password():
+    """Pre-compute the hashed password once for all tests to avoid repeated bcrypt operations."""
+    return get_password_hash(DEFAULT_PASSWORD)
+
+
+@pytest.fixture(scope="session")
 def event_loop():
     """Create an instance of the default event loop for each test case."""
     loop = asyncio.get_event_loop_policy().new_event_loop()
@@ -93,12 +99,12 @@ async def db_session(test_app: FastAPI) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest_asyncio.fixture
-async def user(db_session: AsyncSession, faker: Faker) -> User:
+async def user(db_session: AsyncSession, faker: Faker, pre_hashed_password: str) -> User:
     """Create a test user."""
     user_data = UserCreate(
         email=faker.safe_email(),
         username=faker.user_name(),
-        hashed_password=get_password_hash(DEFAULT_PASSWORD),
+        hashed_password=pre_hashed_password,
         first_name=faker.first_name(),
         last_name=faker.last_name(),
     )
@@ -110,12 +116,13 @@ async def user(db_session: AsyncSession, faker: Faker) -> User:
 async def other_user(
     db_session: AsyncSession,
     faker: Faker,
+    pre_hashed_password: str,
 ) -> User:
     """Create another test user."""
     user_data = UserCreate(
         email=faker.safe_email(),
         username=faker.user_name(),
-        hashed_password=get_password_hash(DEFAULT_PASSWORD),
+        hashed_password=pre_hashed_password,
         first_name=faker.first_name(),
         last_name=faker.last_name(),
     )
