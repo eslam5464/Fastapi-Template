@@ -9,7 +9,7 @@ from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
-from app.schemas import FirebaseServiceAccount
+from app.schemas import ApplePayStoreCredentials, FirebaseServiceAccount
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 PROJECT_TOML_PATH = PROJECT_DIR / "pyproject.toml"
@@ -127,6 +127,14 @@ class Settings(BaseSettings):
     openobserve_batch_size: int = 10
     openobserve_flush_interval: float = 5.0
 
+    # App Store Connect API credentials
+    apple_pay_store_private_key_id: str
+    apple_pay_store_private_key: str
+    apple_pay_store_private_key_path: Path | None = None
+    apple_pay_store_issuer_id: str
+    apple_pay_store_bundle_id: str
+    apple_pay_store_root_certificate_path: Path
+
     @computed_field
     @property
     def cors_origins_list(self) -> list[str]:
@@ -222,6 +230,25 @@ class Settings(BaseSettings):
             user=self.redis_user,
             password=self.redis_pass,
             path=path,
+        )
+
+    @computed_field
+    @property
+    def apple_pay_store_credentials(self) -> ApplePayStoreCredentials:
+        """
+        Assemble App Store Connect API credentials from settings.
+        """
+        # Check if the private key path is provided and exists
+        # If it does, read the private key from the file
+        if self.apple_pay_store_private_key_path is not None:
+            if self.apple_pay_store_private_key_path.is_file():
+                self.apple_pay_store_private_key = self.apple_pay_store_private_key_path.read_text()
+
+        return ApplePayStoreCredentials(
+            private_key=self.apple_pay_store_private_key.replace("\\", "\\\\"),
+            key_id=self.apple_pay_store_private_key_id,
+            issuer_id=self.apple_pay_store_issuer_id,
+            bundle_id=self.apple_pay_store_bundle_id,
         )
 
 

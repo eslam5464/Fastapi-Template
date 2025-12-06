@@ -18,6 +18,7 @@ from .google_bucket import (
     BucketFile,
     BucketFolder,
 )
+from .apple_pay import ApplePayStoreCredentials
 
 __all__ = [
     "BaseSchema",
@@ -41,4 +42,5 @@ __all__ = [
     "ServiceAccount",
     "BucketFile",
     "BucketFolder",
+    "ApplePayStoreCredentials",
 ]
