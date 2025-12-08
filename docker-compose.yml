@@ -70,12 +70,18 @@ services:
       - REDIS_PASSWORD
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 30s
+      retries: 5
+      start_period: 30s
     networks:
       - fastapi_template_network
 
 networks:
-  fastapi_template:
-    name: fastapi_template_network
+  fastapi_template_network:
+    name: fastapi_template
     driver: bridge
 
 volumes:
