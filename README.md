@@ -19,6 +19,7 @@ A production-ready FastAPI project template with modern best practices, async su
 - **⚡ Redis Caching** - High-performance caching with shared connection pooling
 - **🚦 Rate Limiting** - Sliding window rate limiting with microsecond precision
 - **🌩️ Google Cloud Storage** - GCS bucket integration for file management
+- **🧪 Comprehensive Testing** - ~90% test coverage with 510+ passing tests
 
 ## 🚀 Quick Start
 
@@ -157,6 +158,27 @@ The project includes several tools for maintaining code quality:
 - **Pre-commit hooks** - Automated checks before commits
 - **Loguru** - Structured logging
 - **Environment validation** - Pydantic settings
+
+### Testing
+
+The project maintains comprehensive test coverage with **~90% code coverage** across all modules:
+
+```bash
+# Run all tests with verbose output and detailed reporting
+uv run pytest -v
+
+# Run tests with coverage report
+uv run pytest tests/ --cov=app --cov-report=term --cov-report=html
+
+# View detailed HTML coverage report
+# Open htmlcov/index.html in your browser
+```
+
+**Test Statistics:**
+
+- ✅ 510+ passing tests
+- 📊 ~90% code coverage
+- 🎯 Tests cover: API endpoints, authentication, database operations, services, middleware, and utilities
 
 ### Security Analysis
 
