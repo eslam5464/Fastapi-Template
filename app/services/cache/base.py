@@ -46,18 +46,34 @@ class BaseRedisClient(ABC):
     that are inherited by all Redis-based services (CacheManager, RateLimiter, etc.).
     """
 
-    def __init__(self):
-        self.redis_client: Redis
+    _redis_client: Redis | None = None
 
+    def __init__(self):
         # Only initialize Redis in non-local environments
         if settings.current_environment != Environment.LOCAL:
             self._initialize_redis()
+
+    @property
+    def redis_client(self) -> Redis | None:
+        """
+        Get the Redis client instance
+
+        Returns:
+            Redis | None: Redis client or None if in local environment
+        """
+        if settings.current_environment == Environment.LOCAL:
+            return None
+
+        if self._redis_client is None:
+            raise ValueError("Redis client is not initialized.")
+
+        return self._redis_client
 
     def _initialize_redis(self):
         """Initialize Redis connection using shared connection pool"""
         try:
             pool = get_redis_pool()
-            self.redis_client = Redis(connection_pool=pool)
+            self._redis_client = Redis(connection_pool=pool)
             logger.debug(
                 f"Redis client initialized for {self.__class__.__name__} using shared pool"
             )
@@ -76,7 +92,7 @@ class BaseRedisClient(ABC):
             await self.redis_client.ping()  # type: ignore
             return True
         except Exception as e:
-            logger.warning(f"Redis health check failed for {self.__class__.__name__}: {e}")
+            logger.error(f"Redis health check failed for {self.__class__.__name__}: {e}")
             return False
 
     async def close(self):
