@@ -15,14 +15,13 @@ ENV UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
     UV_PYTHON_DOWNLOADS=never
 
-WORKDIR /build
+WORKDIR /app
 
-# Copy dependency files
+# Copy dependency files first for better caching
 COPY pyproject.toml uv.lock* ./
 
-# Create virtual environment and install dependencies
-RUN uv venv /opt/venv && \
-    uv sync --frozen --no-dev --no-install-project
+# Create virtual environment at /app/.venv and install dependencies
+RUN uv sync --frozen --no-dev
 
 # Production stage
 FROM python:3.13-alpine AS production
@@ -31,15 +30,13 @@ FROM python:3.13-alpine AS production
 RUN apk add --no-cache \
     postgresql-libs
 
-# Copy virtual environment from builder stage
-COPY --from=builder /opt/venv /opt/venv
-
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
-    PYTHON_VERSION=3.13 \
-    PATH="/opt/venv/bin:$PATH" \
-    WORKERS_COUNT=1
+    VIRTUAL_ENV=/app/.venv \
+    PATH="/app/.venv/bin:$PATH" \
+    WORKERS_COUNT=1 \
+    UV_PROJECT_ENVIRONMENT=/app/.venv
 
 WORKDIR /app
 
@@ -50,8 +47,14 @@ RUN addgroup -g 1001 -S uvicorn \
     && chown -R uvicorn:uvicorn /home/uvicorn \
     && chown -R uvicorn:uvicorn /app
 
+# Copy virtual environment from builder stage
+COPY --from=builder --chown=uvicorn:uvicorn /app/.venv /app/.venv
+
 # Copy application code
-COPY --chown=uvicorn:uvicorn ./ ./
+COPY --chown=uvicorn:uvicorn ./app ./
+
+# Copy uv from builder stage (after changing ownership for efficiency)
+COPY --from=builder /usr/local/bin/uv /usr/local/bin/uv
 
 # Switch to non-privileged user
 USER uvicorn
