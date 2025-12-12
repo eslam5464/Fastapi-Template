@@ -97,6 +97,23 @@ createdb fastapi_template
 psql -c "CREATE DATABASE fastapi_template;"
 ```
 
+#### Install Redis (Required for Celery)
+
+```bash
+# macOS
+brew install redis
+brew services start redis
+
+# Ubuntu/Debian
+sudo apt-get install redis-server
+sudo systemctl start redis
+
+# Windows
+# Download from https://github.com/microsoftarchive/redis/releases
+# Or use Docker:
+docker run -d -p 6379:6379 redis:alpine
+```
+
 #### Run Migrations
 
 ```bash

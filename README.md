@@ -20,6 +20,7 @@ A production-ready FastAPI project template with modern best practices, async su
 - **🚦 Rate Limiting** - Sliding window rate limiting with microsecond precision
 - **🌩️ Google Cloud Storage** - GCS bucket integration for file management
 - **🧪 Comprehensive Testing** - ~90% test coverage with 510+ passing tests
+- **⚙️ Background Jobs** - Celery with Redis for async task processing and scheduled jobs
 
 ## 🚀 Quick Start
 
@@ -194,6 +195,40 @@ uv run bandit -r app -f json -o bandit_results.json
 uv run pytest -v
 ```
 
+### Background Jobs & Task Queue
+
+The project uses Celery for background job processing with Redis as the message broker.
+
+#### Start Celery Worker
+
+```bash
+# Linux/macOS
+./scripts/celery_worker.sh
+
+# Windows
+.\scripts\celery_worker.bat
+
+# Or directly
+celery -A app.services.task_queue worker --loglevel=info --pool=solo
+```
+
+#### Start Celery Beat (Scheduler)
+
+```bash
+# Linux/macOS
+./scripts/celery_beat.sh
+
+# Windows
+.\scripts\celery_beat.bat
+
+# Or directly
+celery -A app.services.task_queue beat --loglevel=info
+```
+
+**Available Tasks:**
+
+- `seed_fake_users` - Generates fake users for testing (runs every 10 seconds when `ENABLE_DATA_SEEDING=true`)
+
 ### Database Migrations
 
 Use the scripts provided (Recommended):
@@ -251,6 +286,10 @@ REDIS_PASS=your-redis-password
 RATE_LIMIT_ENABLED=true
 RATE_LIMIT_DEFAULT=100
 RATE_LIMIT_WINDOW=60
+
+# Celery & Background Tasks
+ENABLE_DATA_SEEDING=false
+SEEDING_USER_COUNT=100
 ```
 
 ## 📦 Dependencies
@@ -266,6 +305,7 @@ Key dependencies include:
 - **JWT** - Token authentication
 - **Loguru** - Logging
 - **Redis** - Caching and rate limiting backend
+- **Celery** - Distributed task queue for background jobs
 - **B2SDK** - BackBlaze B2 cloud storage integration
 - **Firebase Admin** - Firebase authentication and messaging
 - **Google Cloud Storage** - GCS integration

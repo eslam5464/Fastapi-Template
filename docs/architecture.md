@@ -58,7 +58,12 @@ app/
 │   ├── base.py             # Base repository class
 │   └── user.py             # User repository
 ├── services/               # Business logic and external services
-│   └── back_blaze_b2.py    # BackBlaze B2 cloud storage service
+│   ├── back_blaze_b2.py    # BackBlaze B2 cloud storage service
+│   └── task_queue/         # Celery background jobs
+│       ├── __init__.py     # Celery app configuration
+│       ├── celery_config.py # Beat schedule configuration
+│       └── tasks/          # Task implementations
+│           └── user_tasks.py # User seeding tasks
 ├── middleware/             # Custom middleware
 │   └── logging.py          # Request logging middleware
 └── alembic/                # Database migrations
