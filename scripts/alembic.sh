@@ -1,5 +1,4 @@
 #!/bin/bash
-# filepath: /home/eslam/Documents/vscode/repos/superfitai/backend/scripts/alembic.sh
 
 # Prompt the user for the location of the .env file
 read -p "Enter the location of the .env file: " env_file_location

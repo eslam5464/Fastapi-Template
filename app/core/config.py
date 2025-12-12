@@ -135,6 +135,16 @@ class Settings(BaseSettings):
     apple_pay_store_bundle_id: str
     apple_pay_store_root_certificate_path: Path
 
+    # Celery settings
+    enable_data_seeding: bool
+    seeding_user_count: int
+    celery_broker_url: URL | None = None
+    celery_result_backend: URL | None = None
+    celery_broker_db: int = 1  # Database index for the Celery broker
+    celery_result_db: int = 2  # Database index for the Celery result backend
+    celery_timezone: str = "UTC"
+    celery_task_time_limit: int = 300  # Maximum time limit (default is 5 minutes)
+
     @computed_field
     @property
     def cors_origins_list(self) -> list[str]:
@@ -170,6 +180,21 @@ class Settings(BaseSettings):
         """
         return URL.build(
             scheme="postgresql+asyncpg",
+            host=self.postgres_host,
+            port=self.postgres_port,
+            user=self.postgres_user,
+            password=self.postgres_password,
+            path=f"/{self.postgres_db}",
+        )
+
+    @computed_field
+    @property
+    def db_url_sync(self) -> URL:
+        """
+        Assemble database URL from settings (sync - for Celery).
+        """
+        return URL.build(
+            scheme="postgresql+psycopg",
             host=self.postgres_host,
             port=self.postgres_port,
             user=self.postgres_user,
@@ -249,6 +274,36 @@ class Settings(BaseSettings):
             key_id=self.apple_pay_store_private_key_id,
             issuer_id=self.apple_pay_store_issuer_id,
             bundle_id=self.apple_pay_store_bundle_id,
+        )
+
+    @computed_field
+    @property
+    def celery_broker(self) -> URL:
+        """Celery broker URL (Redis DB 1)"""
+        if self.celery_broker_url is not None:
+            return self.celery_broker_url
+
+        return URL.build(
+            scheme="redis",
+            host=self.redis_host,
+            port=self.redis_port,
+            password=self.redis_pass if self.redis_pass else None,
+            path=f"/{self.celery_broker_db}",
+        )
+
+    @computed_field
+    @property
+    def celery_backend(self) -> URL:
+        """Celery result backend URL (Redis DB 2)"""
+        if self.celery_result_backend is not None:
+            return self.celery_result_backend
+
+        return URL.build(
+            scheme="redis",
+            host=self.redis_host,
+            port=self.redis_port,
+            password=self.redis_pass if self.redis_pass else None,
+            path=f"/{self.celery_result_db}",
         )
 
 
