@@ -61,5 +61,12 @@ USER uvicorn
 
 EXPOSE 8799
 
+# Healthcheck to monitor application status
+HEALTHCHECK --interval=30s \
+    --timeout=5s \
+    --start-period=5s \
+    --retries=3 \
+    CMD curl -f http://localhost:8799/health || exit 1
+
 # Use exec form for better signal handling
 CMD ["/bin/sh", "-c", "alembic upgrade head && python main.py"]
