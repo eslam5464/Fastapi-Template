@@ -28,7 +28,8 @@ FROM python:3.13-alpine AS production
 
 # Install runtime dependencies only
 RUN apk add --no-cache \
-    postgresql-libs
+    postgresql-libs \
+    wget
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -62,11 +63,12 @@ USER uvicorn
 EXPOSE 8799
 
 # Healthcheck to monitor application status
-HEALTHCHECK --interval=30s \
-    --timeout=5s \
+HEALTHCHECK \
+    --interval=10s \
+    --timeout=10s \
     --start-period=5s \
     --retries=3 \
-    CMD curl -f http://localhost:8799/health || exit 1
+    CMD wget --quiet --output-document=/dev/null --timeout=8 http://127.0.0.1:8080/ || exit 1
 
 # Use exec form for better signal handling
 CMD ["/bin/sh", "-c", "alembic upgrade head && python main.py"]
