@@ -114,6 +114,7 @@ addopts = """
     --tb=short
     --cov=app
     --cov-report=term-missing
+    --cov-report=html:htmlcov
     --no-cov-on-fail
 """
 markers = [
