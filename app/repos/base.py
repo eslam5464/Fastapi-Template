@@ -289,14 +289,34 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
 
         return result.rowcount
 
-    async def custom_query(self, query: str) -> Result[Any]:
+    async def custom_query(
+        self,
+        query: str,
+        params: dict[str, Any] | None = None,
+    ) -> Result[Any]:
         """
-        Execute a custom SQL query.
+        Execute a custom parameterized SQL query.
+
+        SECURITY WARNING: Always use parameterized queries to prevent SQL injection.
+        Never concatenate user input directly into the query string.
 
         Args:
-            query (str): The SQL query to execute.
+            query (str): The SQL query with named parameters (e.g., "SELECT * FROM users WHERE id = :user_id")
+            params (dict[str, Any] | None): Dictionary of parameter names to values
 
         Returns:
             Result: The result of the executed query.
+
+        Example:
+            await repo.custom_query(
+                "SELECT * FROM users WHERE email = :email AND status = :status",
+                {"email": user_email, "status": "active"}
+            )
+
+        Reference:
+            https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html
         """
-        return await self.session.execute(text(query))
+        stmt = text(query)
+        if params:
+            stmt = stmt.bindparams(**params)
+        return await self.session.execute(stmt)
