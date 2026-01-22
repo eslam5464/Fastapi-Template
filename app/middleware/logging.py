@@ -1,10 +1,57 @@
 import time
 import uuid
-from typing import Callable
+from typing import Any, Callable
 
 from fastapi import Request, Response
 from loguru import logger
 from starlette.middleware.base import BaseHTTPMiddleware, _StreamingResponse
+
+# Sensitive fields that should be redacted from logs
+# Reference: https://cheatsheetseries.owasp.org/cheatsheets/Logging_Cheat_Sheet.html
+SENSITIVE_FIELDS = {
+    "password",
+    "token",
+    "secret",
+    "api_key",
+    "apikey",
+    "authorization",
+    "refresh_token",
+    "access_token",
+    "credit_card",
+    "card_number",
+    "cvv",
+    "ssn",
+    "private_key",
+}
+
+
+def sanitize_body(body: dict[str, Any] | Any) -> dict[str, Any] | Any:
+    """
+    Recursively sanitize sensitive fields from request body before logging.
+
+    Args:
+        body: The request body to sanitize
+
+    Returns:
+        Sanitized body with sensitive fields redacted
+    """
+    if not isinstance(body, dict):
+        return body
+
+    sanitized = {}
+    for key, value in body.items():
+        key_lower = key.lower()
+        if any(sensitive in key_lower for sensitive in SENSITIVE_FIELDS):
+            sanitized[key] = "***REDACTED***"
+        elif isinstance(value, dict):
+            sanitized[key] = sanitize_body(value)
+        elif isinstance(value, list):
+            sanitized[key] = [
+                sanitize_body(item) if isinstance(item, dict) else item for item in value
+            ]
+        else:
+            sanitized[key] = value
+    return sanitized
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
@@ -48,6 +95,8 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
             try:
                 json_body = await request.json()
+                # Sanitize sensitive data before logging
+                json_body = sanitize_body(json_body)
             except Exception:
                 json_body = ""
 
@@ -55,7 +104,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 f"[{request_id}] {request.method} {request.url.path} - "
                 f"Error: {str(e)} - Time: {process_time:.3f}s",
                 request_body=json_body,
-                request_query_params=request.query_params,
+                request_query_params=dict(request.query_params),
                 request_path_params=request.path_params,
             )
             raise e
