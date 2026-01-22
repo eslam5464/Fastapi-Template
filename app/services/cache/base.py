@@ -59,15 +59,22 @@ class BaseRedisClient(ABC):
         Get the Redis client instance
 
         Returns:
-            Redis | None: Redis client or None if in local environment
+            Redis | None: Redis client or None if not initialized or in local environment
         """
         if settings.current_environment == Environment.LOCAL:
             return None
 
-        if self._redis_client is None:
-            raise ValueError("Redis client is not initialized.")
-
         return self._redis_client
+
+    @redis_client.setter
+    def redis_client(self, value: Redis | None) -> None:
+        """
+        Set the Redis client instance (primarily for testing).
+
+        Args:
+            value: Redis client instance or None
+        """
+        self._redis_client = value
 
     def _initialize_redis(self):
         """Initialize Redis connection using shared connection pool"""

@@ -163,7 +163,10 @@ class TestSignup:
 
         assert response.status_code == 400
         data = response.json()
-        assert data["detail"] == "A user with this email already exists."
+        assert (
+            data["detail"]
+            == "Unable to complete registration. Please check your input and try again."
+        )
 
     @pytest.mark.anyio
     async def test_signup_invalid_username_format(
@@ -387,6 +390,7 @@ class TestRefreshToken:
                 "sub": str(user.id),
                 "exp": datetime.now(UTC) + timedelta(hours=24),
                 "iat": datetime.now(UTC),
+                "type": "refresh",
             },
             settings.secret_key,
             algorithm=settings.jwt_algorithm,
@@ -439,6 +443,7 @@ class TestRefreshToken:
                 "sub": str(user.id),
                 "exp": datetime.now(UTC) - timedelta(hours=1),
                 "iat": datetime.now(UTC) - timedelta(hours=25),
+                "type": "refresh",
             },
             settings.secret_key,
             algorithm=settings.jwt_algorithm,
@@ -451,7 +456,7 @@ class TestRefreshToken:
 
         assert response.status_code == 401
         data = response.json()
-        assert data["detail"] == "Invalid refresh token"
+        assert data["detail"] == "Refresh token has expired"
 
     @pytest.mark.anyio
     async def test_refresh_token_without_sub(
@@ -491,6 +496,7 @@ class TestRefreshToken:
                 "sub": str(fake_user_id),
                 "exp": datetime.now(UTC) + timedelta(hours=24),
                 "iat": datetime.now(UTC),
+                "type": "refresh",
             },
             settings.secret_key,
             algorithm=settings.jwt_algorithm,
@@ -719,6 +725,7 @@ class TestGetCurrentUser:
                 "sub": str(user.id),
                 "exp": datetime.now(UTC) + timedelta(hours=1),
                 "iat": datetime.now(UTC),
+                "type": "access",
             },
             settings.secret_key,
             algorithm=settings.jwt_algorithm,
@@ -834,6 +841,7 @@ class TestGetCurrentUser:
                 "sub": str(fake_user_id),
                 "exp": datetime.now(UTC) + timedelta(hours=1),
                 "iat": datetime.now(UTC),
+                "type": "access",
             },
             settings.secret_key,
             algorithm=settings.jwt_algorithm,

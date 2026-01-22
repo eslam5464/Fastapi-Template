@@ -87,6 +87,7 @@ class TestGetCurrentUserEdgeCases:
                 "sub": str(non_existent_user_id),
                 "exp": datetime.now(UTC) + timedelta(seconds=settings.access_token_expire_seconds),
                 "iat": datetime.now(UTC),
+                "type": "access",
             },
             settings.secret_key,
             algorithm=settings.jwt_algorithm,
@@ -139,6 +140,7 @@ class TestGenerateRefreshToken:
             {
                 "sub": str(user.id),
                 "exp": datetime.now(UTC) + timedelta(days=7),
+                "type": "refresh",
             },
             settings.secret_key,
             algorithm=settings.jwt_algorithm,
@@ -186,6 +188,7 @@ class TestGenerateRefreshToken:
             {
                 "sub": str(non_existent_user_id),
                 "exp": datetime.now(UTC) + timedelta(days=7),
+                "type": "refresh",
             },
             settings.secret_key,
             algorithm=settings.jwt_algorithm,
@@ -230,6 +233,7 @@ class TestGenerateRefreshToken:
             {
                 "sub": str(user.id),
                 "exp": datetime.now(UTC) + timedelta(days=7),
+                "type": "refresh",
             },
             settings.secret_key,
             algorithm=settings.jwt_algorithm,

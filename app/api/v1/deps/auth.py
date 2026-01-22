@@ -1,5 +1,4 @@
 import uuid
-from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import Depends, Form
@@ -108,17 +107,12 @@ async def get_current_user(
             expires_at=expires_at,
         )
 
-    except JWTClaimsError:
-        raise credentials_claims_error
     except ExpiredSignatureError:
         raise credentials_expired
+    except JWTClaimsError:
+        raise credentials_claims_error
     except JWTError:
         raise credentials_exception
-
-    now = int(datetime.now(UTC).timestamp())
-
-    if token_data.expires_at is not None and now > token_data.expires_at:
-        raise credentials_expired
 
     # Check if all user tokens were revoked (e.g., password change)
     revocation_time = await token_blacklist.get_user_revocation_time(str(token_data.user_id))
@@ -228,6 +222,11 @@ async def generate_refresh_token(
             )
 
         user_id = parse_user_id(user_id)
+    except ExpiredSignatureError:
+        raise http_exceptions.UnauthorizedException(
+            "Refresh token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     except JWTError:
         raise http_exceptions.UnauthorizedException(
             "Invalid refresh token",

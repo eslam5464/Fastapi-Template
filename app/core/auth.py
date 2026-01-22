@@ -37,9 +37,9 @@ def create_access_token(
 
     jti = str(uuid.uuid4())  # Unique token identifier for revocation
     to_encode: JWTPayloadDict = {
-        "exp": int(expire.timestamp() * 1000),
+        "exp": int(expire.timestamp()),  # JWT RFC 7519: NumericDate in seconds
         "sub": str(subject),
-        "iat": int(datetime.now(UTC).timestamp() * 1000),
+        "iat": int(datetime.now(UTC).timestamp()),
         "type": "access",  # Token type to distinguish from refresh tokens
         "jti": jti,  # JWT ID for token revocation
     }
@@ -63,9 +63,9 @@ def create_refresh_token(subject: str | int | uuid.UUID) -> TokenWithJtiDict:
     expire = datetime.now(UTC) + timedelta(seconds=settings.refresh_token_expire_seconds)
     jti = str(uuid.uuid4())  # Unique token identifier for revocation
     to_encode: JWTPayloadDict = {
-        "exp": int(expire.timestamp() * 1000),
+        "exp": int(expire.timestamp()),  # JWT RFC 7519: NumericDate in seconds
         "sub": str(subject),
-        "iat": int(datetime.now(UTC).timestamp() * 1000),
+        "iat": int(datetime.now(UTC).timestamp()),
         "type": "refresh",  # Token type to distinguish from access tokens
         "jti": jti,  # JWT ID for token revocation
     }
