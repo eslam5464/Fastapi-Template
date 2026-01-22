@@ -137,6 +137,9 @@ async def logout(
             detail="Invalid token",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    except http_exceptions.UnauthorizedException as ex:
+        # Re-raise UnauthorizedException without converting to 500
+        raise ex
     except Exception as e:
         logger.error(f"Logout failed for user {current_user.id}")
         logger.debug(str(e), exc_info=True)
