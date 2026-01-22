@@ -6,10 +6,13 @@ from loguru import logger
 from app.api.routes import api_router
 from app.core.config import Environment, settings
 from app.core.logger import configure_uvicorn_logging, setup_logger, shutdown_logger
+from app.middleware.csrf import CSRFMiddleware
 from app.middleware.logging import LoggingMiddleware
 from app.middleware.rate_limit import RateLimitHeaderMiddleware
+from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.services.cache.manager import cache_manager
 from app.services.cache.rate_limiter import rate_limiter
+from app.services.cache.token_blacklist import token_blacklist
 
 
 async def _check_dependencies():
@@ -32,6 +35,15 @@ async def _check_dependencies():
     else:
         logger.success("RateLimiter is healthy.")
 
+    # Check TokenBlacklist health (only in non-local environments)
+    if settings.current_environment != Environment.LOCAL:
+        blacklist_healthy = await token_blacklist.health_check()
+
+        if not blacklist_healthy:
+            logger.warning("TokenBlacklist health check failed. Token revocation may not work.")
+        else:
+            logger.success("TokenBlacklist is healthy.")
+
 
 async def _shutdown_dependencies():
     """Shutdown essential dependencies gracefully"""
@@ -41,6 +53,9 @@ async def _shutdown_dependencies():
 
     await rate_limiter.close()
     logger.success("RateLimiter connection closed.")
+
+    await token_blacklist.close()
+    logger.success("TokenBlacklist connection closed.")
 
 
 @asynccontextmanager
@@ -75,14 +90,29 @@ app = FastAPI(
     generate_unique_id_function=lambda route: f"{route.tags[0]}-{route.name}",
 )
 
-# Set CORS middleware
+# Set CORS middleware with restricted configuration
+# Reference: https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "X-CSRF-Token",
+        "X-Request-ID",
+        "Accept",
+        "Accept-Language",
+        "Origin",
+    ],
 )
+
+# Set security headers middleware (OWASP recommended)
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Set CSRF protection middleware (header-based)
+app.add_middleware(CSRFMiddleware)
 
 # Set rate limit header middleware
 app.add_middleware(RateLimitHeaderMiddleware)
