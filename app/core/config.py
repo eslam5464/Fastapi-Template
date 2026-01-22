@@ -5,7 +5,7 @@ from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
 
-from pydantic import computed_field
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
@@ -108,7 +108,13 @@ class Settings(BaseSettings):
     rate_limit_user: int = 300  # Limit for authenticated user endpoints
 
     # Token security settings
-    secret_key: str
+    secret_key: str = Field(
+        min_length=32,
+        description="""Secret key for JWT signing.
+        Generate one with: python -c 'import secrets; print(secrets.token_urlsafe(32))'.
+        Reference: https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html
+        """,
+    )
     access_token_expire_seconds: int = int(
         os.getenv("ACCESS_TOKEN_EXPIRE_SECONDS", timedelta(hours=1).seconds)
     )
