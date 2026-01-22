@@ -8,6 +8,7 @@ from jose import jwt
 from pwdlib import PasswordHash
 
 from app.core.config import settings
+from app.core.types import JWTPayloadDict, TokenWithJtiDict
 
 password_hash = PasswordHash.recommended()
 
@@ -15,40 +16,62 @@ password_hash = PasswordHash.recommended()
 def create_access_token(
     subject: str | int | uuid.UUID,
     expires_delta: Optional[timedelta] = None,
-) -> str:
+) -> TokenWithJtiDict:
     """
-    Create JWT access token
+    Create JWT access token with type and JTI claims.
+
     Args:
         subject: Token subject (usually user ID or username)
         expires_delta: Token expiration time
 
     Returns:
-        Encoded JWT token
+        TokenWithJtiDict containing the encoded JWT token and JTI
+
+    Reference:
+        https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html
     """
     if expires_delta:
         expire = datetime.now(UTC) + expires_delta
     else:
         expire = datetime.now(UTC) + timedelta(seconds=settings.access_token_expire_seconds)
 
-    to_encode = {"exp": expire, "sub": str(subject), "iat": datetime.now(UTC)}
-    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.jwt_algorithm)
-    return encoded_jwt
+    jti = str(uuid.uuid4())  # Unique token identifier for revocation
+    to_encode: JWTPayloadDict = {
+        "exp": int(expire.timestamp() * 1000),
+        "sub": str(subject),
+        "iat": int(datetime.now(UTC).timestamp() * 1000),
+        "type": "access",  # Token type to distinguish from refresh tokens
+        "jti": jti,  # JWT ID for token revocation
+    }
+    encoded_jwt = jwt.encode(dict(to_encode), settings.secret_key, algorithm=settings.jwt_algorithm)
+    return TokenWithJtiDict(token=encoded_jwt, jti=jti)
 
 
-def create_refresh_token(subject: str | int | uuid.UUID) -> str:
+def create_refresh_token(subject: str | int | uuid.UUID) -> TokenWithJtiDict:
     """
-    Create JWT refresh token with longer expiration
+    Create JWT refresh token with longer expiration and type/JTI claims.
+
     Args:
         subject: Token subject (usually user ID or username)
 
     Returns:
-        Encoded JWT refresh token
+        TokenWithJtiDict containing the encoded JWT refresh token and JTI
+
+    Reference:
+        https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html
     """
     expire = datetime.now(UTC) + timedelta(seconds=settings.refresh_token_expire_seconds)
-    to_encode = {"exp": expire, "sub": str(subject), "iat": datetime.now(UTC)}
-    encoded_jwt = jwt.encode(to_encode, settings.secret_key, algorithm=settings.jwt_algorithm)
+    jti = str(uuid.uuid4())  # Unique token identifier for revocation
+    to_encode: JWTPayloadDict = {
+        "exp": int(expire.timestamp() * 1000),
+        "sub": str(subject),
+        "iat": int(datetime.now(UTC).timestamp() * 1000),
+        "type": "refresh",  # Token type to distinguish from access tokens
+        "jti": jti,  # JWT ID for token revocation
+    }
+    encoded_jwt = jwt.encode(dict(to_encode), settings.secret_key, algorithm=settings.jwt_algorithm)
 
-    return encoded_jwt
+    return TokenWithJtiDict(token=encoded_jwt, jti=jti)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:

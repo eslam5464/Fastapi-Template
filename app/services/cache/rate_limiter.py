@@ -1,6 +1,5 @@
 import hashlib
 import time
-from typing import TypedDict
 
 from loguru import logger
 
@@ -8,16 +7,8 @@ from app.core.config import settings
 from app.core.exceptions.rate_limiter import (
     RateLimitConfigurationError,
 )
+from app.core.types import RateLimitInfoDict
 from app.services.cache import BaseRedisClient
-
-
-class RateLimitInfo(TypedDict):
-    """Rate limit information returned by check operations"""
-
-    limit: int
-    remaining: int
-    reset_time: int
-    window: int
 
 
 class RateLimiter(BaseRedisClient):
@@ -50,7 +41,7 @@ class RateLimiter(BaseRedisClient):
 
     async def check_rate_limit(
         self, key: str, limit: int, window: int = 60
-    ) -> tuple[bool, RateLimitInfo]:
+    ) -> tuple[bool, RateLimitInfoDict]:
         """
         Check if rate limit is exceeded for a given key.
 
@@ -78,7 +69,7 @@ class RateLimiter(BaseRedisClient):
 
         # Skip rate limiting if disabled
         if not settings.rate_limit_enabled:
-            return True, RateLimitInfo(
+            return True, RateLimitInfoDict(
                 limit=limit, remaining=limit, reset_time=int(time.time()) + window, window=window
             )
 
@@ -87,7 +78,7 @@ class RateLimiter(BaseRedisClient):
             logger.warning(
                 f"Redis client not initialized in RateLimiter, allowing request for key {key}"
             )
-            return True, RateLimitInfo(
+            return True, RateLimitInfoDict(
                 limit=limit, remaining=limit, reset_time=int(time.time()) + window, window=window
             )
 
@@ -124,7 +115,7 @@ class RateLimiter(BaseRedisClient):
             reset_time = now + window
             is_allowed = request_count <= limit  # Changed from < to <=
 
-            rate_limit_info = RateLimitInfo(
+            rate_limit_info = RateLimitInfoDict(
                 limit=limit, remaining=remaining, reset_time=reset_time, window=window
             )
 
@@ -133,14 +124,14 @@ class RateLimiter(BaseRedisClient):
         except Exception as e:
             logger.warning(f"Rate limit check failed for key {key}: {e}. Allowing request.")
             # On error, allow request (fail open)
-            return True, RateLimitInfo(
+            return True, RateLimitInfoDict(
                 limit=limit,
                 remaining=limit,
                 reset_time=int(time.time()) + window,
                 window=window,
             )
 
-    async def get_limit_info(self, key: str, limit: int, window: int = 60) -> RateLimitInfo:
+    async def get_limit_info(self, key: str, limit: int, window: int = 60) -> RateLimitInfoDict:
         """
         Get current rate limit information without modifying counters.
 
@@ -157,7 +148,7 @@ class RateLimiter(BaseRedisClient):
             Use check_rate_limit() for actual rate limiting with counter increment.
         """
         if not settings.rate_limit_enabled or not self.redis_client:
-            return RateLimitInfo(
+            return RateLimitInfoDict(
                 limit=limit,
                 remaining=limit,
                 reset_time=int(time.time()) + window,
@@ -178,13 +169,13 @@ class RateLimiter(BaseRedisClient):
             remaining = max(0, limit - request_count)
             reset_time = now + window
 
-            return RateLimitInfo(
+            return RateLimitInfoDict(
                 limit=limit, remaining=remaining, reset_time=reset_time, window=window
             )
 
         except Exception as e:
             logger.warning(f"Failed to get limit info for key {key}: {e}")
-            return RateLimitInfo(
+            return RateLimitInfoDict(
                 limit=limit, remaining=limit, reset_time=int(time.time()) + window, window=window
             )
 

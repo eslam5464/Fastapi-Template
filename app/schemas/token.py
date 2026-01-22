@@ -36,3 +36,10 @@ class TokenPayload(BaseSchema):
     """Token payload for refresh token"""
 
     refresh_token: str
+
+
+class LogoutResponse(BaseSchema):
+    """Logout response schema"""
+
+    message: str
+    revoked: bool
