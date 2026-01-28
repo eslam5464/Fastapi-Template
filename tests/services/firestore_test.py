@@ -28,7 +28,7 @@ class TestFirestoreInitialization:
 
         firestore = Firestore(firebase_service_account)
 
-        assert firestore._firestore_db is not None
+        assert firestore._firestore_client is not None
         mock_get_app.assert_called_once()
 
     @patch("app.services.firestore.firebase_admin.get_app")
@@ -52,7 +52,7 @@ class TestFirestoreInitialization:
         firestore = Firestore(firebase_service_account)
 
         assert firestore._default_app == mock_firebase_app
-        assert firestore._firestore_db is not None
+        assert firestore._firestore_client is not None
 
     @patch("app.services.firestore.firebase_admin.get_app")
     @patch("app.services.firestore.credentials.Certificate")
@@ -154,7 +154,7 @@ class TestFirestoreInitialization:
     def test_firestore_client_property_none(self):
         """Test firestore_client property when client is None."""
         firestore = Firestore.__new__(Firestore)
-        firestore._firestore_db = None
+        firestore._firestore_client = None
 
         with pytest.raises(ValueError) as exc_info:
             _ = firestore.firestore_client

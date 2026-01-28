@@ -18,7 +18,7 @@ from app.schemas import FirebaseServiceAccount
 class Firestore:
     _default_app: App | None = field(init=False, default=None)
     _app_certificate: Certificate | None = field(init=False, default=None)
-    _firestore_db: AsyncClient | None = field(init=False, default=None)
+    _firestore_client: AsyncClient | None = field(init=False, default=None)
 
     def __init__(self, service_account: FirebaseServiceAccount):
         """
@@ -34,7 +34,7 @@ class Firestore:
         """
         try:
             firebase_admin.get_app()
-            self._firestore_db = firestore_async.client(self._default_app)
+            self._firestore_client = firestore_async.client(self._default_app)
             app_exists = True
         except ValueError:
             app_exists = False
@@ -45,7 +45,7 @@ class Firestore:
                 self._default_app = firebase_admin.initialize_app(
                     credential=self._app_certificate,
                 )
-                self._firestore_db = firestore_async.client(self._default_app)
+                self._firestore_client = firestore_async.client(self._default_app)
         except IOError as err:
             logger.exception(
                 "Error initializing Firestore app, certificate file not found",
@@ -88,11 +88,11 @@ class Firestore:
         Raises:
             ValueError: If the Firestore client is not initialized
         """
-        if self._firestore_db is None:
+        if self._firestore_client is None:
             logger.error("Firestore client not initialized")
             raise ValueError("Firestore client not initialized")
 
-        return self._firestore_db
+        return self._firestore_client
 
     async def fetch_all_documents(self, collection_name: str) -> list[dict[str, Any]]:
         """
