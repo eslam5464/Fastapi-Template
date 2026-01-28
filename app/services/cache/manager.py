@@ -34,8 +34,8 @@ class CacheManager(BaseRedisClient):
             if data:
                 return pickle.loads(data)
             return None
-        except Exception as e:
-            logger.error(f"Cache get failed for key {key}: {e}")
+        except Exception:
+            logger.exception(f"Cache get failed for key {key}")
             return None
 
     async def set(self, key: str, value: Any, expire: int | None = None) -> bool:
@@ -58,8 +58,8 @@ class CacheManager(BaseRedisClient):
             serialized = pickle.dumps(value)
             expire = expire or settings.cache_ttl_default
             return await self.redis_client.set(key, serialized, ex=expire)
-        except Exception as e:
-            logger.error(f"Cache set failed for key {key}: {e}")
+        except Exception:
+            logger.exception(f"Cache set failed for key {key}")
             return False
 
     async def delete(self, key: str) -> bool:
@@ -78,8 +78,8 @@ class CacheManager(BaseRedisClient):
 
         try:
             return await self.redis_client.delete(key) > 0
-        except Exception as e:
-            logger.error(f"Cache delete failed for key {key}: {e}")
+        except Exception:
+            logger.exception(f"Cache delete failed for key {key}")
             return False
 
     async def delete_pattern(self, pattern: str) -> int:
@@ -101,8 +101,8 @@ class CacheManager(BaseRedisClient):
             if keys:
                 return await self.redis_client.delete(*keys)
             return 0
-        except Exception as e:
-            logger.error(f"Cache delete pattern failed for pattern {pattern}: {e}")
+        except Exception:
+            logger.exception(f"Cache delete pattern failed for pattern {pattern}")
             return 0
 
     async def exists(self, key: str) -> bool:
@@ -121,8 +121,8 @@ class CacheManager(BaseRedisClient):
 
         try:
             return await self.redis_client.exists(key) > 0
-        except Exception as e:
-            logger.error(f"Cache exists check failed for key {key}: {e}")
+        except Exception:
+            logger.exception(f"Cache exists check failed for key {key}")
             return False
 
 

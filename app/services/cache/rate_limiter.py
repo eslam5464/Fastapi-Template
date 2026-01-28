@@ -121,8 +121,8 @@ class RateLimiter(BaseRedisClient):
 
             return is_allowed, rate_limit_info
 
-        except Exception as e:
-            logger.warning(f"Rate limit check failed for key {key}: {e}. Allowing request.")
+        except Exception:
+            logger.exception(f"Rate limit check failed for key {key}. Allowing request.")
             # On error, allow request (fail open)
             return True, RateLimitInfoDict(
                 limit=limit,
@@ -173,8 +173,8 @@ class RateLimiter(BaseRedisClient):
                 limit=limit, remaining=remaining, reset_time=reset_time, window=window
             )
 
-        except Exception as e:
-            logger.warning(f"Failed to get limit info for key {key}: {e}")
+        except Exception:
+            logger.exception(f"Failed to get limit info for key {key}")
             return RateLimitInfoDict(
                 limit=limit, remaining=limit, reset_time=int(time.time()) + window, window=window
             )
@@ -201,8 +201,8 @@ class RateLimiter(BaseRedisClient):
             if deleted:
                 logger.info(f"Rate limit reset for key {key}")
             return deleted > 0
-        except Exception as e:
-            logger.warning(f"Failed to reset rate limit for key {key}: {e}")
+        except Exception:
+            logger.exception(f"Failed to reset rate limit for key {key}")
             return False
 
 

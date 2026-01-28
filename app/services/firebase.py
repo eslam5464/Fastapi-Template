@@ -40,16 +40,13 @@ class Firebase:
                     credential=self._app_certificate,
                 )
         except IOError as err:
-            logger.critical("Error initializing Firebase app, certificate file not found")
-            logger.debug(str(err))
+            logger.exception("Error initializing Firebase app, certificate file not found")
             raise err
         except ValueError as err:
-            logger.critical("Error initializing Firebase app")
-            logger.debug(str(err))
+            logger.exception("Error initializing Firebase app")
             raise err
         except Exception as err:
-            logger.critical("Error initializing Firebase app, unknown error")
-            logger.debug(str(err))
+            logger.exception("Error initializing Firebase app, unknown error")
             raise err
 
     @property
@@ -94,16 +91,13 @@ class Firebase:
         try:
             return await asyncio.to_thread(_get_user)
         except ValueError as err:
-            logger.error("Error getting user by ID, user ID is malformed")
-            logger.debug(str(err))
+            logger.exception("Error getting user by ID, user ID is malformed")
             raise err
         except UserNotFoundError as err:
-            logger.error("Error getting user by ID, User not found")
-            logger.debug(str(err))
+            logger.exception("Error getting user by ID, User not found")
             raise ConnectionAbortedError("User not found")
         except FirebaseError as err:
-            logger.error("Error getting user by ID")
-            logger.debug(str(err))
+            logger.exception("Error getting user by ID")
             raise ConnectionError("Unknown error getting user by ID")
 
     async def get_user_by_email(self, email: str) -> UserRecord:
@@ -131,16 +125,13 @@ class Firebase:
         try:
             return await asyncio.to_thread(_get_user)
         except ValueError as err:
-            logger.error("Error getting user by email, email is malformed")
-            logger.debug(str(err))
+            logger.exception("Error getting user by email, email is malformed")
             raise err
         except UserNotFoundError as err:
-            logger.error("Error getting user by email, User not found")
-            logger.debug(str(err))
+            logger.exception("Error getting user by email, User not found")
             raise ConnectionAbortedError("User not found")
         except FirebaseError as err:
-            logger.error("Error getting user by email")
-            logger.debug(str(err))
+            logger.exception("Error getting user by email")
             raise ConnectionError("Unknown error getting user by email")
 
     async def get_user_by_phone_number(self, phone_number: str) -> UserRecord:
@@ -168,16 +159,13 @@ class Firebase:
         try:
             return await asyncio.to_thread(_get_user)
         except ValueError as err:
-            logger.error("Error getting user by phone number, phone number is malformed")
-            logger.debug(str(err))
+            logger.exception("Error getting user by phone number, phone number is malformed")
             raise err
         except UserNotFoundError as err:
-            logger.error("Error getting user by phone number, User not found")
-            logger.debug(str(err))
+            logger.exception("Error getting user by phone number, User not found")
             raise ConnectionAbortedError("User not found")
         except FirebaseError as err:
-            logger.error("Error getting user by phone number")
-            logger.debug(str(err))
+            logger.exception("Error getting user by phone number")
             raise ConnectionError("Unknown error getting user by phone number")
 
     async def get_all_users(self, max_results: int = 1000) -> ListUsersPage:
@@ -201,12 +189,10 @@ class Firebase:
         try:
             return await asyncio.to_thread(_list_users)
         except ValueError as err:
-            logger.error("Error getting all users, max_results is malformed")
-            logger.debug(str(err))
+            logger.exception("Error getting all users, max_results is malformed")
             raise err
         except FirebaseError as err:
-            logger.error("Error getting all users")
-            logger.debug(str(err))
+            logger.exception("Error getting all users")
             raise ConnectionError("Unknown error getting all users")
 
     async def create_custom_id_token(
@@ -237,12 +223,10 @@ class Firebase:
         try:
             return await asyncio.to_thread(_create_token)
         except ValueError as err:
-            logger.error("Error creating custom ID token, UID is malformed")
-            logger.debug(str(err))
+            logger.exception("Error creating custom ID token, UID is malformed")
             raise err
         except FirebaseError as err:
-            logger.error("Error creating custom ID token")
-            logger.debug(str(err))
+            logger.exception("Error creating custom ID token")
             raise ConnectionError("Unknown error creating custom ID token")
 
     async def verify_id_token(self, id_token: str) -> dict:
@@ -270,24 +254,19 @@ class Firebase:
         try:
             return await asyncio.to_thread(_verify_token)
         except ValueError as err:
-            logger.error("Error verifying ID token, ID token is malformed")
-            logger.debug(str(err))
+            logger.exception("Error verifying ID token, ID token is malformed")
             raise err
         except auth.RevokedIdTokenError as err:
-            logger.error("Error verifying ID token, ID token has been revoked")
-            logger.debug(str(err))
+            logger.exception("Error verifying ID token, ID token has been revoked")
             raise ConnectionAbortedError("ID token has been revoked")
         except auth.ExpiredIdTokenError as err:
-            logger.error("Error verifying ID token, ID token has expired")
-            logger.debug(str(err))
+            logger.exception("Error verifying ID token, ID token has expired")
             raise ConnectionAbortedError("ID token has expired")
         except auth.InvalidIdTokenError as err:
-            logger.error("Error verifying ID token, Invalid ID token")
-            logger.debug(str(err))
+            logger.exception("Error verifying ID token, Invalid ID token")
             raise ConnectionAbortedError("Invalid ID token")
         except FirebaseError as err:
-            logger.error("Unknown error verifying ID token")
-            logger.debug(str(err))
+            logger.exception("Unknown error verifying ID token")
             raise ConnectionError("Error verifying ID token")
 
     async def validate_fcm_token(self, registration_token: str):
@@ -312,16 +291,13 @@ class Firebase:
             await asyncio.to_thread(_validate_token)
             return True
         except FirebaseError as err:
-            logger.error("Firebase error validating token")
-            logger.debug(str(err))
+            logger.exception("Firebase error validating token")
             return False
         except ValueError as err:
-            logger.error("Token is malformed")
-            logger.debug(str(err))
+            logger.exception("Token is malformed")
             return False
         except Exception as e:
-            logger.error(f"Error validating token")
-            logger.debug(str(e))
+            logger.exception(f"Error validating token")
             return False
 
     async def notify_a_device(
@@ -363,8 +339,7 @@ class Firebase:
             logger.info(f"Push notification sent successfully: {response}")
             return True
         except Exception as e:
-            logger.error(f"Error sending push notification")
-            logger.debug(str(e))
+            logger.exception(f"Error sending push notification")
             return False
 
     async def notify_multiple_devices(
@@ -414,13 +389,10 @@ class Firebase:
                             f"{result.message_id}: {result.exception}"
                         )
             except FirebaseError as err:
-                logger.error("Firebase error sending push notification to multiple devices")
-                logger.debug(str(err))
+                logger.exception("Firebase error sending push notification to multiple devices")
             except ValueError as err:
-                logger.error("Error sending push notification to multiple devices")
-                logger.debug(str(err))
+                logger.exception("Error sending push notification to multiple devices")
             except Exception as e:
-                logger.error("Unknown error sending push notification to multiple devices")
-                logger.debug(str(e))
+                logger.exception("Unknown error sending push notification to multiple devices")
 
         return success_count

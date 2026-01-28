@@ -237,7 +237,7 @@ class GCS:
             )
             return BytesIO(file_data)
         except Exception as e:
-            logger.error(f"Failed to download {file_path_in_bucket}: {e}")
+            logger.exception(f"Failed to download {file_path_in_bucket}: {e}")
             return None
 
     async def create_folder(

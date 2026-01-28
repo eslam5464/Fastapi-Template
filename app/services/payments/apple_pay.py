@@ -198,11 +198,11 @@ class ApplePay:
         except AppStoreConnectionAbortedException:
             # Authentication failed, but connection is established
             return True
-        except AppStoreConnectionErrorException as err:
-            logger.error(f"Apple Pay connection error: {err}")
+        except AppStoreConnectionErrorException:
+            logger.exception("Apple Pay connection error")
             return False
-        except Exception as err:
-            logger.error(f"Apple Pay connection check failed: {err}")
+        except Exception:
+            logger.exception("Apple Pay connection check failed")
             return False
 
     def _validate_transaction_id(self, transaction_id: str) -> None:
@@ -277,32 +277,28 @@ class ApplePay:
                 if transaction_id != "0000000000000000":
                     logger.error(f"Invalid transaction ID: {transaction_id}")
 
-                logger.debug(f"APIException details: {err}")
+                logger.exception(f"APIException details: {err}")
                 raise AppStoreNotFoundException(
                     f"Transaction ID {transaction_id} not found"
                 ) from err
             elif err.http_status_code == 401:
-                logger.critical("Apple Pay API authentication failed")
-                logger.debug(f"APIException details: {err}")
+                logger.exception(f"Apple Pay API authentication failed")
                 raise AppStoreInvalidCredentialsException("Invalid Apple Pay credentials") from err
             elif err.http_status_code == 404:
-                logger.error(f"Transaction id {transaction_id} not found")
-                logger.debug(f"APIException details: {err}")
+                logger.exception(f"Transaction id {transaction_id} not found")
                 raise AppStoreNotFoundException(
                     f"Transaction id {transaction_id} not found in Apple Pay"
                 ) from err
             elif err.http_status_code == 429:
-                logger.warning(f"Rate limit exceeded for transaction: {transaction_id}")
-                logger.debug(f"APIException details: {err}")
+                logger.exception(f"Rate limit exceeded for transaction: {transaction_id}")
                 raise AppStoreRateLimitExceededException(
                     "Apple Pay API rate limit exceeded"
                 ) from err
             elif err.http_status_code == 500:
-                logger.error(f"Apple Pay API server error for transaction: {transaction_id}")
-                logger.debug(f"APIException details: {err}")
+                logger.exception(f"Apple Pay API server error for transaction: {transaction_id}")
                 raise AppStoreConnectionAbortedException("Apple Pay server error occurred") from err
             else:
-                logger.error(f"Apple Pay API error ({err.http_status_code}): {err}")
+                logger.exception(f"Apple Pay API error ({err.http_status_code}): {err}")
                 raise AppStoreConnectionErrorException(
                     f"Failed to verify transaction: HTTP {err.http_status_code}"
                 ) from err
@@ -395,23 +391,20 @@ class ApplePay:
             return response
         except APIException as err:
             if err.http_status_code == 404:
-                logger.error(f"Subscription not found: {original_transaction_id}")
-                logger.debug(f"APIException details: {err}")
+                logger.exception(f"Subscription not found: {original_transaction_id}")
                 raise AppStoreConnectionAbortedException(
                     f"Subscription '{original_transaction_id}' not found"
                 ) from err
             elif err.http_status_code == 401:
-                logger.critical("Apple Pay API authentication failed")
-                logger.debug(f"APIException details: {err}")
+                logger.exception("Apple Pay API authentication failed")
                 raise AppStoreInvalidCredentialsException("Invalid Apple Pay credentials") from err
             elif err.http_status_code == 500:
-                logger.error(
+                logger.exception(
                     f"Apple Pay API server error for transaction: {original_transaction_id}"
                 )
-                logger.debug(f"APIException details: {err}")
                 raise AppStoreConnectionAbortedException("Apple Pay server error occurred") from err
             else:
-                logger.error(f"Apple Pay API error ({err.http_status_code}): {err}")
+                logger.exception(f"Apple Pay API error ({err.http_status_code}): {err}")
                 raise AppStoreConnectionErrorException(
                     f"Failed to get transaction history: HTTP {err.http_status_code}"
                 ) from err
@@ -468,23 +461,20 @@ class ApplePay:
 
         except APIException as err:
             if err.http_status_code == 404:
-                logger.error(f"Subscription not found: {original_transaction_id}")
-                logger.debug(f"APIException details: {err}")
+                logger.exception(f"Subscription not found: {original_transaction_id}")
                 raise AppStoreConnectionAbortedException(
                     f"Subscription '{original_transaction_id}' not found"
                 ) from err
             elif err.http_status_code == 401:
-                logger.critical("Apple Pay API authentication failed")
-                logger.debug(f"APIException details: {err}")
+                logger.exception("Apple Pay API authentication failed")
                 raise AppStoreInvalidCredentialsException("Invalid Apple Pay credentials") from err
             elif err.http_status_code == 500:
-                logger.error(
+                logger.exception(
                     f"Apple Pay API server error for subscription: {original_transaction_id}"
                 )
-                logger.debug(f"APIException details: {err}")
                 raise AppStoreConnectionAbortedException("Apple Pay server error occurred") from err
             else:
-                logger.error(f"Apple Pay API error ({err.http_status_code}): {err}")
+                logger.exception(f"Apple Pay API error ({err.http_status_code}): {err}")
                 raise AppStoreConnectionErrorException(
                     f"Failed to get subscription status: HTTP {err.http_status_code}"
                 ) from err
@@ -544,24 +534,20 @@ class ApplePay:
 
         except APIException as err:
             if err.http_status_code == 404:
-                logger.error(f"Subscription not found: {original_transaction_id}")
-                logger.debug(f"APIException details: {err}")
+                logger.exception(f"Subscription not found: {original_transaction_id}")
                 raise AppStoreConnectionAbortedException(
                     f"Subscription '{original_transaction_id}' not found"
                 ) from err
             elif err.http_status_code == 401:
-                logger.critical("Apple Pay API authentication failed")
-                logger.debug(f"APIException details: {err}")
+                logger.exception("Apple Pay API authentication failed")
                 raise AppStoreInvalidCredentialsException("Invalid Apple Pay credentials") from err
             elif err.http_status_code == 500:
-                logger.error(
+                logger.exception(
                     f"Apple Pay API server error for transaction: {original_transaction_id}"
                 )
-                logger.debug(f"APIException details: {err}")
                 raise AppStoreConnectionAbortedException("Apple Pay server error occurred") from err
             else:
-                logger.error(f"Apple Pay API error ({err.http_status_code}): {err}")
-                logger.debug(f"APIException details: {err}")
+                logger.exception(f"Apple Pay API error ({err.http_status_code}): {err}")
                 raise AppStoreConnectionErrorException(
                     f"Failed to get refund history: HTTP {err.http_status_code}"
                 ) from err
@@ -657,27 +643,23 @@ class ApplePay:
 
         except APIException as err:
             if err.http_status_code == 404:
-                logger.error(f"Subscription not found: {original_transaction_id}")
-                logger.debug(f"APIException details: {err}")
+                logger.exception(f"Subscription not found: {original_transaction_id}")
                 raise AppStoreNotFoundException(
                     f"Subscription '{original_transaction_id}' not found"
                 ) from err
             elif err.http_status_code == 401:
-                logger.critical("Apple Pay API authentication failed")
-                logger.debug(f"APIException details: {err}")
+                logger.exception("Apple Pay API authentication failed")
                 raise AppStoreInvalidCredentialsException("Invalid Apple Pay credentials") from err
             elif err.http_status_code == 400:
-                logger.error(f"Invalid extension request: {err}")
-                logger.debug(f"APIException details: {err}")
+                logger.exception(f"Invalid extension request: {err}")
                 raise AppStoreValidationException(f"Invalid extension request: {err}") from err
             elif err.http_status_code == 500:
-                logger.error(
+                logger.exception(
                     f"Apple Pay API server error for transaction: {original_transaction_id}"
                 )
-                logger.debug(f"APIException details: {err}")
                 raise AppStoreConnectionAbortedException("Apple Pay server error occurred") from err
             else:
-                logger.error(f"Apple Pay API error ({err.http_status_code}): {err}")
+                logger.exception(f"Apple Pay API error ({err.http_status_code}): {err}")
                 raise AppStoreConnectionAbortedException(
                     f"Failed to extend renewal date: HTTP {err.http_status_code}"
                 ) from err
@@ -687,7 +669,9 @@ class ApplePay:
             raise
 
         except Exception as err:
-            logger.error(f"Unexpected error extending renewal for {original_transaction_id}: {err}")
+            logger.exception(
+                f"Unexpected error extending renewal for {original_transaction_id}: {err}"
+            )
             raise AppStoreConnectionAbortedException(
                 "Failed to extend renewal date due to unexpected error"
             ) from err
@@ -733,7 +717,7 @@ class ApplePay:
 
             return transaction_info
         except Exception as err:
-            logger.error(f"Error decoding transaction info: {err}")
+            logger.exception(f"Error decoding transaction info: {err}")
             raise AppStoreConnectionAbortedException("Failed to decode transaction info") from err
 
     async def verify_webhook_signature(
@@ -770,7 +754,7 @@ class ApplePay:
 
             return notification
         except Exception as err:
-            logger.error(f"Webhook signature verification failed: {err}")
+            logger.exception(f"Webhook signature verification failed: {err}")
             raise AppStoreValidationException("Invalid webhook signature") from err
 
     async def get_subscription_status_cached(
@@ -875,7 +859,7 @@ class ApplePay:
             return latest
 
         except Exception as err:
-            logger.error(f"Error extracting latest transaction: {err}")
+            logger.exception(f"Error extracting latest transaction")
             return None
 
     async def verify_and_process_subscription(

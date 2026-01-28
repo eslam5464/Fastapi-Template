@@ -101,13 +101,11 @@ class BackBlaze:
             return self
         except NonExistentBucket as ex:
             error_msg = f"Bucket '{bucket_name}' does not exist"
-            logger.error(error_msg)
-            logger.debug(str(ex))
+            logger.exception(error_msg)
             raise B2BucketNotFoundError(error_msg, ex) from ex
         except Exception as ex:
             error_msg = f"Failed to select bucket '{bucket_name}'"
-            logger.error(error_msg)
-            logger.debug(str(ex))
+            logger.exception(error_msg)
             raise B2BucketNotSelectedError(error_msg, ex) from ex
 
     async def list_buckets(self) -> list[Bucket]:
@@ -128,8 +126,7 @@ class BackBlaze:
             return list(buckets)
         except Exception as ex:
             error_msg = "Failed to list buckets"
-            logger.error(error_msg)
-            logger.debug(str(ex))
+            logger.exception(error_msg)
             raise B2FileOperationError(error_msg, ex) from ex
 
     async def create_bucket(
@@ -165,8 +162,7 @@ class BackBlaze:
             return self
         except Exception as ex:
             error_msg = f"Failed to create bucket '{bucket_name}'"
-            logger.error(error_msg)
-            logger.debug(str(ex))
+            logger.exception(error_msg)
             raise B2FileOperationError(error_msg, ex) from ex
 
     async def delete_selected_bucket(self) -> Self:
@@ -198,13 +194,11 @@ class BackBlaze:
             return self
         except NonExistentBucket as ex:
             error_msg = f"Bucket '{bucket_name}' does not exist"
-            logger.error(error_msg)
-            logger.debug(str(ex))
+            logger.exception(error_msg)
             raise B2BucketNotFoundError(error_msg, ex) from ex
         except Exception as ex:
             error_msg = f"Failed to delete bucket '{bucket_name}'"
-            logger.error(error_msg)
-            logger.debug(str(ex))
+            logger.exception(error_msg)
             raise B2BucketOperationError(error_msg, ex) from ex
 
     async def update_selected_bucket(
@@ -244,8 +238,7 @@ class BackBlaze:
             return self
         except Exception as ex:
             error_msg = f"Failed to update bucket '{self._bucket.name}'"
-            logger.error(error_msg)
-            logger.debug(str(ex))
+            logger.exception(error_msg)
             raise B2BucketOperationError(error_msg, ex) from ex
 
     async def upload_file(
@@ -301,8 +294,7 @@ class BackBlaze:
         except Exception as ex:
             self._cleanup_failed_upload(local_file_path)
             error_msg = f"Failed to upload file '{local_file_path}'"
-            logger.error(error_msg)
-            logger.debug(str(ex))
+            logger.exception(error_msg)
             raise B2FileOperationError(error_msg, ex) from ex
 
     async def get_download_url_by_name(self, file_name: str) -> FileDownloadLink:
@@ -338,8 +330,7 @@ class BackBlaze:
             return FileDownloadLink(download_url=download_url)
         except Exception as ex:
             error_msg = f"Failed to get download URL for file '{file_name}'"
-            logger.error(error_msg)
-            logger.debug(str(ex))
+            logger.exception(error_msg)
             raise B2FileOperationError(error_msg, ex) from ex
 
     async def get_download_url_by_file_id(self, file_id: str) -> FileDownloadLink:
@@ -367,8 +358,7 @@ class BackBlaze:
             return FileDownloadLink(download_url=download_url)
         except Exception as ex:
             error_msg = f"Failed to get download URL for file ID '{file_id}'"
-            logger.error(error_msg)
-            logger.debug(str(ex))
+            logger.exception(error_msg)
             raise B2FileOperationError(error_msg, ex) from ex
 
     async def delete_file(self, file_id: str, file_name: str) -> FileIdAndName:
@@ -403,8 +393,7 @@ class BackBlaze:
             return result
         except Exception as ex:
             error_msg = f"Failed to delete file '{file_name}' (ID: {file_id})"
-            logger.error(error_msg)
-            logger.debug(str(ex))
+            logger.exception(error_msg)
             raise B2FileOperationError(error_msg, ex) from ex
 
     async def get_temporary_download_link(
@@ -452,8 +441,7 @@ class BackBlaze:
             return FileDownloadLink(download_url=download_url, auth_token=auth_token)
         except Exception as ex:
             error_msg = f"Failed to get temporary download link for file ID '{file_id}'"
-            logger.error(error_msg)
-            logger.debug(str(ex))
+            logger.exception(error_msg)
             raise B2FileOperationError(error_msg, ex) from ex
 
     async def get_file_details(self, file_id: str) -> FileVersion:
@@ -477,8 +465,7 @@ class BackBlaze:
             return await asyncio.to_thread(self._b2_api.get_file_info, file_id)
         except Exception as ex:
             error_msg = f"Failed to get file details for ID '{file_id}'"
-            logger.error(error_msg)
-            logger.debug(str(ex))
+            logger.exception(error_msg)
             raise B2FileOperationError(error_msg, ex) from ex
 
     async def _authorize(self) -> None:
@@ -493,8 +480,7 @@ class BackBlaze:
             self._authorized = True
             logger.info("Successfully authorized BackBlaze account")
         except Exception as ex:
-            logger.error("Failed to authorize BackBlaze account")
-            logger.debug(str(ex))
+            logger.exception("Failed to authorize BackBlaze account")
             raise B2AuthorizationError("Failed to authorize BackBlaze account", ex) from ex
 
     @staticmethod
@@ -524,8 +510,7 @@ class BackBlaze:
                 Path(local_file_path).unlink()
                 logger.info(f"Cleaned up local file after failed upload: {local_file_path}")
         except OSError as ex:
-            logger.warning(f"Failed to clean up local file: {local_file_path}")
-            logger.debug(str(ex))
+            logger.exception(f"Failed to clean up local file: {local_file_path}")
 
     @staticmethod
     def _extract_file_id_from_url(url: AnyUrl) -> str:

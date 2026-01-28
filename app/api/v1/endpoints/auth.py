@@ -141,8 +141,7 @@ async def logout(
         # Re-raise UnauthorizedException without converting to 500
         raise ex
     except Exception as e:
-        logger.error(f"Logout failed for user {current_user.id}")
-        logger.debug(str(e), exc_info=True)
+        logger.exception(f"Logout failed for user {current_user.id}")
         raise http_exceptions.InternalServerErrorException(
             detail=f"Logout failed",
             headers={"WWW-Authenticate": "Bearer"},

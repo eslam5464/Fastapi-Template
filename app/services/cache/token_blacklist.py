@@ -47,8 +47,8 @@ class TokenBlacklist(BaseRedisClient):
             await self.redis_client.setex(key, ttl_seconds, "revoked")
             logger.info(f"Token revoked: {jti[:8]}... (TTL: {ttl_seconds}s)")
             return True
-        except Exception as e:
-            logger.error(f"Failed to revoke token {jti[:8]}...: {e}")
+        except Exception:
+            logger.exception(f"Failed to revoke token {jti[:8]}...")
             return False
 
     async def is_revoked(self, jti: str) -> bool:
@@ -74,8 +74,8 @@ class TokenBlacklist(BaseRedisClient):
         try:
             key = f"{self.KEY_PREFIX}{jti}"
             return await self.redis_client.exists(key) > 0
-        except Exception as e:
-            logger.error(f"Failed to check token revocation {jti[:8]}...: {e}")
+        except Exception:
+            logger.exception(f"Failed to check token revocation {jti[:8]}...")
             # Fail open on error
             return False
 
@@ -108,8 +108,8 @@ class TokenBlacklist(BaseRedisClient):
             await self.redis_client.setex(key, ttl_seconds, str(int(time.time())))
             logger.info(f"All tokens revoked for user: {user_id}")
             return True
-        except Exception as e:
-            logger.error(f"Failed to revoke all tokens for user {user_id}: {e}")
+        except Exception:
+            logger.exception(f"Failed to revoke all tokens for user {user_id}")
             return False
 
     async def get_user_revocation_time(self, user_id: str) -> int | None:
@@ -134,8 +134,8 @@ class TokenBlacklist(BaseRedisClient):
             if value:
                 return int(value)
             return None
-        except Exception as e:
-            logger.error(f"Failed to get revocation time for user {user_id}: {e}")
+        except Exception:
+            logger.exception(f"Failed to get revocation time for user {user_id}")
             return None
 
 

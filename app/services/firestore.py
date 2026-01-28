@@ -47,20 +47,17 @@ class Firestore:
                 )
                 self._firestore_db = firestore_async.client(self._default_app)
         except IOError as err:
-            logger.critical(
+            logger.exception(
                 "Error initializing Firestore app, certificate file not found",
             )
-            logger.debug(str(err))
             raise err
         except ValueError as err:
-            logger.critical("Error initializing Firestore app")
-            logger.debug(str(err))
+            logger.exception("Error initializing Firestore app")
             raise err
         except Exception as ex:
-            logger.critical(
+            logger.exception(
                 "Error initializing Firestore app, unknown error",
             )
-            logger.debug(str(ex))
             raise ex
 
     @property
@@ -112,8 +109,7 @@ class Firestore:
             docs = collection_ref.stream()
             return [doc_dict async for doc in docs if (doc_dict := doc.to_dict()) is not None]
         except Exception as ex:
-            logger.error("Error fetching documents from collection")
-            logger.debug(str(ex))
+            logger.exception("Error fetching documents from collection")
             raise ex
 
     async def add_document(self, collection_name: str, document_id: str, data: dict) -> None:
@@ -133,8 +129,7 @@ class Firestore:
             await doc_ref.set(data)
             logger.debug(f"Document added to collection {collection_name} with ID {document_id}")
         except Exception as ex:
-            logger.error("Error adding document to collection")
-            logger.debug(str(ex))
+            logger.exception("Error adding document to collection")
             raise ex
 
     async def update_document(self, collection_name: str, document_id: str, data: dict) -> None:
@@ -155,16 +150,14 @@ class Firestore:
             await doc_ref.update(data)
             logger.debug(f"Document updated in collection {collection_name} with ID {document_id}")
         except NotFound as ex:
-            logger.error(
+            logger.exception(
                 f"Document with ID {document_id} not found in collection {collection_name}"
             )
-            logger.debug(str(ex))
             raise FirebaseDocumentNotFoundError(
                 f"Document with ID {document_id} not found in collection {collection_name}"
             ) from ex
         except Exception as ex:
-            logger.error(f"Error updating document in collection {collection_name}")
-            logger.debug(str(ex))
+            logger.exception(f"Error updating document in collection {collection_name}")
             raise ex
 
     async def remove_document(self, collection_name: str, document_id: str) -> None:
@@ -185,10 +178,9 @@ class Firestore:
                 f"Document removed from collection {collection_name} with ID {document_id}"
             )
         except Exception as ex:
-            logger.error(
+            logger.exception(
                 f"Error removing document from collection {collection_name} with ID {document_id}"
             )
-            logger.debug(str(ex))
             raise ex
 
     async def get_document(self, collection_name: str, document_id: str) -> dict[str, Any] | None:
@@ -213,6 +205,5 @@ class Firestore:
             else:
                 return None
         except Exception as ex:
-            logger.error(f"Error getting document from collection {collection_name}")
-            logger.debug(str(ex))
+            logger.exception(f"Error getting document from collection {collection_name}")
             raise ex
