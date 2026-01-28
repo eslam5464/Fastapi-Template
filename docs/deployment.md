@@ -136,6 +136,69 @@ If your application uses Firebase for authentication or push notifications:
    - Clean up expired FCM tokens regularly
    - Use appropriate Firebase pricing plan
 
+#### Google Cloud Storage (GCS) Setup for Production
+
+If your application uses Google Cloud Storage:
+
+1. **Create GCS Service Account**
+
+   - Navigate to Google Cloud Console → IAM & Admin → Service Accounts
+   - Create a new service account with appropriate roles (Storage Admin or Object Admin)
+   - Generate JSON key file
+   - Store credentials securely as environment variables
+
+2. **Environment Configuration**
+
+   ```env
+   GCS_PROJECT_ID=your-project-id
+   GCS_BUCKET_NAME=your-bucket-name
+   GCS_CREDENTIALS_JSON={"type": "service_account", ...}
+   ```
+
+3. **Security Best Practices**
+
+   - Use separate service accounts per environment
+   - Grant minimum required permissions (principle of least privilege)
+   - Enable uniform bucket-level access
+   - Configure lifecycle rules for automatic cleanup
+   - Enable versioning for critical data
+   - Set up Cloud Audit Logs for monitoring
+
+#### Apple Pay (App Store Server API) Setup for Production
+
+If your application uses Apple Pay for in-app purchase verification:
+
+1. **App Store Connect Setup**
+
+   - Log in to [App Store Connect](https://appstoreconnect.apple.com)
+   - Navigate to Users and Access → Keys → App Store Connect API
+   - Generate a new API key with appropriate permissions
+   - Download the private key (`.p8` file) - this can only be downloaded once
+
+2. **Environment Configuration**
+
+   ```env
+   APPLE_PAY_STORE_PRIVATE_KEY_ID=your_key_id
+   APPLE_PAY_STORE_PRIVATE_KEY=-----KEY-----
+   APPLE_PAY_STORE_ISSUER_ID=your_issuer_id
+   APPLE_PAY_STORE_BUNDLE_ID=com.your.app.bundle
+   APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH=/path/to/AppleRootCA-G3.cer
+   ```
+
+3. **Download Apple Root Certificate**
+
+   - Download from [Apple PKI](https://www.apple.com/certificateauthority/)
+   - Use `AppleRootCA-G3.cer` for production
+   - Store securely and reference via `APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH`
+
+4. **Security Best Practices**
+
+   - Never commit private keys to version control
+   - Use secrets management (AWS Secrets Manager, HashiCorp Vault, etc.)
+   - Rotate keys periodically
+   - Monitor for unauthorized transaction verification attempts
+   - Implement server-side receipt validation
+
 ### Security Considerations
 
 - **Secret Key**: Generate a cryptographically secure secret key
@@ -245,7 +308,7 @@ services:
       - app-network
 
   db:
-    image: postgres:15-alpine
+    image: postgres:18-alpine
     container_name: fastapi-db
     restart: unless-stopped
     environment:

@@ -21,21 +21,27 @@ This API template includes the following services:
 
 ### Core Services
 
-- **Authentication** - JWT-based user authentication
+- **Authentication** - JWT-based user authentication with token blacklisting
 - **User Management** - User registration and profile management
+- **Rate Limiting** - Redis-based sliding window rate limiting with microsecond precision
+- **Caching** - High-performance Redis caching with shared connection pooling
 
 ### Integrated Services
 
 - **BackBlaze B2 Cloud Storage** - File storage and management service (available as a service layer, can be integrated into custom endpoints)
+- **Google Cloud Storage (GCS)** - GCS bucket integration for file management (available as a service layer)
 - **Firebase Authentication** - User authentication and management via Firebase (available as a service layer)
 - **Firebase Cloud Messaging** - Push notification service for mobile and web applications (available as a service layer)
 - **Firestore Database** - NoSQL document database for flexible data storage (available as a service layer)
+- **Apple Pay** - App Store Server API integration for in-app purchase verification (available as a service layer)
 
 For integration examples:
 
 - [BackBlaze B2 Integration](./development.md#backblaze-b2-cloud-storage-integration)
+- [Google Cloud Storage Integration](./development.md#google-cloud-storage-gcs-integration)
 - [Firebase Integration](./development.md#firebase-authentication--messaging-integration)
 - [Firestore Integration](./development.md#firestore-nosql-database-integration)
+- [Apple Pay Integration](./development.md#apple-pay-app-store-server-api-integration)
 
 ## Authentication
 
@@ -49,8 +55,8 @@ The API uses JWT (JSON Web Token) authentication with the following flow:
 
 ### Token Types
 
-- **Access Token**: Short-lived (30 minutes by default), used for API requests
-- **Refresh Token**: Long-lived (7 days by default), used to get new access tokens
+- **Access Token**: Short-lived (1 hour by default), used for API requests
+- **Refresh Token**: Long-lived (24 hours by default), used to get new access tokens
 
 ## API Endpoints
 
@@ -156,6 +162,70 @@ Get a new access token using a refresh token.
 
 - `401 Unauthorized`: Invalid or expired refresh token
 
+#### POST /api/v1/auth/logout
+
+Revoke the current access token. After logout, the token cannot be used again.
+
+**Headers**:
+
+```text
+Authorization: Bearer <access_token>
+```
+
+**Response** (200 OK):
+
+```json
+{
+  "message": "Successfully logged out",
+  "revoked_at": "2025-01-19T10:30:00Z"
+}
+```
+
+**Error Responses**:
+
+- `401 Unauthorized`: Invalid or missing token
+
+**Example Request**:
+
+```bash
+curl -X POST "http://localhost:8799/api/v1/auth/logout" \
+  -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
+```
+
+**Note**: This endpoint uses token blacklisting via Redis. Revoked tokens are stored until their natural expiration time, after which they are automatically cleaned up.
+
+### Health Endpoints
+
+#### GET /health
+
+Check the health status of the API and its dependencies.
+
+**Response** (200 OK):
+
+```json
+{
+  "status": "healthy",
+  "timestamp": "2025-01-19T10:30:00Z",
+  "version": "0.1.0"
+}
+```
+
+**Response** (503 Service Unavailable):
+
+```json
+{
+  "status": "unhealthy",
+  "error": "Database connection failed",
+  "timestamp": "2025-01-19T10:30:00Z"
+}
+```
+
+**Example Request**:
+
+```bash
+curl -X GET "http://localhost:8799/health"
+```
+
 ### User Endpoints
 
 #### GET /api/v1/users/me
@@ -172,7 +242,7 @@ Authorization: Bearer <access_token>
 
 ```json
 {
-  "id": "123e4567-e89b-12d3-a456-426614174000",
+  "id": 1,
   "username": "johndoe",
   "email": "john@example.com",
   "first_name": "John",
@@ -200,7 +270,7 @@ curl -X GET "http://localhost:8799/api/v1/users/me" \
 
 ```json
 {
-  "id": "uuid",
+  "id": "integer (auto-increment)",
   "username": "string (unique, 3-50 characters)",
   "email": "string (valid email, unique)",
   "first_name": "string (1-50 characters)",
@@ -300,11 +370,58 @@ For 422 status codes, the response includes field-specific errors:
 
 ## Rate Limiting
 
-Currently, the API does not implement rate limiting, but it can be added using middleware. Recommended limits for production:
+The API implements production-ready rate limiting using Redis with a sliding window algorithm and microsecond precision.
 
-- Authentication endpoints: 5 requests per minute
-- General endpoints: 100 requests per minute
-- User-specific endpoints: 60 requests per minute
+### Rate Limit Tiers
+
+| Endpoint Type                        | Limit    | Window | Description          |
+| ------------------------------------ | -------- | ------ | -------------------- |
+| Authentication (`/login`, `/signup`) | 10 req   | 1 min  | Strict limit per IP  |
+| General API                          | 100 req  | 1 min  | Default limit per IP |
+| Public endpoints                     | 1000 req | 1 min  | Lenient limit per IP |
+| Authenticated user endpoints         | 300 req  | 1 min  | Per user ID          |
+
+### Rate Limit Response Headers
+
+All rate-limited endpoints include these headers:
+
+```http
+X-RateLimit-Limit: 100          # Maximum requests allowed
+X-RateLimit-Remaining: 73       # Requests remaining in window
+X-RateLimit-Reset: 1701234567   # Unix timestamp when limit resets
+```
+
+### Rate Limit Exceeded Response
+
+When the limit is exceeded, clients receive HTTP 429:
+
+```http
+HTTP/1.1 429 Too Many Requests
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1701234567
+```
+
+```json
+{
+  "detail": "Rate limit exceeded. Please slow down your requests."
+}
+```
+
+### Configuration
+
+Rate limiting can be configured via environment variables:
+
+```env
+RATE_LIMIT_ENABLED=true     # Enable/disable rate limiting
+RATE_LIMIT_DEFAULT=100      # General API endpoints
+RATE_LIMIT_WINDOW=60        # Time window in seconds
+RATE_LIMIT_STRICT=10        # Authentication endpoints
+RATE_LIMIT_LENIENT=1000     # Public endpoints
+RATE_LIMIT_USER=300         # Authenticated user endpoints
+```
+
+**Note**: Rate limiting requires Redis. If Redis is unavailable, the system fails open (allows requests) to prevent service disruption
 
 ## API Versioning
 

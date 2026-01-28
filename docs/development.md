@@ -1435,6 +1435,331 @@ async def update_user_preferences(
 - **Data Integrity**: When ACID compliance is required
 - **Complex Queries**: JOINs, aggregations, full-text search
 
+### Google Cloud Storage (GCS) Integration
+
+The template includes Google Cloud Storage integration for file management as an alternative to BackBlaze B2.
+
+#### GCS Setup
+
+1. **Create GCS Service Account**
+
+   - Go to [Google Cloud Console](https://console.cloud.google.com/)
+   - Navigate to IAM & Admin → Service Accounts
+   - Create a new service account with Storage Admin role
+   - Generate and download JSON key
+
+2. **Configure Credentials**
+
+Add to your `.env` file:
+
+```env
+GCS_PROJECT_ID=your-project-id
+GCS_BUCKET_NAME=your-bucket-name
+GCS_CREDENTIALS_JSON={"type": "service_account", "project_id": "...", ...}
+```
+
+#### GCS Usage Example
+
+```python
+from app.services.gcs import GoogleCloudStorage
+
+# Initialize GCS client
+gcs_client = GoogleCloudStorage(
+    project_id="your-project-id",
+    credentials_json=settings.gcs_credentials_json
+)
+
+# Select a bucket
+gcs_client.select_bucket("my-bucket-name")
+
+# Upload a file
+blob = gcs_client.upload_file(
+    local_file_path="/path/to/local/file.pdf",
+    destination_blob_name="documents/file.pdf",
+    content_type="application/pdf"
+)
+
+# Download a file
+gcs_client.download_file(
+    source_blob_name="documents/file.pdf",
+    destination_file_path="/path/to/download/file.pdf"
+)
+
+# Get public URL (for public buckets)
+public_url = gcs_client.get_public_url("documents/file.pdf")
+
+# Generate signed URL (for private buckets)
+signed_url = gcs_client.generate_signed_url(
+    blob_name="documents/file.pdf",
+    expiration_minutes=60
+)
+
+# Delete a file
+gcs_client.delete_file("documents/file.pdf")
+
+# List files in bucket
+files = gcs_client.list_files(prefix="documents/")
+for file in files:
+    print(f"File: {file.name}, Size: {file.size}")
+```
+
+#### GCS Integration in Endpoints
+
+```python
+from fastapi import APIRouter, Depends, UploadFile, File
+from app.services.gcs import GoogleCloudStorage
+from app.core.config import settings
+
+router = APIRouter()
+
+def get_gcs_client() -> GoogleCloudStorage:
+    """Dependency to get GCS client"""
+    return GoogleCloudStorage(
+        project_id=settings.gcs_project_id,
+        credentials_json=settings.gcs_credentials_json
+    ).select_bucket(settings.gcs_bucket_name)
+
+@router.post("/upload")
+async def upload_file(
+    file: UploadFile = File(...),
+    gcs: GoogleCloudStorage = Depends(get_gcs_client)
+):
+    # Save uploaded file temporarily
+    temp_path = f"/tmp/{file.filename}"
+    with open(temp_path, "wb") as buffer:
+        content = await file.read()
+        buffer.write(content)
+
+    # Upload to GCS
+    blob = gcs.upload_file(
+        local_file_path=temp_path,
+        destination_blob_name=f"uploads/{file.filename}"
+    )
+
+    return {
+        "file_name": blob.name,
+        "size": blob.size,
+        "url": gcs.get_public_url(blob.name)
+    }
+```
+
+### Apple Pay (App Store Server API) Integration
+
+The template includes Apple Pay integration for verifying in-app purchases and subscriptions via the App Store Server API.
+
+#### Apple Pay Setup
+
+1. **App Store Connect Configuration**
+
+   - Log in to [App Store Connect](https://appstoreconnect.apple.com)
+   - Navigate to Users and Access → Keys → App Store Connect API
+   - Generate a new API key and download the `.p8` private key file
+
+2. **Download Apple Root Certificate**
+
+   - Download `AppleRootCA-G3.cer` from [Apple PKI](https://www.apple.com/certificateauthority/)
+   - Store it securely in your project or server
+
+3. **Configure Credentials**
+
+Add to your `.env` file:
+
+```env
+APPLE_PAY_STORE_PRIVATE_KEY_ID=YOUR_KEY_ID
+APPLE_PAY_STORE_PRIVATE_KEY=-----KEY-----
+APPLE_PAY_STORE_ISSUER_ID=YOUR_ISSUER_ID
+APPLE_PAY_STORE_BUNDLE_ID=com.yourcompany.yourapp
+APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH=/path/to/AppleRootCA-G3.cer
+```
+
+#### Apple Pay Usage Example
+
+```python
+from app.services.payments.apple_pay import ApplePay
+from app.schemas.apple_pay import ApplePayStoreCredentials
+
+# Initialize Apple Pay client
+credentials = ApplePayStoreCredentials(
+    private_key_id=settings.apple_pay_store_private_key_id,
+    private_key=settings.apple_pay_store_private_key,
+    issuer_id=settings.apple_pay_store_issuer_id,
+    bundle_id=settings.apple_pay_store_bundle_id,
+    root_certificate_path=settings.apple_pay_store_root_certificate_path
+)
+apple_pay = ApplePay(credentials)
+
+# Verify a transaction
+transaction_id = "1000000123456789"
+try:
+    transaction_info = apple_pay.get_transaction_info(transaction_id)
+    print(f"Product ID: {transaction_info.product_id}")
+    print(f"Purchase Date: {transaction_info.purchase_date}")
+    print(f"Status: {transaction_info.status}")
+except ApplePayVerificationError as e:
+    print(f"Verification failed: {e}")
+
+# Get subscription status
+original_transaction_id = "1000000123456789"
+subscription_status = apple_pay.get_subscription_status(original_transaction_id)
+for subscription in subscription_status.data:
+    print(f"Subscription Group: {subscription.subscription_group_identifier}")
+    print(f"Status: {subscription.status}")
+
+# Get transaction history
+history = apple_pay.get_transaction_history(original_transaction_id)
+for transaction in history.signed_transactions:
+    print(f"Transaction: {transaction.transaction_id}")
+```
+
+#### Apple Pay Integration in Endpoints
+
+```python
+from fastapi import APIRouter, Depends, HTTPException
+from app.services.payments.apple_pay import ApplePay
+from app.core.config import settings
+from app.core.exceptions.apple_pay import ApplePayVerificationError
+
+router = APIRouter()
+
+def get_apple_pay_client() -> ApplePay:
+    """Dependency to get Apple Pay client"""
+    return ApplePay(settings.apple_pay_credentials)
+
+@router.post("/verify-purchase")
+async def verify_purchase(
+    transaction_id: str,
+    apple_pay: ApplePay = Depends(get_apple_pay_client)
+):
+    try:
+        transaction = apple_pay.get_transaction_info(transaction_id)
+        return {
+            "valid": True,
+            "product_id": transaction.product_id,
+            "purchase_date": transaction.purchase_date,
+            "expires_date": transaction.expires_date
+        }
+    except ApplePayVerificationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/subscription-status/{original_transaction_id}")
+async def check_subscription(
+    original_transaction_id: str,
+    apple_pay: ApplePay = Depends(get_apple_pay_client)
+):
+    try:
+        status = apple_pay.get_subscription_status(original_transaction_id)
+        return {
+            "active": any(s.status == "ACTIVE" for s in status.data),
+            "subscriptions": [
+                {
+                    "group_id": s.subscription_group_identifier,
+                    "status": s.status
+                }
+                for s in status.data
+            ]
+        }
+    except ApplePayVerificationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+```
+
+#### Apple Pay Use Cases
+
+- **In-App Purchase Verification**: Verify one-time purchases from iOS apps
+- **Subscription Management**: Check subscription status and renewal info
+- **Transaction History**: Retrieve complete purchase history for a user
+- **Refund Detection**: Identify refunded transactions
+- **Server-to-Server Notifications**: Handle App Store Server Notifications (webhooks)
+
+### Security Middleware
+
+The template includes several security middleware components that are automatically applied to all requests.
+
+#### CSRF Protection
+
+CSRF (Cross-Site Request Forgery) protection is implemented via middleware for state-changing requests.
+
+**How it works:**
+
+- Validates CSRF tokens for POST, PUT, DELETE, PATCH requests
+- Tokens are validated against the session or a secure cookie
+- Safe methods (GET, HEAD, OPTIONS) are exempt
+
+**Frontend Integration:**
+
+```javascript
+// Include CSRF token in requests
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
+fetch('/api/v1/users/me', {
+  method: 'PUT',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRF-Token': csrfToken
+  },
+  body: JSON.stringify(userData)
+});
+```
+
+#### Security Headers Middleware
+
+Automatically adds security headers to all responses:
+
+- `X-Frame-Options: DENY` - Prevents clickjacking
+- `X-Content-Type-Options: nosniff` - Prevents MIME type sniffing
+- `X-XSS-Protection: 1; mode=block` - XSS filter (legacy browsers)
+- `Strict-Transport-Security` - HSTS for HTTPS enforcement (production only)
+
+#### Rate Limit Headers Middleware
+
+Adds rate limiting information to responses (see [Rate Limiting](#rate-limiting) section).
+
+### Token Blacklisting (Logout)
+
+The template implements secure token revocation using Redis-based blacklisting.
+
+#### How Token Blacklisting Works
+
+```python
+from app.services.cache.token_blacklist import token_blacklist
+
+# When user logs out, the token is added to blacklist
+async def logout(token: str, user_id: int):
+    # Add token to blacklist with TTL matching token expiration
+    await token_blacklist.add_token(token, user_id)
+
+# During authentication, check if token is blacklisted
+async def validate_token(token: str) -> bool:
+    if await token_blacklist.is_blacklisted(token):
+        raise HTTPException(status_code=401, detail="Token has been revoked")
+    return True
+```
+
+#### Blacklist Features
+
+- **Automatic Expiration**: Blacklisted tokens are automatically removed after their natural expiration time
+- **User-Based Revocation**: Revoke all tokens for a specific user (e.g., password change)
+- **Memory Efficient**: Uses Redis sorted sets with automatic cleanup
+- **Graceful Degradation**: If Redis is unavailable, tokens are still validated by expiration
+
+### Cache Decorators
+
+The template includes caching decorators for easy function-level caching.
+
+```python
+from app.services.cache.decorators import cached, cache_invalidate
+
+# Cache function result for 5 minutes
+@cached(ttl=300, key_prefix="user")
+async def get_user_profile(user_id: int) -> dict:
+    # Expensive database query
+    return await fetch_user_from_db(user_id)
+
+# Invalidate cache when data changes
+@cache_invalidate(key_pattern="user:*")
+async def update_user_profile(user_id: int, data: dict):
+    await save_user_to_db(user_id, data)
+```
+
 ### Custom Middleware
 
 ```python

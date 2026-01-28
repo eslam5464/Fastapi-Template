@@ -5,13 +5,13 @@ A production-ready FastAPI project template with modern best practices, async su
 ## ✨ Features
 
 - **🚀 FastAPI** - Modern, fast web framework for building APIs
-- **🔐 JWT Authentication** - Secure token-based authentication system
+- **🔐 JWT Authentication** - Secure token-based authentication with token blacklisting
 - **📊 PostgreSQL** - Async database integration with SQLAlchemy 2.0
 - **🗄️ Database Migrations** - Alembic for schema management
 - **🏗️ Clean Architecture** - Repository pattern and dependency injection
 - **📝 Automatic API Documentation** - Interactive Swagger UI and ReDoc
-- **🔒 Security** - Password hashing, CORS, and security middleware
-- **📊 Logging** - Structured logging with Loguru
+- **🔒 Security** - Password hashing with Argon2, CORS, CSRF, and security headers middleware
+- **📊 Logging** - Structured logging with Loguru and centralized log aggregation
 - **⚡ Environment Management** - Multi-environment configuration
 - **🧪 Development Tools** - Pre-commit hooks, code formatting with Black
 - **☁️ Cloud Storage Integration** - BackBlaze B2 cloud storage service support
@@ -19,6 +19,7 @@ A production-ready FastAPI project template with modern best practices, async su
 - **⚡ Redis Caching** - High-performance caching with shared connection pooling
 - **🚦 Rate Limiting** - Sliding window rate limiting with microsecond precision
 - **🌩️ Google Cloud Storage** - GCS bucket integration for file management
+- **💳 Apple Pay** - App Store Server API integration for in-app purchase verification
 - **🧪 Comprehensive Testing** - ~90% test coverage with 510+ passing tests
 - **⚙️ Background Jobs** - Celery with Redis for async task processing and scheduled jobs
 
@@ -136,7 +137,8 @@ The template includes a complete JWT-based authentication system:
 
 - User registration and login
 - Access and refresh tokens
-- Password hashing with bcrypt
+- Password hashing with Argon2 (via pwdlib)
+- Token blacklisting for secure logout
 - Protected routes with dependency injection
 
 ### Example Usage

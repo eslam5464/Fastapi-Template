@@ -34,7 +34,8 @@ app/
 │   └── v1/                 # API version 1
 │       ├── router.py       # Version router
 │       ├── deps/           # Dependencies
-│       │   └── auth.py     # Authentication dependencies
+│       │   ├── auth.py     # Authentication dependencies
+│       │   └── rate_limit.py # Rate limiting dependencies
 │       └── endpoints/      # Endpoint modules
 │           ├── auth.py     # Authentication endpoints
 │           └── user.py     # User endpoints
@@ -42,10 +43,19 @@ app/
 │   ├── config.py           # Configuration management
 │   ├── db.py               # Database connection
 │   ├── auth.py             # Authentication utilities
-│   ├── exceptions.py       # Custom exceptions
+│   ├── constants.py        # Application constants and enums
 │   ├── logger.py           # Logging configuration
-│   ├── responses.py        # Standard responses
-│   └── field_sizes.py      # Database field constraints
+│   ├── responses.py        # Standard API responses
+│   ├── types.py            # TypedDict definitions
+│   ├── utils.py            # Utility functions
+│   └── exceptions/         # Custom exceptions (folder)
+│       ├── base.py         # Base exception classes
+│       ├── http_exceptions.py  # HTTP-related exceptions
+│       ├── rate_limiter.py # Rate limiting exceptions
+│       ├── firebase_exceptions.py # Firebase exceptions
+│       ├── gcs_exceptions.py # Google Cloud Storage exceptions
+│       ├── back_blaze_exceptions.py # BackBlaze B2 exceptions
+│       └── apple_pay.py    # Apple Pay exceptions
 ├── models/                 # Data models (SQLAlchemy)
 │   ├── base.py             # Base model class
 │   └── user.py             # User model
@@ -53,19 +63,37 @@ app/
 │   ├── base.py             # Base schema classes
 │   ├── user.py             # User schemas
 │   ├── token.py            # Token schemas
-│   └── back_blaze_bucket.py # BackBlaze B2 schemas
+│   ├── health_check.py     # Health check schemas
+│   ├── back_blaze_bucket.py # BackBlaze B2 schemas
+│   ├── google_bucket.py    # Google Cloud Storage schemas
+│   ├── firebase.py         # Firebase schemas
+│   └── apple_pay.py        # Apple Pay schemas
 ├── repos/                  # Repository layer
 │   ├── base.py             # Base repository class
 │   └── user.py             # User repository
 ├── services/               # Business logic and external services
 │   ├── back_blaze_b2.py    # BackBlaze B2 cloud storage service
+│   ├── gcs.py              # Google Cloud Storage service
+│   ├── firebase.py         # Firebase authentication & messaging
+│   ├── firestore.py        # Firestore NoSQL database
+│   ├── cache/              # Caching services
+│   │   ├── base.py         # Redis connection base
+│   │   ├── manager.py      # Cache manager service
+│   │   ├── rate_limiter.py # Rate limiting service
+│   │   ├── token_blacklist.py # Token blacklist for logout
+│   │   └── decorators.py   # Caching decorators
+│   ├── payments/           # Payment services
+│   │   └── apple_pay.py    # Apple Pay App Store Server API
 │   └── task_queue/         # Celery background jobs
 │       ├── __init__.py     # Celery app configuration
 │       ├── celery_config.py # Beat schedule configuration
 │       └── tasks/          # Task implementations
 │           └── user_tasks.py # User seeding tasks
 ├── middleware/             # Custom middleware
-│   └── logging.py          # Request logging middleware
+│   ├── logging.py          # Request logging middleware
+│   ├── csrf.py             # CSRF protection middleware
+│   ├── rate_limit.py       # Rate limit headers middleware
+│   └── security_headers.py # Security headers middleware
 └── alembic/                # Database migrations
     ├── env.py              # Alembic environment
     ├── script.py.mako      # Migration template
@@ -79,7 +107,7 @@ app/
 **Responsibility**: Handle HTTP requests and responses
 
 - **Routes**: Define API endpoints and their grouping
-- **Dependencies**: Provide authentication, database sessions, etc.
+- **Dependencies**: Provide authentication, database sessions, rate limiting, etc.
 - **Endpoints**: Implement specific API operations
 - **Validation**: Input validation using Pydantic schemas
 
@@ -109,22 +137,38 @@ async def create_user(
 **Responsibility**: Data structure definitions
 
 - **SQLAlchemy Models**: Database table representations
-- **Base Model**: Common functionality (timestamps, UUID)
+- **Base Model**: Common functionality (timestamps, auto-increment ID)
 - **Relationships**: Define model associations
 
 ```python
 # Base model with common fields
 class Base(DeclarativeBase):
-    id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    __abstract__ = True
+
+    id: Mapped[int] = mapped_column(
+        BigInteger(),
+        autoincrement=True,
         primary_key=True,
-        default=uuid.uuid4
+        index=True
     )
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(
-        default=datetime.utcnow,
-        onupdate=datetime.utcnow
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now()
     )
+    updated_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now()
+    )
+
+    @declared_attr.directive
+    def __tablename__(cls) -> str:
+        # Auto-generates table name from class name (e.g., UserProfile -> user_profile)
+        return re.sub(r"(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
+
+    def to_dict(self, exclude_keys: set[str] | None = None) -> dict[str, Any]:
+        """Convert model instance to dictionary with serializable fields."""
+        ...
 ```
 
 ### 4. Schemas Layer (`app/schemas/`)
@@ -575,9 +619,10 @@ class NotFoundError(BaseAPIException):
 
 ### Authentication Security
 
-- **Password Hashing**: Bcrypt with salt
-- **JWT Tokens**: Signed with secret key
-- **Token Expiration**: Automatic token invalidation
+- **Password Hashing**: Argon2 via pwdlib (modern, secure alternative to bcrypt)
+- **JWT Tokens**: Signed with HS256 algorithm using secret key
+- **Token Expiration**: Automatic token invalidation (1 hour access, 24 hours refresh)
+- **Token Blacklisting**: Redis-based token revocation for logout functionality
 
 ### Authorization Levels
 
@@ -590,6 +635,9 @@ class NotFoundError(BaseAPIException):
 - **Input Validation**: Pydantic schema validation
 - **SQL Injection**: SQLAlchemy ORM protection
 - **CORS Policy**: Configured origin restrictions
+- **CSRF Protection**: Middleware-based CSRF token validation
+- **Security Headers**: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
+- **Rate Limiting**: Redis-based sliding window algorithm with microsecond precision
 
 ## Deployment Architecture
 

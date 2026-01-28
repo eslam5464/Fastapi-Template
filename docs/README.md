@@ -38,6 +38,13 @@ Complete guide for local development environment setup and daily development tas
 - Code quality tools (Black, pre-commit hooks)
 - Testing strategies and execution
 - Debugging techniques
+- Rate limiting configuration
+- BackBlaze B2, Firebase, Firestore integration guides
+- Google Cloud Storage (GCS) integration
+- Apple Pay (App Store Server API) integration
+- Security middleware (CSRF, security headers)
+- Token blacklisting and logout
+- Cache decorators
 - Development best practices
 - Common troubleshooting
 
@@ -51,13 +58,14 @@ Complete guide for local development environment setup and daily development tas
 
 Comprehensive API documentation including all endpoints, request/response formats, and examples:
 
-- Authentication flow (login, signup, refresh tokens)
+- Authentication flow (login, signup, refresh tokens, logout)
 - User management endpoints
+- Health check endpoint
 - Request/response schemas
 - Error handling and status codes
 - Authentication implementation
 - CORS configuration
-- Rate limiting considerations
+- Rate limiting (implemented with Redis sliding window)
 - Complete usage examples (curl, Python, JavaScript)
 
 **Best for**: Frontend developers, API consumers, integration developers, testing APIs.
@@ -119,9 +127,15 @@ This template is built with:
 - **Alembic** - Database migrations
 - **Pydantic** - Data validation
 - **JWT** - Authentication
-- **Loguru** - Structured logging
+- **pwdlib** - Password hashing with Argon2
+- **Loguru** - Structured logging with centralized aggregation
+- **Redis** - Caching and rate limiting
+- **Celery** - Background task processing
 - **uvicorn/gunicorn** - ASGI server
 - **B2SDK** - BackBlaze B2 cloud storage integration
+- **Firebase Admin** - Firebase authentication, FCM, and Firestore
+- **Google Cloud Storage** - GCS bucket integration
+- **App Store Server API** - Apple Pay in-app purchase verification
 
 ---
 
