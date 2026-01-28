@@ -61,7 +61,7 @@ class Firebase:
             ValueError: If the Firebase app is not initialized.
         """
         if self._default_app is None:
-            logger.error("Firebase app not initialized")
+            logger.critical("Firebase app not initialized")
             raise ValueError("Firebase app not initialized")
 
         return self._default_app
@@ -85,7 +85,7 @@ class Firebase:
         def _get_user():
             return auth.get_user(
                 uid=user_id,
-                app=self._default_app,
+                app=self.app,
             )
 
         try:
@@ -119,7 +119,7 @@ class Firebase:
         def _get_user():
             return auth.get_user_by_email(
                 email=email,
-                app=self._default_app,
+                app=self.app,
             )
 
         try:
@@ -153,7 +153,7 @@ class Firebase:
         def _get_user():
             return auth.get_user_by_phone_number(
                 phone_number=phone_number,
-                app=self._default_app,
+                app=self.app,
             )
 
         try:
@@ -184,7 +184,7 @@ class Firebase:
         """
 
         def _list_users():
-            return auth.list_users(app=self._default_app, max_results=max_results)
+            return auth.list_users(app=self.app, max_results=max_results)
 
         try:
             return await asyncio.to_thread(_list_users)
@@ -217,7 +217,7 @@ class Firebase:
             return auth.create_custom_token(
                 uid=uid,
                 developer_claims=additional_claims,
-                app=self._default_app,
+                app=self.app,
             )
 
         try:
@@ -248,7 +248,7 @@ class Firebase:
         def _verify_token():
             return auth.verify_id_token(
                 id_token=id_token,
-                app=self._default_app,
+                app=self.app,
             )
 
         try:
@@ -284,7 +284,7 @@ class Firebase:
             return messaging.send(
                 messaging.Message(token=registration_token, data={"test": "validation"}),
                 dry_run=True,
-                app=self._default_app,
+                app=self.app,
             )
 
         try:
@@ -331,7 +331,7 @@ class Firebase:
             )
             return messaging.send(
                 message=message,
-                app=self._default_app,
+                app=self.app,
             )
 
         try:
@@ -374,7 +374,7 @@ class Firebase:
                 )
                 return messaging.send_each_for_multicast(
                     multicast_message=message,
-                    app=self._default_app,
+                    app=self.app,
                 )
 
             try:
