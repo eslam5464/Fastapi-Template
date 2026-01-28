@@ -656,8 +656,8 @@ class TestFirebaseTokenOperations:
             }
             result = await firebase.verify_id_token("valid_token")
 
-            assert "uid" in result
-            assert "email" in result
+            assert result.uid is not None
+            assert result.email is not None
 
     @pytest.mark.anyio
     @patch("app.services.firebase.firebase_admin.get_app")

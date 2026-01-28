@@ -9,7 +9,7 @@ from firebase_admin.exceptions import FirebaseError
 from loguru import logger
 
 from app.core.config import settings
-from app.schemas.firebase import FirebaseServiceAccount
+from app.schemas.firebase import DecodedFirebaseTokenResponse, FirebaseServiceAccount
 
 
 @dataclass
@@ -99,6 +99,60 @@ class Firebase:
         except FirebaseError as err:
             logger.exception("Error getting user by ID")
             raise ConnectionError("Unknown error getting user by ID")
+
+    async def create_user(
+        self,
+        email: str,
+        uid: str | None = None,
+        display_name: str | None = None,
+        email_verified: bool = False,
+        phone_number: str | None = None,
+        photo_url: str | None = None,
+        password: str | None = None,
+        disabled: bool = False,
+    ) -> UserRecord:
+        """
+        Create a new user
+
+        Args:
+            email (str): The user's primary email
+            uid (str | None): User ID to assign to the newly created user (optional).
+            display_name (str | None): The user's display name (optional)..
+            email_verified (bool): A boolean indicating whether or not the user's primary email is verified (optional).
+            phone_number (str | None): The user's primary phone number (optional).
+            photo_url (str | None): The user's photo URL (optional).
+            password (str | None): The user's raw, unhashed password. (optional).
+            disabled (bool): A boolean indicating whether or not the user account is disabled (optional).
+
+        Returns:
+            UserRecord: The newly created user record
+
+        Raises:
+            ValueError: If any of the provided fields are malformed
+            ConnectionError: If there is an error creating the user
+        """
+
+        def _create_user():
+            return auth.create_user(
+                uid=uid,
+                display_name=display_name,
+                email=email,
+                email_verified=email_verified,
+                phone_number=phone_number,
+                photo_url=photo_url,
+                password=password,
+                disabled=disabled,
+                app=self.app,
+            )
+
+        try:
+            return await asyncio.to_thread(_create_user)
+        except ValueError as err:
+            logger.exception("Error creating user, one of the provided fields is malformed")
+            raise err
+        except FirebaseError as err:
+            logger.exception("Error creating user")
+            raise ConnectionError("Unknown error creating user")
 
     async def get_user_by_email(self, email: str) -> UserRecord:
         """
@@ -229,7 +283,7 @@ class Firebase:
             logger.exception("Error creating custom ID token")
             raise ConnectionError("Unknown error creating custom ID token")
 
-    async def verify_id_token(self, id_token: str) -> dict:
+    async def verify_id_token(self, id_token: str) -> DecodedFirebaseTokenResponse:
         """
         Verify ID token
 
@@ -237,7 +291,7 @@ class Firebase:
             id_token (str): The ID token to verify
 
         Returns:
-            dict: The decoded token claims
+            DecodeFirebaseTokenResponse: The decoded token claims
 
         Raises:
             ValueError: If ID token is malformed
@@ -396,3 +450,67 @@ class Firebase:
                 logger.exception("Unknown error sending push notification to multiple devices")
 
         return success_count
+
+    async def set_custom_claims(self, uid: str, claims: dict) -> None:
+        """
+        Set custom claims for a user
+
+        Args:
+            uid (str): The user ID to set the claims for the user
+            claims (dict): The custom claims to set for the user
+
+        Returns:
+            None
+
+        Raises:
+            ValueError: If UID is malformed
+            ConnectionError: If there is an error setting the custom claims
+        """
+
+        def _set_claims():
+            return auth.set_custom_user_claims(
+                uid=uid,
+                custom_claims=claims,
+                app=self.app,
+            )
+
+        try:
+            await asyncio.to_thread(_set_claims)
+        except ValueError as err:
+            logger.exception("Error setting custom claims, UID is malformed")
+            raise err
+        except FirebaseError as err:
+            logger.exception("Error setting custom claims")
+            raise ConnectionError("Unknown error setting custom claims")
+
+    async def create_custom_token(self, uid: str, additional_claims: dict | None = None) -> bytes:
+        """
+        Create a custom ID token for a user
+
+        Args:
+            uid (str): The user ID for whom to create the token
+            additional_claims (dict | None): Additional claims to include in the token
+
+        Returns:
+            id_token (bytes): The created custom ID token
+
+        Raises:
+            ValueError: If UID is malformed
+            ConnectionError: If there is an error creating the custom ID token
+        """
+
+        def _create_token() -> bytes:
+            return auth.create_custom_token(
+                uid=uid,
+                developer_claims=additional_claims,
+                app=self.app,
+            )
+
+        try:
+            return await asyncio.to_thread(_create_token)
+        except ValueError as err:
+            logger.exception("Error creating custom ID token, UID is malformed")
+            raise err
+        except FirebaseError as err:
+            logger.exception("Error creating custom ID token")
+            raise ConnectionError("Unknown error creating custom ID token")
