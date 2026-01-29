@@ -100,11 +100,12 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             except Exception:
                 json_body = ""
 
-            logger.error(
+            error_msg = (
                 f"[{request_id}] {request.method} {request.url.path} - "
-                f"Error: {str(e)} - Time: {process_time:.3f}s",
-                request_body=json_body,
-                request_query_params=dict(request.query_params),
-                request_path_params=request.path_params,
+                f"Error: {str(e)} - Time: {process_time:.3f}s\n"
+                f"Request Body: {json_body}\n"
+                f"Query Params: {dict(request.query_params)}\n"
+                f"Path Params: {request.path_params}"
             )
+            logger.error(error_msg)
             raise e
