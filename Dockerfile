@@ -71,4 +71,4 @@ HEALTHCHECK \
     CMD wget --quiet --output-document=/dev/null --timeout=8 http://127.0.0.1:8080/ || exit 1
 
 # Use exec form for better signal handling
-CMD ["/bin/sh", "-c", "alembic upgrade head && python main.py"]
+CMD ["/bin/sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8799 --forwarded-allow-ips '*' --proxy-headers --workers ${WORKERS_COUNT}"]
