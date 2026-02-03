@@ -60,6 +60,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         version_table_schema=get_schema_name(),
+        include_schemas=True,
         include_name=include_name,
     )
 
@@ -76,8 +77,11 @@ def do_run_migrations(connection: Connection) -> None:
     context.configure(
         connection=connection,
         target_metadata=target_metadata,
+        include_schemas=True,
         include_name=include_name,
         version_table_schema=get_schema_name(),
+        compare_type=True,
+        compare_server_default=True,
     )
     inspector: Inspector = inspect(connection)
 
