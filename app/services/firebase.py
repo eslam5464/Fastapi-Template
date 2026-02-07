@@ -300,9 +300,11 @@ class Firebase:
         """
 
         def _verify_token():
-            return auth.verify_id_token(
-                id_token=id_token,
-                app=self.app,
+            return DecodedFirebaseTokenResponse.model_validate(
+                auth.verify_id_token(
+                    id_token=id_token,
+                    app=self.app,
+                )
             )
 
         try:

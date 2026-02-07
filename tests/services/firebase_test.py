@@ -13,6 +13,7 @@ from firebase_admin.exceptions import FirebaseError
 from firebase_admin.messaging import BatchResponse, SendResponse
 
 from app.schemas import FirebaseServiceAccount
+from app.schemas.firebase import DecodedFirebaseTokenResponse
 from app.services.firebase import Firebase
 
 
@@ -650,14 +651,26 @@ class TestFirebaseTokenOperations:
         firebase = Firebase(firebase_service_account)
 
         with patch("asyncio.to_thread", new_callable=AsyncMock) as mock_to_thread:
-            mock_to_thread.return_value = {
-                "uid": faker_instance.uuid4(),
-                "email": faker_instance.email(),
-            }
+            mock_to_thread.return_value = DecodedFirebaseTokenResponse(
+                uid=faker_instance.uuid4(),
+                email=faker_instance.email(),
+                iss=faker_instance.url(),
+                aud=faker_instance.uuid4(),
+                auth_time=int(faker_instance.unix_time()),
+                user_id=faker_instance.uuid4(),
+                sub=faker_instance.uuid4(),
+                iat=int(faker_instance.unix_time()),
+                exp=int(faker_instance.unix_time()) + 3600,
+                email_verified=faker_instance.boolean(),
+                firebase={"sign_in_provider": "password"},
+            )
             result = await firebase.verify_id_token("valid_token")
 
-            assert result.uid is not None
-            assert result.email is not None
+            assert (
+                type(result) == DecodedFirebaseTokenResponse
+            ), f"Expected DecodedFirebaseTokenResponse, got {type(result)} with value {result}"
+            assert result.uid is not None, f"{result} does not contain 'uid'"
+            assert result.email is not None, f"{result} does not contain 'email'"
 
     @pytest.mark.anyio
     @patch("app.services.firebase.firebase_admin.get_app")

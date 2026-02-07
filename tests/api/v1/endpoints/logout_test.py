@@ -35,23 +35,26 @@ class TestLogoutEndpoint:
         token_data = login_response.json()
         access_token = token_data["access_token"]
 
-        # Mock the token blacklist
-        with patch("app.api.v1.endpoints.auth.token_blacklist") as mock_blacklist:
-            mock_blacklist.revoke_token = AsyncMock(return_value=True)
+        # Mock the token blacklist (auth_service for auth validation + endpoint for revoke)
+        with patch("app.services.auth_service.token_blacklist") as mock_auth_blacklist:
+            mock_auth_blacklist.is_revoked = AsyncMock(return_value=False)
+            mock_auth_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
+            with patch("app.api.v1.endpoints.auth.token_blacklist") as mock_blacklist:
+                mock_blacklist.revoke_token = AsyncMock(return_value=True)
 
-            # Logout
-            response = await client.post(
-                "/api/v1/auth/logout",
-                headers={"Authorization": f"Bearer {access_token}"},
-            )
+                # Logout
+                response = await client.post(
+                    "/api/v1/auth/logout",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                )
 
-            assert response.status_code == 200
-            data = response.json()
-            assert data["message"] == "Successfully logged out"
-            assert data["revoked"] is True
+                assert response.status_code == 200
+                data = response.json()
+                assert data["message"] == "Successfully logged out"
+                assert data["revoked"] is True
 
-            # Verify revoke_token was called
-            mock_blacklist.revoke_token.assert_called_once()
+                # Verify revoke_token was called
+                mock_blacklist.revoke_token.assert_called_once()
 
     @pytest.mark.anyio
     async def test_logout_invalid_token(
@@ -125,7 +128,7 @@ class TestLogoutEndpoint:
         )
 
         # Mock both get_current_user (to pass auth) and token_blacklist
-        with patch("app.api.v1.deps.auth.token_blacklist") as mock_blacklist_deps:
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist_deps:
             mock_blacklist_deps.is_revoked = AsyncMock(return_value=False)
             mock_blacklist_deps.get_user_revocation_time = AsyncMock(return_value=None)
 
@@ -217,17 +220,20 @@ class TestLogoutEndpoint:
         access_token = token_data["access_token"]
 
         # Mock token_blacklist to raise an exception
-        with patch("app.api.v1.endpoints.auth.token_blacklist") as mock_blacklist:
-            mock_blacklist.revoke_token = AsyncMock(side_effect=Exception("Database error"))
+        with patch("app.services.auth_service.token_blacklist") as mock_auth_blacklist:
+            mock_auth_blacklist.is_revoked = AsyncMock(return_value=False)
+            mock_auth_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
+            with patch("app.api.v1.endpoints.auth.token_blacklist") as mock_blacklist:
+                mock_blacklist.revoke_token = AsyncMock(side_effect=Exception("Database error"))
 
-            response = await client.post(
-                "/api/v1/auth/logout",
-                headers={"Authorization": f"Bearer {access_token}"},
-            )
+                response = await client.post(
+                    "/api/v1/auth/logout",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                )
 
-            assert response.status_code == 500, f"Response: {response.text}"
-            data = response.json()
-            assert "Logout failed" in data["detail"]
+                assert response.status_code == 500, f"Response: {response.text}"
+                data = response.json()
+                assert "Logout failed" in data["detail"]
 
 
 class TestTokenRevocationIntegration:
@@ -253,19 +259,22 @@ class TestTokenRevocationIntegration:
         token_data = login_response.json()
         access_token = token_data["access_token"]
 
-        # Mock token_blacklist for logout
-        with patch("app.api.v1.endpoints.auth.token_blacklist") as mock_blacklist:
-            mock_blacklist.revoke_token = AsyncMock(return_value=True)
+        # Mock token_blacklist for logout (auth_service for auth + endpoint for revoke)
+        with patch("app.services.auth_service.token_blacklist") as mock_auth_blacklist:
+            mock_auth_blacklist.is_revoked = AsyncMock(return_value=False)
+            mock_auth_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
+            with patch("app.api.v1.endpoints.auth.token_blacklist") as mock_blacklist:
+                mock_blacklist.revoke_token = AsyncMock(return_value=True)
 
-            # Logout
-            logout_response = await client.post(
-                "/api/v1/auth/logout",
-                headers={"Authorization": f"Bearer {access_token}"},
-            )
-            assert logout_response.status_code == 200
+                # Logout
+                logout_response = await client.post(
+                    "/api/v1/auth/logout",
+                    headers={"Authorization": f"Bearer {access_token}"},
+                )
+                assert logout_response.status_code == 200
 
         # Mock token_blacklist to return True for is_revoked (token is blacklisted)
-        with patch("app.api.v1.deps.auth.token_blacklist") as mock_blacklist:
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
             mock_blacklist.is_revoked = AsyncMock(return_value=True)
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
 
@@ -300,7 +309,7 @@ class TestTokenRevocationIntegration:
         access_token = token_data["access_token"]
 
         # Mock token_blacklist to return a revocation time in the future of token's iat
-        with patch("app.api.v1.deps.auth.token_blacklist") as mock_blacklist:
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
             mock_blacklist.is_revoked = AsyncMock(return_value=False)
             # Set revocation time to now (after token was issued)
             mock_blacklist.get_user_revocation_time = AsyncMock(

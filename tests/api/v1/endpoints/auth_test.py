@@ -832,6 +832,8 @@ class TestGetCurrentUser:
         db_session: AsyncSession,
     ):
         """Test get_current_user with token for non-existent user"""
+        from unittest.mock import AsyncMock, patch
+
         from app.core.exceptions.http_exceptions import UnauthorizedException
 
         # Create a token with fake user ID
@@ -847,11 +849,15 @@ class TestGetCurrentUser:
             algorithm=settings.jwt_algorithm,
         )
 
-        with pytest.raises(UnauthorizedException) as exc_info:
-            await get_current_user(token=token, db=db_session)
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
+            mock_blacklist.is_revoked = AsyncMock(return_value=False)
+            mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
 
-        assert exc_info.value.status_code == 401
-        assert "Could not validate credentials" in str(exc_info.value.detail)
+            with pytest.raises(UnauthorizedException) as exc_info:
+                await get_current_user(token=token, db=db_session)
+
+            assert exc_info.value.status_code == 401
+            assert "User not found" in str(exc_info.value.detail)
 
     @pytest.mark.anyio
     async def test_get_current_user_wrong_secret_key(
@@ -995,11 +1001,17 @@ class TestAuthenticatedEndpoints:
         signup_data["access_token"]
         initial_refresh_token = signup_data["refresh_token"]
 
-        # 2. Refresh the token
-        refresh_response = await client.post(
-            "/api/v1/auth/refresh-token",
-            json={"refresh_token": initial_refresh_token},
-        )
+        # 2. Refresh the token (mock token_blacklist since AuthService checks it)
+        from unittest.mock import AsyncMock, patch
+
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
+            mock_blacklist.is_revoked = AsyncMock(return_value=False)
+            mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
+
+            refresh_response = await client.post(
+                "/api/v1/auth/refresh-token",
+                json={"refresh_token": initial_refresh_token},
+            )
         assert refresh_response.status_code == 200
         refresh_data = refresh_response.json()
 

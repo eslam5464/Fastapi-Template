@@ -36,7 +36,7 @@ class TestAccessTokenTypeValidation:
             algorithm=settings.jwt_algorithm,
         )
 
-        with patch("app.api.v1.deps.auth.token_blacklist") as mock_blacklist:
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
             mock_blacklist.is_revoked = AsyncMock(return_value=False)
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
 
@@ -65,7 +65,7 @@ class TestAccessTokenTypeValidation:
             algorithm=settings.jwt_algorithm,
         )
 
-        with patch("app.api.v1.deps.auth.token_blacklist") as mock_blacklist:
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
             mock_blacklist.is_revoked = AsyncMock(return_value=False)
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
 
@@ -95,7 +95,7 @@ class TestAccessTokenTypeValidation:
             algorithm=settings.jwt_algorithm,
         )
 
-        with patch("app.api.v1.deps.auth.token_blacklist") as mock_blacklist:
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
             mock_blacklist.is_revoked = AsyncMock(return_value=False)
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
 
@@ -129,7 +129,7 @@ class TestRefreshTokenTypeValidation:
             algorithm=settings.jwt_algorithm,
         )
 
-        with patch("app.api.v1.deps.auth.token_blacklist") as mock_blacklist:
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
             mock_blacklist.is_revoked = AsyncMock(return_value=False)
 
             response = await client.post(
@@ -160,7 +160,7 @@ class TestRefreshTokenTypeValidation:
             algorithm=settings.jwt_algorithm,
         )
 
-        with patch("app.api.v1.deps.auth.token_blacklist") as mock_blacklist:
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
             mock_blacklist.is_revoked = AsyncMock(return_value=False)
 
             response = await client.post(
@@ -193,7 +193,7 @@ class TestRefreshTokenTypeValidation:
         )
 
         # Mock token_blacklist to return True (token is blacklisted)
-        with patch("app.api.v1.deps.auth.token_blacklist") as mock_blacklist:
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
             mock_blacklist.is_revoked = AsyncMock(return_value=True)
 
             response = await client.post(
@@ -232,7 +232,7 @@ class TestTokenBlacklistIntegration:
         )
 
         # Mock token_blacklist to return True for is_revoked
-        with patch("app.api.v1.deps.auth.token_blacklist") as mock_blacklist:
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
             mock_blacklist.is_revoked = AsyncMock(return_value=True)
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
 
@@ -269,7 +269,7 @@ class TestTokenBlacklistIntegration:
         )
 
         # Mock token_blacklist
-        with patch("app.api.v1.deps.auth.token_blacklist") as mock_blacklist:
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
             mock_blacklist.is_revoked = AsyncMock(return_value=False)
             # Return a revocation time that's after token's iat
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=revocation_time)
@@ -304,7 +304,7 @@ class TestTokenBlacklistIntegration:
         )
 
         # Mock token_blacklist
-        with patch("app.api.v1.deps.auth.token_blacklist") as mock_blacklist:
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
             mock_blacklist.is_revoked = AsyncMock(return_value=False)
             # Return a revocation time that's before token's iat
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=revocation_time)

@@ -1,5 +1,5 @@
 from datetime import UTC, datetime, timedelta
-from unittest.mock import patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from jose import jwt
@@ -34,7 +34,7 @@ class TestGetCurrentUserEdgeCases:
     async def test_jwt_claims_error(self, db_session):
         """Test that JWTClaimsError is caught and handled."""
         # Create token with invalid claims
-        with patch("app.api.v1.deps.auth.jwt.decode") as mock_decode:
+        with patch("app.services.auth_service.jwt.decode") as mock_decode:
             mock_decode.side_effect = JWTClaimsError("Invalid claims")
 
             with pytest.raises(UnauthorizedException, match="Token has invalid claims"):
@@ -93,8 +93,12 @@ class TestGetCurrentUserEdgeCases:
             algorithm=settings.jwt_algorithm,
         )
 
-        with pytest.raises(UnauthorizedException, match="Could not validate credentials"):
-            await get_current_user(valid_token, db_session)
+        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
+            mock_blacklist.is_revoked = AsyncMock(return_value=False)
+            mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
+
+            with pytest.raises(UnauthorizedException, match="User not found"):
+                await get_current_user(valid_token, db_session)
 
     async def test_token_expired_after_decode(self, db_session, user: User):
         """Test expiration check after successful decode."""
@@ -201,7 +205,7 @@ class TestGenerateRefreshToken:
 
     async def test_jwt_decode_error(self, db_session):
         """Test that JWT decode errors are handled."""
-        with patch("app.api.v1.deps.auth.jwt.decode") as mock_decode:
+        with patch("app.services.auth_service.jwt.decode") as mock_decode:
             mock_decode.side_effect = JWTError("Decode failed")
 
             token_payload = TokenPayload(refresh_token="some_token")
