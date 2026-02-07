@@ -7,20 +7,23 @@ A comprehensive, reusable guide for building maintainable FastAPI applications u
 ## 📋 Table of Contents
 
 1. [Overview](#-overview)
-2. [Layer Reference](#-layer-reference)
-   - [API Layer](#21-api-layer-endpoints)
-   - [Dependency Layer](#22-dependency-layer-deps)
-   - [Service Layer](#23-service-layer)
-   - [Repository Layer](#24-repository-layer)
-   - [Schema Layer](#25-schema-layer)
-   - [Model Layer](#26-model-layer)
-   - [Core Layer](#27-core-layer)
-3. [Data Flow](#-data-flow)
-4. [Dependency Direction Rules](#-dependency-direction-rules)
-5. [Testing Strategy](#-testing-strategy)
-6. [Anti-patterns Catalog](#-anti-patterns-catalog)
-7. [Decision Trees](#-decision-trees)
-8. [Patterns Catalog](#-patterns-catalog)
+2. [Architecture Applicability](#-architecture-applicability)
+3. [Layer Reference](#-layer-reference)
+   - [API Layer](#31-api-layer-endpoints)
+   - [Dependency Layer](#32-dependency-layer-deps)
+   - [Service Layer](#33-service-layer)
+   - [Repository Layer](#34-repository-layer)
+   - [Schema Layer](#35-schema-layer)
+   - [Model Layer](#36-model-layer)
+   - [Core Layer](#37-core-layer)
+4. [Data Flow](#-data-flow)
+5. [Dependency Direction Rules](#-dependency-direction-rules)
+6. [Testing Strategy](#-testing-strategy)
+7. [Anti-patterns Catalog](#-anti-patterns-catalog)
+8. [Decision Trees](#-decision-trees)
+9. [Patterns Catalog](#-patterns-catalog)
+10. [Scalability Limits & When to Outgrow](#-scalability-limits--when-to-outgrow)
+11. [Summary](#-summary)
 
 ---
 
@@ -59,9 +62,10 @@ flowchart TB
 
     Client --> Endpoint
     Endpoint --> Deps
-    Deps --> Service
+    Deps -->|creates repos &<br/>injects into services| Service
+    Deps -->|creates instances| Repo
     Service --> Cache
-    Service --> Repo
+    Service -->|calls via<br/>injected repos| Repo
     Repo --> Model
     Model --> DB
     Core -.-> Deps
@@ -84,18 +88,56 @@ flowchart TB
 | Layer | Location | Responsibility | Depends On |
 |-------|----------|----------------|------------|
 | **API** | `app/api/` | HTTP routing, authentication, response codes | Deps, Schemas |
-| **Deps** | `app/api/*/deps/` | Dependency injection, session management, orchestration | Services, Core |
-| **Service** | `app/services/` | Business logic, domain rules, validation | Repos, Schemas, Cache |
-| **Repository** | `app/repos/` | Data access, CRUD operations | Models, Schemas |
+| **Deps** | `app/api/*/deps/` | Dependency injection, session management, repo creation, exception translation | Services, Repos, Schemas, Core |
+| **Service** | `app/services/` | Business logic, domain rules, domain exceptions; receives repos via injection | Repos, Schemas, Cache |
+| **Repository** | `app/repos/` | Data access, CRUD with `auto_commit` support | Models, Schemas |
 | **Schema** | `app/schemas/` | Validation, serialization, API contracts | None (leaf) |
 | **Model** | `app/models/` | Database table mapping (ORM) | None (leaf) |
-| **Core** | `app/core/` | Configuration, exceptions, database setup | None (leaf) |
+| **Core** | `app/core/` | Configuration, exceptions (HTTP + domain), database setup | None (leaf) |
+
+---
+
+## 🎯 Architecture Applicability
+
+This architecture is a **modular monolith** using layered separation. It is designed for **small-to-medium** FastAPI projects with teams of **1–15 developers**.
+
+### When This Architecture Fits
+
+| Metric | Sweet Spot | Upper Limit |
+|--------|-----------|-------------|
+| Team size | 1–8 developers | 15 developers |
+| Endpoints | 10–80 | ~150 |
+| Services | 3–15 | ~30 |
+| Repositories | 5–20 | ~40 |
+| Models | 5–30 | ~60 |
+| Databases | 1 | 2–3 |
+
+### When This Architecture Does NOT Fit
+
+| Signal | Alternative |
+|--------|-------------|
+| 15+ developers with daily merge conflicts | Domain-driven modules (`app/domains/`) |
+| 150+ endpoints across unrelated domains | API gateway + microservices |
+| Event-heavy workflows (notifications, queues, sagas) | Event-driven architecture with message bus |
+| Multiple teams owning separate databases | Microservices with independent data stores |
+| Sub-millisecond latency requirements | Specialized frameworks (gRPC, async workers) |
+
+> **Rule of thumb**: If you hit 3+ signals from the "Does NOT Fit" table, start planning migration. See [Scalability Limits](#-scalability-limits--when-to-outgrow) for detailed thresholds.
+
+### Key Design Decisions
+
+| Decision | Choice | Rationale |
+|----------|--------|-----------|
+| Service dependencies | **Repository injection** | Explicit deps, easy testing, no session leaking into services |
+| Error handling | **Domain exceptions** | Pythonic, forces handling, clear exception hierarchy |
+| Transaction control | **`auto_commit` parameter** | Flexible per-operation; deps layer can coordinate multi-step transactions |
+| Session ownership | **Deps layer only** | Sessions injected via `Depends(get_db)`, never reach services — clean separation |
 
 ---
 
 ## 📚 Layer Reference
 
-### 2.1 API Layer (Endpoints)
+### 3.1 API Layer (Endpoints)
 
 **Location**: `app/api/`
 
@@ -142,7 +184,7 @@ router = APIRouter(tags=["Resources"], prefix="/resources")
     summary="Process a resource",
     description="""
     Processes the given resource with the specified parameters.
-    
+
     Returns 206 Partial Content if some items failed processing.
     """,
     responses={
@@ -173,21 +215,24 @@ async def process_resource(
 
 ---
 
-### 2.2 Dependency Layer (Deps)
+### 3.2 Dependency Layer (Deps)
 
 **Location**: `app/api/*/deps/`
 
 #### Responsibility
 
-The dependency layer is a **factory and orchestration layer**. It creates service instances, manages database sessions, handles error sanitization, and coordinates multiple service calls. It acts as the **glue** between HTTP and business logic.
+The dependency layer is a **factory and orchestration layer**. It creates repository and service instances, manages database sessions, translates domain exceptions to HTTP exceptions, and coordinates multiple service calls. It acts as the **glue** between HTTP and business logic.
+
+> **Critical rule**: The database session **never leaves this layer**. Services receive repositories, not sessions.
 
 #### ✅ What Belongs Here
 
-- Creating service/repository instances
-- Database session management (session-per-request or session-per-operation)
+- Creating repository instances and injecting them into services
+- Receiving database sessions via `Depends(get_db)` and creating repos
 - Orchestrating multiple service calls
-- Error sanitization (removing internal details before returning to client)
+- Catching domain exceptions and converting to HTTP exceptions
 - Query/body parameter extraction with validation
+- Coordinating multi-step transactions (`auto_commit=False` + explicit `session.commit()`)
 
 #### ❌ What Does NOT Belong Here
 
@@ -195,6 +240,7 @@ The dependency layer is a **factory and orchestration layer**. It creates servic
 - Direct database queries (use repositories)
 - Data transformation beyond basic mapping
 - Validation rules (use schemas)
+- Passing raw sessions to services
 
 #### Full Code Example
 
@@ -204,13 +250,19 @@ from typing import Annotated
 from fastapi import Body, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.db import SessionLocal
+from app.core.db import get_db
+from app.core.exceptions import (
+    AppException,
+    BadRequestException,
+    NotFoundException,
+)
 from app.schemas.resource import (
     ResourceRequest,
     ResourceResponse,
-    ResourceItemResult,
     ProcessingOption,
 )
+from app.repos.resource_repository import ResourceRepository
+from app.repos.audit_repository import AuditRepository
 from app.services.resource_service import ResourceService
 
 
@@ -220,65 +272,75 @@ async def get_resource_result(
         ProcessingOption,
         Query(default=ProcessingOption.DEFAULT, description="Processing mode"),
     ],
+    session: Annotated[AsyncSession, Depends(get_db)],
 ) -> ResourceResponse:
     """
     Dependency function that orchestrates service calls.
-    Each operation gets its own session for isolation.
+    Session injected via Depends(get_db) — repos created here, never in services.
     """
-    results: list[ResourceItemResult] = []
+    # Session stays here — services never see it
+    resource_repo = ResourceRepository(session)
+    audit_repo = AuditRepository(session)
+    service = ResourceService(resource_repo, audit_repo)
 
-    for item in request.items:
-        result = await _process_item_with_session(item, option)
-        results.append(result)
+    try:
+        return await service.process(request, option)
+    except ResourceNotFoundError as e:
+        raise NotFoundException(detail=str(e))
+    except ValidationError as e:
+        raise BadRequestException(detail=str(e))
+    except AppException as e:
+        raise BadRequestException(detail=e.message)
 
-    return ResourceResponse(
-        items=results,
-        has_errors=any(r.error for r in results),
-    )
 
-
-async def _process_item_with_session(
-    item: ResourceItem,
-    option: ProcessingOption,
-) -> ResourceItemResult:
+async def get_resource_atomic(
+    request: Annotated[ResourceRequest, Body(...)],
+    session: Annotated[AsyncSession, Depends(get_db)],
+) -> ResourceResponse:
     """
-    Session-per-operation pattern for isolation.
-    Errors are caught and sanitized before returning.
+    Example: multi-step atomic operation using auto_commit=False.
+    Deps layer controls the transaction boundary.
+    Session injected via Depends(get_db) — deps layer commits explicitly.
     """
-    async with SessionLocal() as session:
-        try:
-            service = ResourceService(session)
-            return await service.process(item, option)
-        except Exception as e:
-            # Sanitize error - remove internal details
-            error_msg = _sanitize_error(str(e))
-            return ResourceItemResult(item_id=item.id, error=error_msg)
+    resource_repo = ResourceRepository(session)
+    audit_repo = AuditRepository(session)
+    service = ResourceService(resource_repo, audit_repo)
 
-
-def _sanitize_error(error: str) -> str:
-    """Remove internal implementation details from error messages."""
-    if "postgresql" in error.lower() or "sqlalchemy" in error.lower():
-        return "Database error occurred. Please check your request."
-    return error
+    try:
+        # Service uses auto_commit=False for atomic multi-step operations
+        result = await service.process_batch(
+            request, auto_commit=False
+        )
+        # Deps layer owns the commit
+        await session.commit()
+        return result
+    except AppException as e:
+        await session.rollback()
+        raise BadRequestException(detail=e.message)
+    except Exception:
+        await session.rollback()
+        raise
 ```
+
+> **When to use `SessionLocal()` directly**: Use manual session creation only in contexts where FastAPI's dependency injection is **unavailable** — lifespan/startup events, Celery tasks, background workers, and CLI scripts. For all request-handling deps, always use `Depends(get_db)`.
 
 #### Key Characteristics
 
-- **Factory pattern**: Creates service instances with proper dependencies
-- **Session management**: Controls database session lifecycle
-- **Error sanitization**: Strips internal details before returning to client
-- **Orchestration**: Coordinates multiple operations/services
+- **Factory pattern**: Creates repo instances and injects into services
+- **Session injection**: Receives session via `Depends(get_db)` — session never reaches services
+- **Exception translation**: Catches domain exceptions, raises HTTP exceptions
+- **Transaction coordination**: Uses `auto_commit=False` + explicit `commit()` for atomic operations
 - **Thin logic**: Complex rules go in services
 
 ---
 
-### 2.3 Service Layer
+### 3.3 Service Layer
 
 **Location**: `app/services/`
 
 #### Responsibility
 
-The service layer contains **all business logic and domain rules**. It orchestrates repository calls, performs validation, transforms data, and implements the core functionality of your application. Services receive dependencies (session, config) as constructor or method parameters.
+The service layer contains **all business logic and domain rules**. It orchestrates repository calls, performs validation, transforms data, and implements the core functionality of your application. Services receive **repository instances** as constructor parameters — they never see or hold database sessions.
 
 #### ✅ What Belongs Here
 
@@ -287,25 +349,31 @@ The service layer contains **all business logic and domain rules**. It orchestra
 - Data validation and transformation
 - Cache integration and lookups
 - Complex calculations and algorithms
-- Transaction coordination
+- Raising domain exceptions for business rule violations
 
 #### ❌ What Does NOT Belong Here
 
 - HTTP concerns (status codes, headers)
-- Creating database sessions (receive as parameter)
+- Creating database sessions (deps layer owns sessions)
+- Creating repository instances (receive as constructor parameter)
 - Direct SQL queries (use repositories)
 - Request/response formatting (use schemas)
+- Holding session references
 
 #### Full Code Example
 
 ```python
-from sqlalchemy.ext.asyncio import AsyncSession
-
+from app.core.exceptions import (
+    AppException,
+    ResourceNotFoundError,
+    ValidationError,
+    ProcessingError,
+)
 from app.repos.resource_repository import ResourceRepository
 from app.repos.audit_repository import AuditRepository
 from app.schemas.resource import (
     ResourceItem,
-    ResourceItemResult,
+    ResourceResponse,
     ProcessingOption,
     CreateResourceSchema,
 )
@@ -315,65 +383,68 @@ from app.services.cache.resource_cache import resource_cache
 class ResourceService:
     """
     Service layer: contains all business logic.
-    Receives session as constructor parameter.
+    Receives repository instances as constructor parameters.
+    Never sees or holds database sessions.
     """
 
-    def __init__(self, session: AsyncSession):
-        self.session = session
-        self.resource_repo = ResourceRepository(session)
-        self.audit_repo = AuditRepository(session)
+    def __init__(
+        self,
+        resource_repo: ResourceRepository,
+        audit_repo: AuditRepository,
+    ):
+        self.resource_repo = resource_repo
+        self.audit_repo = audit_repo
 
     async def process(
         self,
         item: ResourceItem,
         option: ProcessingOption,
-    ) -> ResourceItemResult:
+    ) -> ResourceResponse:
         """
         Process a resource item with full business logic.
-        Returns result type - never raises exceptions to caller.
+        Raises domain exceptions on failure — deps layer catches and translates.
         """
-        try:
-            # Step 1: Validate against cache
-            validation = self._validate_item(item)
-            if validation.error:
-                return ResourceItemResult(item_id=item.id, error=validation.error)
+        # Step 1: Validate against cache
+        self._validate_item(item)
 
-            # Step 2: Apply business rules
-            processed = self._apply_rules(item, option)
+        # Step 2: Apply business rules
+        processed = self._apply_rules(item, option)
 
-            # Step 3: Persist via repository
-            create_schema = CreateResourceSchema(
-                name=processed.name,
-                value=processed.value,
-                metadata=processed.metadata,
-            )
-            created = await self.resource_repo.create_one(create_schema)
+        # Step 3: Persist via repository
+        create_schema = CreateResourceSchema(
+            name=processed.name,
+            value=processed.value,
+            metadata=processed.metadata,
+        )
+        created = await self.resource_repo.create_one(create_schema)
 
-            # Step 4: Record audit trail
-            await self.audit_repo.log_action(
-                action="PROCESS",
-                resource_id=created.id,
-                details={"option": option.value},
-            )
+        # Step 4: Record audit trail
+        await self.audit_repo.log_action(
+            action="PROCESS",
+            resource_id=created.id,
+            details={"option": option.value},
+        )
 
-            # Step 5: Return success result
-            return ResourceItemResult(
-                item_id=item.id,
-                resource_id=created.id,
-                status="completed",
-            )
+        # Step 5: Return response schema
+        return ResourceResponse.model_validate(created)
 
-        except Exception as e:
-            return ResourceItemResult(item_id=item.id, error=str(e))
+    async def get_resource(self, resource_id: int) -> ResourceResponse:
+        """Retrieve a single resource by ID."""
+        model = await self.resource_repo.get_by_id(resource_id)
+        if model is None:
+            raise ResourceNotFoundError(f"Resource {resource_id} not found")
+        return ResourceResponse.model_validate(model)
 
-    def _validate_item(self, item: ResourceItem) -> ValidationResult:
-        """Pure validation logic using cache lookup."""
+    def _validate_item(self, item: ResourceItem) -> None:
+        """
+        Pure validation logic using cache lookup.
+        Raises ValidationError on failure.
+        """
         cached = resource_cache.get(item.category)
         if not cached:
-            return ValidationResult(error=f"Unknown category: {item.category}")
+            raise ValidationError(f"Unknown category: {item.category}")
         if item.value < cached.min_value or item.value > cached.max_value:
-            return ValidationResult(error="Value out of allowed range")
-        return ValidationResult(success=True)
+            raise ValidationError("Value out of allowed range")
 
     def _apply_rules(
         self, item: ResourceItem, option: ProcessingOption
@@ -389,16 +460,17 @@ class ResourceService:
 
 #### Key Characteristics
 
-- **Receives dependencies**: Session, config passed in (not created)
-- **Returns result types**: Never raises exceptions to callers
+- **Receives repositories**: Repos injected via constructor — no session awareness
+- **Raises domain exceptions**: `ValidationError`, `ResourceNotFoundError`, etc. — never returns error result types
 - **Pure functions**: For validation and transformation logic
 - **Clear steps**: Processing flows are explicit and documented
-- **Repository integration**: Uses repos for all data access
+- **Repository integration**: Uses injected repos for all data access
 - **Cache integration**: Uses singleton caches for metadata lookups
+- **Threshold**: If a service constructor takes **>5 repositories**, it’s doing too much — split into smaller services
 
 ---
 
-### 2.4 Repository Layer
+### 3.4 Repository Layer
 
 **Location**: `app/repos/`
 
@@ -406,13 +478,17 @@ class ResourceService:
 
 The repository layer provides a **clean abstraction over database access**. It handles all CRUD operations, query building, and result mapping. Repositories work with SQLAlchemy models and Pydantic schemas for type safety.
 
+All mutation methods accept an `auto_commit` parameter (default `True`). Pass `auto_commit=False` when the **deps layer** needs to coordinate multiple repo calls in a single transaction — the deps layer is then responsible for calling `session.commit()`.
+
+> ⚠️ **WARNING**: If you pass `auto_commit=False`, you **MUST** commit in the calling deps function. Failure to do so = **silent data loss**.
+
 #### ✅ What Belongs Here
 
 - CRUD operations (create, read, update, delete)
 - Query building with SQLAlchemy
 - Pagination, filtering, sorting
 - Complex queries specific to the domain
-- Transaction commit/rollback
+- Conditional commit via `auto_commit` parameter
 - Raw SQL for complex queries (escape hatch)
 
 #### ❌ What Does NOT Belong Here
@@ -457,7 +533,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
                 f"Column '{column_name}' does not exist on model '{self.model.__name__}'"
             )
 
-    async def create_one(self, schema: CreateSchema) -> Model:
+    async def create_one(self, schema: CreateSchema, auto_commit: bool = True) -> Model:
         """Create a single record and return the created model."""
         stmt = (
             insert(self.model)
@@ -465,17 +541,21 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             .returning(self.model)
         )
         result = await self.session.execute(stmt)
-        await self.session.commit()
+        if auto_commit:
+            await self.session.commit()
         return result.scalar_one()
 
-    async def create_bulk(self, schemas: Sequence[CreateSchema]) -> list[Model]:
+    async def create_bulk(
+        self, schemas: Sequence[CreateSchema], auto_commit: bool = True
+    ) -> list[Model]:
         """Create multiple records in a single transaction."""
         if not schemas:
             return []
         values = [schema.model_dump(exclude_none=True) for schema in schemas]
         stmt = insert(self.model).values(values).returning(self.model)
         result = await self.session.execute(stmt)
-        await self.session.commit()
+        if auto_commit:
+            await self.session.commit()
         return list(result.scalars().all())
 
     async def get_by_id(
@@ -506,6 +586,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         obj_id: int | uuid.UUID,
         schema: UpdateSchema,
         id_column_name: str = "id",
+        auto_commit: bool = True,
     ) -> Model | None:
         """Update a record by ID and return the updated model."""
         self._validate_column_exists(id_column_name)
@@ -516,13 +597,15 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             .returning(self.model)
         )
         result = await self.session.execute(stmt)
-        await self.session.commit()
+        if auto_commit:
+            await self.session.commit()
         return result.scalar_one_or_none()
 
     async def delete_by_id(
         self,
         obj_id: int | uuid.UUID,
         id_column_name: str = "id",
+        auto_commit: bool = True,
     ) -> bool:
         """Delete a record by ID. Returns True if deleted."""
         self._validate_column_exists(id_column_name)
@@ -530,7 +613,8 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             getattr(self.model, id_column_name) == obj_id
         )
         result = await self.session.execute(stmt)
-        await self.session.commit()
+        if auto_commit:
+            await self.session.commit()
         return result.rowcount > 0
 
     async def custom_query(self, query: str) -> Result[Any]:
@@ -580,14 +664,14 @@ class ResourceRepository(BaseRepository[ResourceModel, CreateResourceSchema, Upd
 #### Key Characteristics
 
 - **Generic base class**: Reusable CRUD with type parameters
+- **`auto_commit` parameter**: Default `True` for standalone operations; pass `False` when deps layer coordinates transactions
 - **Column validation**: Prevents runtime errors on dynamic queries
 - **Domain-specific extensions**: Custom methods in concrete repositories
-- **Explicit transactions**: `commit()` calls after mutations
 - **Escape hatch**: `custom_query()` for complex SQL when needed
 
 ---
 
-### 2.5 Schema Layer
+### 3.5 Schema Layer
 
 **Location**: `app/schemas/`
 
@@ -805,7 +889,7 @@ class InputSource(BaseSchema):
 
 ---
 
-### 2.6 Model Layer
+### 3.6 Model Layer
 
 **Location**: `app/models/`
 
@@ -964,7 +1048,7 @@ class AuditLogModel(Base):
 
 ---
 
-### 2.7 Core Layer
+### 3.7 Core Layer
 
 **Location**: `app/core/`
 
@@ -1081,6 +1165,34 @@ class AppException(Exception):
         super().__init__(message)
 
 
+# ---------------------------------------------------------------------------
+# Domain Exceptions (raised by Services, caught by Deps)
+# ---------------------------------------------------------------------------
+
+class ValidationError(AppException):
+    """Business rule validation failure."""
+    pass
+
+
+class ResourceNotFoundError(AppException):
+    """Requested resource does not exist."""
+    pass
+
+
+class ProcessingError(AppException):
+    """Error during business logic processing."""
+    pass
+
+
+class DuplicateResourceError(AppException):
+    """Attempted to create a resource that already exists."""
+    pass
+
+
+# ---------------------------------------------------------------------------
+# HTTP Exceptions (raised by Deps, handled by FastAPI)
+# ---------------------------------------------------------------------------
+
 class HTTPException(FastAPIHTTPException):
     """Base HTTP exception with standard interface."""
 
@@ -1182,7 +1294,7 @@ async def get_db() -> AsyncSession:
 
 - **Settings**: Use `pydantic-settings` for type-safe configuration
 - **Computed properties**: Derive values from base settings
-- **Exception hierarchy**: Typed exceptions for different HTTP codes
+- **Exception hierarchy**: Domain exceptions (`AppException` → `ValidationError`, `ResourceNotFoundError`, etc.) for services; HTTP exceptions (`HTTPException` → `BadRequestException`, `NotFoundException`, etc.) for deps
 - **Database factory**: Async session with proper pool settings
 - **Caching**: Use `@lru_cache` for singleton settings
 - **No business logic**: Pure infrastructure code
@@ -1206,7 +1318,8 @@ sequenceDiagram
     API->>API: Validate auth (JWT)
     API->>Deps: Depends(get_result)
     Deps->>Deps: Parse Body/Query params
-    Deps->>Deps: Create session
+    Deps->>Deps: Receive session (Depends) + create repos
+    Deps->>Service: service = Service(repos)
     Deps->>Service: service.process()
     Service->>Service: Validate business rules
     Service->>Repo: repo.create_one()
@@ -1214,7 +1327,8 @@ sequenceDiagram
     DB-->>Repo: Model instance
     Repo-->>Service: Model
     Service->>Service: Transform to response
-    Service-->>Deps: ResponseSchema
+    Service-->>Deps: ResponseSchema (or raises domain exception)
+    Deps->>Deps: Catch domain exception → raise HTTP exception
     Deps-->>API: ResponseSchema
     API-->>Client: HTTP Response (JSON)
 ```
@@ -1224,11 +1338,15 @@ sequenceDiagram
 | From | To | Type |
 |------|-----|------|
 | Client → API | Request body | Pydantic schema (validated automatically) |
-| API → Deps | Depends result | Response schema or service result |
-| Deps → Service | Method params | Schemas + primitives + session |
+| API → Deps | Depends result | Response schema |
+| Deps → Service | Constructor | Repository instances (injected) |
+| Deps → Service | Method params | Schemas + primitives |
 | Service → Repo | CRUD operations | Create/Update schemas |
 | Repo → Service | Query results | SQLAlchemy Models |
-| Service → Deps | Return value | Response schemas or result types |
+| Service → Deps | Return value | Response schemas |
+| Service → Deps | Error path | Domain exceptions (`AppException` subclasses) |
+| Deps → API | Error path | HTTP exceptions (`HTTPException` subclasses) |
+| API → Client | Response body | Pydantic schema (serialized automatically) |
 | API → Client | Response body | Pydantic schema (serialized automatically) |
 
 ### Error Propagation Flow
@@ -1240,30 +1358,31 @@ flowchart TD
     end
 
     subgraph "Service Layer"
-        B --> C{Catch Exception?}
-        C -->|Yes| D[Return Error Result]
-        C -->|No| E[Re-raise]
+        B --> C{Handle DB result?}
+        C -->|None result| D[Raise ResourceNotFoundError]
+        C -->|DB exception| E[Raise ProcessingError]
+        C -->|Success| F[Return ResponseSchema]
     end
 
     subgraph "Dependency Layer"
-        D --> F[Sanitize Error]
-        E --> G[Catch & Sanitize]
-        F --> H[Return Response]
-        G --> H
+        D --> G[Catch domain exception]
+        E --> G
+        G --> H[Raise HTTP exception]
+        F --> I[Return to API]
     end
 
     subgraph "API Layer"
-        H --> I[Set Status Code]
-        I --> J[Return to Client]
+        H --> J[FastAPI returns error response]
+        I --> K[Return success to Client]
     end
 ```
 
 **Error Handling Rules**:
 
 1. **Repository**: Raises SQLAlchemy exceptions or returns `None`
-2. **Service**: Catches exceptions, returns result types with error field
-3. **Dependency**: Sanitizes errors (removes internal details)
-4. **API**: Sets appropriate HTTP status code
+2. **Service**: Catches DB exceptions and raises domain exceptions (`ValidationError`, `ResourceNotFoundError`, `ProcessingError`)
+3. **Dependency**: Catches domain exceptions and raises HTTP exceptions (`BadRequestException`, `NotFoundException`)
+4. **API**: FastAPI automatically handles `HTTPException` and returns the appropriate status code
 
 ---
 
@@ -1277,8 +1396,10 @@ flowchart TD
         API[API Layer] --> Deps[Dependency Layer]
         API --> Schemas
         Deps --> Services[Service Layer]
+        Deps -->|creates instances| Repos[Repository Layer]
         Deps --> Core
-        Services --> Repos[Repository Layer]
+        Deps --> Schemas
+        Services --> Repos
         Services --> Schemas
         Services --> Cache[Cache Singletons]
         Repos --> Models[Model Layer]
@@ -1301,7 +1422,7 @@ flowchart TD
 | Layer | Can Import | Cannot Import |
 |-------|------------|---------------|
 | **API** | Deps, Schemas | Services, Repos, Models, Core |
-| **Deps** | Services, Schemas, Core | API, Repos, Models |
+| **Deps** | Services, Repos, Schemas, Core | API, Models |
 | **Service** | Repos, Schemas, Core, Cache | API, Deps, Models |
 | **Repository** | Models, Schemas | API, Deps, Services |
 | **Schema** | Core (enums only) | All other layers |
@@ -1361,59 +1482,74 @@ from app.schemas.common import ResourceStatus
 
 #### Unit Testing Services (Mock Repositories)
 
+> With repository injection, testing is straightforward: create mock repos, inject them into the service constructor. No internal patching needed — all dependencies are explicit.
+
 ```python
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
+from app.core.exceptions import ValidationError, ResourceNotFoundError
 from app.services.resource_service import ResourceService
-from app.schemas.resource import CreateResourceSchema, ResourceResponse
+from app.schemas.resource import ResourceItem, ProcessingOption
 
 
 @pytest.fixture
-def mock_session():
-    """Mock database session."""
-    return MagicMock()
+def mock_resource_repo():
+    """Mock resource repository."""
+    return AsyncMock()
 
 
 @pytest.fixture
-def service(mock_session):
-    """Service instance with mocked session."""
-    return ResourceService(mock_session)
+def mock_audit_repo():
+    """Mock audit repository."""
+    return AsyncMock()
+
+
+@pytest.fixture
+def service(mock_resource_repo, mock_audit_repo):
+    """Service with injected mock repositories."""
+    return ResourceService(mock_resource_repo, mock_audit_repo)
 
 
 @pytest.mark.asyncio
-async def test_process_resource_success(service):
+async def test_process_resource_success(service, mock_resource_repo):
     """Test successful resource processing."""
     # Arrange
     item = ResourceItem(id="1", name="test", value=100, category="valid")
-    
-    # Mock repository response
-    service.resource_repo.create_one = AsyncMock(
-        return_value=ResourceModel(id=1, name="test", value=100)
+
+    # Mock repo return value — set BEFORE calling service (clean injection)
+    mock_resource_repo.create_one.return_value = ResourceModel(
+        id=1, name="TEST", value=100
     )
-    service.audit_repo.log_action = AsyncMock()
 
     # Act
     result = await service.process(item, ProcessingOption.DEFAULT)
 
     # Assert
-    assert result.resource_id == 1
-    assert result.error is None
-    service.resource_repo.create_one.assert_called_once()
+    assert result.id == 1
+    mock_resource_repo.create_one.assert_called_once()
 
 
 @pytest.mark.asyncio
 async def test_process_resource_validation_error(service):
-    """Test validation failure returns error result."""
+    """Test validation failure raises domain exception."""
     # Arrange
     item = ResourceItem(id="1", name="test", value=100, category="invalid")
 
-    # Act
-    result = await service.process(item, ProcessingOption.DEFAULT)
+    # Act & Assert — domain exception, not error result
+    with pytest.raises(ValidationError, match="Unknown category"):
+        await service.process(item, ProcessingOption.DEFAULT)
 
-    # Assert
-    assert result.error is not None
-    assert "Unknown category" in result.error
+
+@pytest.mark.asyncio
+async def test_get_resource_not_found(service, mock_resource_repo):
+    """Test missing resource raises ResourceNotFoundError."""
+    # Arrange
+    mock_resource_repo.get_by_id.return_value = None
+
+    # Act & Assert
+    with pytest.raises(ResourceNotFoundError, match="not found"):
+        await service.get_resource(resource_id=999)
 ```
 
 #### Integration Testing Repositories (Test Database)
@@ -1548,6 +1684,36 @@ response = client.post("/api/v1/resources/process", json={...})
 app.dependency_overrides.clear()
 ```
 
+#### Session Override Pattern (Integration Tests)
+
+```python
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from app.core.db import get_db
+from app.main import app
+
+# Test database engine
+test_engine = create_async_engine("sqlite+aiosqlite:///./test.db")
+TestSessionLocal = async_sessionmaker(
+    test_engine, class_=AsyncSession, expire_on_commit=False,
+)
+
+
+async def override_get_db():
+    """Provide test database session."""
+    async with TestSessionLocal() as session:
+        try:
+            yield session
+        except Exception:
+            await session.rollback()
+            raise
+
+
+# Override get_db for all tests
+app.dependency_overrides[get_db] = override_get_db
+```
+
+> **Note**: Override `get_db` (not `SessionLocal`) because deps receive sessions via `Depends(get_db)`. This swaps the session for all deps without changing any business logic.
+
 ---
 
 ## ⚠️ Anti-patterns Catalog
@@ -1564,15 +1730,15 @@ async def process_resource(
     # Validation logic in endpoint
     if request.value < 0 or request.value > 1000:
         raise HTTPException(400, "Invalid value")
-    
+
     # Business calculation in endpoint
     adjusted_value = request.value * 1.5 if request.priority == "high" else request.value
-    
+
     # Database query in endpoint
     stmt = insert(ResourceModel).values(name=request.name, value=adjusted_value)
     await session.execute(stmt)
     await session.commit()
-    
+
     return {"status": "created"}
 
 
@@ -1590,52 +1756,69 @@ async def process_resource(
 # ❌ WRONG: Service directly uses session
 class ResourceService:
     def __init__(self, session: AsyncSession):
-        self.session = session  # Holds session
+        self.session = session  # Holds session — violation!
 
     async def process(self, item: ResourceItem):
-        # Direct SQL in service - bypasses repository
+        # Direct SQL in service — bypasses repository
         stmt = select(ResourceModel).where(ResourceModel.id == item.id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
 
-# ✅ CORRECT: Service uses repository
+# ✅ CORRECT: Service receives repository, never sees session
 class ResourceService:
-    def __init__(self, session: AsyncSession):
-        self.resource_repo = ResourceRepository(session)
+    def __init__(self, resource_repo: ResourceRepository):
+        self.resource_repo = resource_repo  # Repo injected by deps
 
     async def process(self, item: ResourceItem):
         # Uses repository abstraction
         return await self.resource_repo.get_by_id(item.id)
 ```
 
-### 3. Raising Exceptions in Dependencies (Instead of Error Results)
+### 3. Mixing Exception Layers
 
 ```python
-# ❌ WRONG: Raising exceptions that bypass error handling
-async def get_resource_result(request: ResourceRequest):
-    for item in request.items:
-        async with SessionLocal() as session:
-            service = ResourceService(session)
-            result = await service.process(item)
-            if result is None:
-                # Exception escapes to FastAPI default handler
-                raise HTTPException(404, "Not found")
-    return results
+# ❌ WRONG: Service raises HTTP exception directly
+class ResourceService:
+    async def get_resource(self, resource_id: int):
+        model = await self.resource_repo.get_by_id(resource_id)
+        if model is None:
+            raise HTTPException(404, "Not found")  # HTTP concern in service!
+        return model
 
 
-# ✅ CORRECT: Return error results, let API layer set status
-async def get_resource_result(request: ResourceRequest):
-    results = []
-    for item in request.items:
-        async with SessionLocal() as session:
-            service = ResourceService(session)
-            result = await service.process(item)
-            if result is None:
-                results.append(ResourceItemResult(id=item.id, error="Not found"))
-            else:
-                results.append(result)
-    return ResourceResponse(items=results, has_errors=any(r.error for r in results))
+# ❌ WRONG: Deps ignores domain exceptions (lets them crash)
+async def get_resource_result(
+    resource_id: int,
+    session: AsyncSession = Depends(get_db),
+):
+    repo = ResourceRepository(session)
+    service = ResourceService(repo)
+    return await service.get_resource(resource_id)
+    # If service raises ResourceNotFoundError, it crashes with 500!
+
+
+# ✅ CORRECT: Service raises domain exception → Deps catches → raises HTTP exception
+class ResourceService:
+    async def get_resource(self, resource_id: int) -> ResourceResponse:
+        model = await self.resource_repo.get_by_id(resource_id)
+        if model is None:
+            raise ResourceNotFoundError(f"Resource {resource_id} not found")
+        return ResourceResponse.model_validate(model)
+
+
+async def get_resource_result(
+    resource_id: int,
+    session: AsyncSession = Depends(get_db),
+) -> ResourceResponse:
+    repo = ResourceRepository(session)
+    service = ResourceService(repo)
+    try:
+        return await service.get_resource(resource_id)
+    except ResourceNotFoundError as e:
+        raise NotFoundException(detail=str(e))
+    except AppException as e:
+        raise BadRequestException(detail=e.message)
 ```
 
 ### 4. Tight Coupling Between Layers
@@ -1673,11 +1856,11 @@ async def get_resource(resource: ResourceResponse = Depends(get_resource)):
 from app.api.v1.deps.resource import get_db  # Circular!
 
 
-# ✅ CORRECT: Service receives session as parameter
+# ✅ CORRECT: Service receives repos as constructor parameter
 # app/services/resource_service.py
 class ResourceService:
-    def __init__(self, session: AsyncSession):  # Injected
-        self.session = session
+    def __init__(self, resource_repo: ResourceRepository):  # Injected by deps
+        self.resource_repo = resource_repo
 ```
 
 ### 6. Missing Input Validation
@@ -1699,6 +1882,154 @@ async def process_resource(request: ResourceRequest):  # Pydantic validates
     pass
 ```
 
+### 7. Creating Repositories Inside Services
+
+```python
+# ❌ WRONG: Service creates its own repos — hides dependencies, hard to test
+class ResourceService:
+    def __init__(self, session: AsyncSession):
+        self.session = session
+        self.resource_repo = ResourceRepository(session)  # Created internally
+        self.audit_repo = AuditRepository(session)        # Created internally
+
+    async def process(self, item: ResourceItem):
+        return await self.resource_repo.get_by_id(item.id)
+
+
+# ✅ CORRECT: Repos injected by deps layer — explicit, testable
+class ResourceService:
+    def __init__(
+        self,
+        resource_repo: ResourceRepository,
+        audit_repo: AuditRepository,
+    ):
+        self.resource_repo = resource_repo  # Injected
+        self.audit_repo = audit_repo        # Injected
+
+    async def process(self, item: ResourceItem):
+        return await self.resource_repo.get_by_id(item.id)
+```
+
+### 8. Injecting Too Many Repositories
+
+> **Threshold**: If a service constructor takes **>5 repositories**, it's doing too much — split into smaller, focused services.
+
+```python
+# ❌ WRONG: God service with too many dependencies
+class OrderService:
+    def __init__(
+        self,
+        order_repo: OrderRepository,
+        product_repo: ProductRepository,
+        user_repo: UserRepository,
+        payment_repo: PaymentRepository,
+        shipping_repo: ShippingRepository,
+        notification_repo: NotificationRepository,  # 6th repo — red flag!
+        audit_repo: AuditRepository,                # 7th — split this service
+    ):
+        pass  # This service is doing too much
+
+
+# ✅ CORRECT: Split into focused services
+class OrderService:
+    def __init__(
+        self,
+        order_repo: OrderRepository,
+        product_repo: ProductRepository,
+    ):
+        pass  # Handles order creation and queries
+
+
+class PaymentService:
+    def __init__(
+        self,
+        payment_repo: PaymentRepository,
+        order_repo: OrderRepository,
+    ):
+        pass  # Handles payment processing
+
+
+class ShippingService:
+    def __init__(
+        self,
+        shipping_repo: ShippingRepository,
+        order_repo: OrderRepository,
+    ):
+        pass  # Handles shipping logistics
+```
+
+### 9. Forgetting to Commit with `auto_commit=False`
+
+```python
+# ❌ WRONG: auto_commit=False but no commit — SILENT DATA LOSS
+async def create_order_with_audit(
+    request: OrderRequest,
+    session: AsyncSession = Depends(get_db),
+):
+    order_repo = OrderRepository(session)
+    audit_repo = AuditRepository(session)
+    service = OrderService(order_repo, audit_repo)
+
+    await service.create_order(request, auto_commit=False)
+    await service.log_audit("ORDER_CREATED", auto_commit=False)
+    # ⚠️ No commit! Data is lost when session closes!
+    return {"status": "created"}  # Lies — nothing was saved
+
+
+# ✅ CORRECT: Explicit commit after all operations
+async def create_order_with_audit(
+    request: OrderRequest,
+    session: AsyncSession = Depends(get_db),
+):
+    order_repo = OrderRepository(session)
+    audit_repo = AuditRepository(session)
+    service = OrderService(order_repo, audit_repo)
+
+    try:
+        await service.create_order(request, auto_commit=False)
+        await service.log_audit("ORDER_CREATED", auto_commit=False)
+        await session.commit()  # ✅ Atomic commit for both operations
+    except Exception:
+        await session.rollback()
+        raise
+```
+
+### 10. Letting Domain Exceptions Leak to API Layer
+
+```python
+# ❌ WRONG: Endpoint catches domain exception directly
+@router.get("/{id}")
+async def get_resource(resource_id: int, session: AsyncSession = Depends(get_db)):
+    repo = ResourceRepository(session)
+    service = ResourceService(repo)
+    try:
+        return await service.get_resource(resource_id)
+    except ResourceNotFoundError:  # Domain exception in API layer!
+        raise HTTPException(404, "Not found")
+
+
+# ✅ CORRECT: Deps layer handles domain → HTTP translation
+# Endpoint stays clean:
+@router.get("/{id}", response_model=ResourceResponse)
+async def get_resource(
+    result: ResourceResponse = Depends(get_resource_dep),
+):
+    return result  # Thin controller
+
+
+# Deps layer catches and translates:
+async def get_resource_dep(
+    resource_id: int,
+    session: AsyncSession = Depends(get_db),
+) -> ResourceResponse:
+    repo = ResourceRepository(session)
+    service = ResourceService(repo)
+    try:
+        return await service.get_resource(resource_id)
+    except ResourceNotFoundError as e:
+        raise NotFoundException(detail=str(e))
+```
+
 ---
 
 ## 🌳 Decision Trees
@@ -1711,22 +2042,22 @@ flowchart TD
     B -->|Yes| C{Routing or auth?}
     C -->|Routing| D[API Layer]
     C -->|Auth/Headers| D
-    
+
     B -->|No| E{Does it create<br/>service instances?}
     E -->|Yes| F[Dependency Layer]
-    
+
     E -->|No| G{Is it business logic?}
     G -->|Yes| H[Service Layer]
-    
+
     G -->|No| I{Is it database access?}
     I -->|Yes| J[Repository Layer]
-    
+
     I -->|No| K{Is it validation?}
     K -->|Yes| L[Schema Layer]
-    
+
     K -->|No| M{Is it ORM mapping?}
     M -->|Yes| N[Model Layer]
-    
+
     M -->|No| O[Core Layer]
 ```
 
@@ -1736,16 +2067,16 @@ flowchart TD
 flowchart TD
     A[Need new functionality] --> B{Crosses multiple repos?}
     B -->|Yes| C[Create new Service]
-    
+
     B -->|No| D{Has business rules?}
     D -->|Yes| C
-    
+
     D -->|No| E{Needs caching logic?}
     E -->|Yes| C
-    
+
     E -->|No| F{Complex orchestration?}
     F -->|Yes| C
-    
+
     F -->|No| G[Add to existing Service<br/>or use Repository directly]
 ```
 
@@ -1755,13 +2086,13 @@ flowchart TD
 flowchart TD
     A[Need data access] --> B{Standard CRUD?}
     B -->|Yes| C[Use BaseRepository methods]
-    
+
     B -->|No| D{Domain-specific filter?}
     D -->|Yes| E[Add method to concrete Repository]
-    
+
     D -->|No| F{Very complex SQL?}
     F -->|Yes| G[Use custom_query escape hatch]
-    
+
     F -->|No| E
 ```
 
@@ -1869,14 +2200,14 @@ resource_cache = ResourceCache()
 # app/main.py - Initialize at startup
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Initialize caches before accepting requests
+    # Lifespan runs outside request context — use SessionLocal() directly
     async with SessionLocal() as session:
         repo = MetadataRepository(session)
         metadata = await repo.get_all()
         resource_cache.initialize({m.key: m for m in metadata})
-    
+
     yield  # Application runs
-    
+
     # Cleanup on shutdown
     pass
 ```
@@ -2042,6 +2373,119 @@ class AggregationService:
 
 ---
 
+## 📊 Scalability Limits & When to Outgrow
+
+This architecture is designed as a **stepping stone**, not a permanent destination for large projects. Use the thresholds below to gauge when it's time to evolve.
+
+### Traffic Light Thresholds
+
+| Metric | 🟢 Green (This Architecture) | 🟡 Yellow (Refactor Soon) | 🔴 Red (New Architecture) |
+|--------|------------------------------|--------------------------|--------------------------|
+| **Team size** | 1–8 developers | 9–15 developers | 15+ developers |
+| **Endpoints** | 10–80 | 80–150 | 150+ |
+| **Services** | 3–15 | 15–30 | 30+ |
+| **Repositories** | 5–20 | 20–40 | 40+ |
+| **Models** | 5–30 | 30–60 | 60+ |
+| **Repos per service** | 1–3 | 4–5 | >5 |
+| **Single service file** | <200 LOC | 200–400 LOC | >400 LOC |
+| **Deps function length** | <30 LOC | 30–50 LOC | >50 LOC |
+| **Response time (p95)** | <200ms | 200–500ms | >500ms |
+| **DB connections** | <50 | 50–100 | 100+ |
+| **Test suite runtime** | <5 min | 5–15 min | >15 min |
+| **Deploy frequency** | Weekly+ | Monthly | Quarterly |
+
+### Warning Signs You're Outgrowing This Architecture
+
+- **Daily merge conflicts** in the same service file across team members
+- **3+ services** need the exact same combination of repositories — consider a shared Unit of Work
+- **A single service file** exceeds ~300 lines — split into sub-services
+- **Deps layer functions** exceed ~50 lines — extract orchestration logic to a service
+- **Test setup** requires mocking >5 repositories — the service is too large
+- **New developers** take more than 1 week to understand the codebase structure
+- **Cross-domain calls** are happening (e.g., `OrderService` calling `NotificationService` calling `UserService` in a chain)
+
+### What Comes Next
+
+| Signal | Next Architecture | Key Change |
+|--------|------------------|------------|
+| 15+ developers with merge conflicts | **Domain-driven modules** | `app/services/` → `app/domains/user/service.py`, `app/domains/billing/service.py` |
+| 150+ endpoints across unrelated domains | **API gateway + microservices** | Split into independent deployable services |
+| Multiple teams owning separate databases | **Microservices** with independent data stores | Each team owns their entire stack |
+| Complex multi-step transactions across services | **Unit of Work pattern** | Coordinate commits across multiple repos in a single wrapper |
+| Event-heavy workflows (notifications, queues) | **Event-driven architecture** | Add message bus (Celery, Redis Streams, Kafka) |
+
+### Migration Path: Layer-First → Domain-First
+
+If you hit the Yellow/Red thresholds, follow this incremental migration:
+
+**Step 1: Group by domain** (can be done file-by-file, no big-bang refactor)
+
+```
+# Before (layer-first):
+app/services/user_service.py
+app/services/billing_service.py
+app/repos/user_repo.py
+app/repos/billing_repo.py
+
+# After (domain-first):
+app/domains/user/service.py
+app/domains/user/repo.py
+app/domains/user/schemas.py
+app/domains/billing/service.py
+app/domains/billing/repo.py
+app/domains/billing/schemas.py
+```
+
+**Step 2: Introduce abstract repository interfaces** (optional, for very large projects)
+
+```python
+# app/domains/user/interfaces.py
+from abc import ABC, abstractmethod
+
+class IUserRepository(ABC):
+    @abstractmethod
+    async def get_by_id(self, user_id: int) -> UserModel | None: ...
+
+# app/domains/user/service.py
+class UserService:
+    def __init__(self, user_repo: IUserRepository):  # Depends on interface
+        self.user_repo = user_repo
+```
+
+**Step 3: Add module-level dependency containers** (for 15+ developers)
+
+```python
+# app/domains/user/container.py
+class UserContainer:
+    """Wires up all dependencies for the user domain."""
+
+    def __init__(self, session: AsyncSession):
+        self.user_repo = UserRepository(session)
+        self.audit_repo = AuditRepository(session)
+        self.user_service = UserService(self.user_repo, self.audit_repo)
+```
+
+### Decision Tree: Is It Time to Evolve?
+
+```mermaid
+flowchart TD
+    A[Check Your Metrics] --> B{Team > 8 people?}
+    B -->|Yes| C{Daily merge conflicts?}
+    C -->|Yes| D[🔴 Move to Domain-Driven Modules]
+    C -->|No| E[🟡 Start grouping by domain]
+
+    B -->|No| F{> 80 endpoints?}
+    F -->|Yes| G{Unrelated domains?}
+    G -->|Yes| H[🟡 Plan module boundaries]
+    G -->|No| I[🟢 Stay with current architecture]
+
+    F -->|No| J{Service files > 300 LOC?}
+    J -->|Yes| K[🟡 Split services, stay layered]
+    J -->|No| I
+```
+
+---
+
 ## 📝 Summary
 
 This guide provides a complete reference for building maintainable FastAPI applications using layered architecture. Key takeaways:
@@ -2049,9 +2493,11 @@ This guide provides a complete reference for building maintainable FastAPI appli
 1. **Each layer has ONE responsibility** — don't mix concerns
 2. **Dependencies flow DOWN** — higher layers import from lower layers, never the reverse
 3. **Thin controllers** — Endpoints delegate to dependencies/services
-4. **Services orchestrate** — Business logic lives in services, not endpoints
-5. **Repositories abstract data** — All database access goes through repositories
-6. **Schemas validate** — Pydantic handles all input/output validation
-7. **Test each layer appropriately** — Unit tests for services, integration for repos, E2E for endpoints
+4. **Services receive repos** — Repositories are injected via constructor; sessions stay in the deps layer
+5. **Domain exceptions flow up** — Services raise domain exceptions, deps translate to HTTP exceptions
+6. **Repositories abstract data** — All database access goes through repositories with `auto_commit` support
+7. **Schemas validate** — Pydantic handles all input/output validation
+8. **Test each layer appropriately** — Unit tests for services (mock repos), integration for repos (real DB), E2E for endpoints
+9. **Know your limits** — This architecture serves 1–15 developers and up to ~150 endpoints; beyond that, evolve to domain-driven modules
 
 Copy this document to any FastAPI project as a foundation for consistent, maintainable architecture.
