@@ -16,6 +16,7 @@ A comprehensive, reusable guide for building maintainable FastAPI applications u
    - [Schema Layer](#35-schema-layer)
    - [Model Layer](#36-model-layer)
    - [Core Layer](#37-core-layer)
+   - [Middleware Layer](#38-middleware-layer)
 4. [Data Flow](#-data-flow)
 5. [Dependency Direction Rules](#-dependency-direction-rules)
 6. [Testing Strategy](#-testing-strategy)
@@ -131,7 +132,7 @@ This architecture is a **modular monolith** using layered separation. It is desi
 | Service dependencies | **Repository injection** | Explicit deps, easy testing, no session leaking into services |
 | Error handling | **Domain exceptions** | Pythonic, forces handling, clear exception hierarchy |
 | Transaction control | **`auto_commit` parameter** | Flexible per-operation; deps layer can coordinate multi-step transactions |
-| Session ownership | **Deps layer only** | Sessions injected via `Depends(get_db)`, never reach services — clean separation |
+| Session ownership | **Deps layer only** | Sessions injected via `Depends(get_session)`, never reach services — clean separation |
 
 ---
 
@@ -228,7 +229,7 @@ The dependency layer is a **factory and orchestration layer**. It creates reposi
 #### ✅ What Belongs Here
 
 - Creating repository instances and injecting them into services
-- Receiving database sessions via `Depends(get_db)` and creating repos
+- Receiving database sessions via `Depends(get_session)` and creating repos
 - Orchestrating multiple service calls
 - Catching domain exceptions and converting to HTTP exceptions
 - Query/body parameter extraction with validation
@@ -250,9 +251,13 @@ from typing import Annotated
 from fastapi import Body, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.db import get_db
-from app.core.exceptions import (
+from app.core.db import get_session
+from app.core.exceptions.domain import (
     AppException,
+    ResourceNotFoundError,
+    ValidationError,
+)
+from app.core.exceptions.http_exceptions import (
     BadRequestException,
     NotFoundException,
 )
@@ -272,11 +277,11 @@ async def get_resource_result(
         ProcessingOption,
         Query(default=ProcessingOption.DEFAULT, description="Processing mode"),
     ],
-    session: Annotated[AsyncSession, Depends(get_db)],
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ResourceResponse:
     """
     Dependency function that orchestrates service calls.
-    Session injected via Depends(get_db) — repos created here, never in services.
+    Session injected via Depends(get_session) — repos created here, never in services.
     """
     # Session stays here — services never see it
     resource_repo = ResourceRepository(session)
@@ -295,12 +300,12 @@ async def get_resource_result(
 
 async def get_resource_atomic(
     request: Annotated[ResourceRequest, Body(...)],
-    session: Annotated[AsyncSession, Depends(get_db)],
+    session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ResourceResponse:
     """
     Example: multi-step atomic operation using auto_commit=False.
     Deps layer controls the transaction boundary.
-    Session injected via Depends(get_db) — deps layer commits explicitly.
+    Session injected via Depends(get_session) — deps layer commits explicitly.
     """
     resource_repo = ResourceRepository(session)
     audit_repo = AuditRepository(session)
@@ -322,12 +327,12 @@ async def get_resource_atomic(
         raise
 ```
 
-> **When to use `SessionLocal()` directly**: Use manual session creation only in contexts where FastAPI's dependency injection is **unavailable** — lifespan/startup events, Celery tasks, background workers, and CLI scripts. For all request-handling deps, always use `Depends(get_db)`.
+> **When to use `SessionLocal()` directly**: Use manual session creation only in contexts where FastAPI's dependency injection is **unavailable** — lifespan/startup events, Celery tasks, background workers, and CLI scripts. For all request-handling deps, always use `Depends(get_session)`.
 
 #### Key Characteristics
 
 - **Factory pattern**: Creates repo instances and injects into services
-- **Session injection**: Receives session via `Depends(get_db)` — session never reaches services
+- **Session injection**: Receives session via `Depends(get_session)` — session never reaches services
 - **Exception translation**: Catches domain exceptions, raises HTTP exceptions
 - **Transaction coordination**: Uses `auto_commit=False` + explicit `commit()` for atomic operations
 - **Thin logic**: Complex rules go in services
@@ -468,6 +473,8 @@ class ResourceService:
 - **Cache integration**: Uses singleton caches for metadata lookups
 - **Threshold**: If a service constructor takes **>5 repositories**, it’s doing too much — split into smaller services
 
+> **Infrastructure services**: Not all services follow the repo-injection pattern. Infrastructure services like `firebase.py`, `gcs.py`, `back_blaze_b2.py`, and `firestore.py` wrap external SDKs and don't use repositories. They live in `app/services/` alongside domain services and are typically used by deps or other services directly.
+
 ---
 
 ### 3.4 Repository Layer
@@ -560,7 +567,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
 
     async def get_by_id(
         self,
-        obj_id: int | uuid.UUID,
+        obj_id: str | int | uuid.UUID,
         id_column_name: str = "id",
     ) -> Model | None:
         """Retrieve a single record by ID."""
@@ -571,19 +578,27 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_multi(
+    async def get_multi_by_ids(
         self,
+        obj_ids: Sequence[str | int | uuid.UUID],
         skip: int = 0,
         limit: int = 100,
-    ) -> list[Model]:
-        """Retrieve multiple records with pagination."""
-        stmt = select(self.model).offset(skip).limit(limit)
+        id_column_name: str = "id",
+    ) -> Sequence[Model]:
+        """Retrieve multiple records by IDs with pagination."""
+        self._validate_column_exists(id_column_name)
+        stmt = (
+            select(self.model)
+            .where(getattr(self.model, id_column_name).in_(obj_ids))
+            .offset(skip)
+            .limit(limit)
+        )
         result = await self.session.execute(stmt)
-        return list(result.scalars().all())
+        return result.scalars().all()
 
     async def update_by_id(
         self,
-        obj_id: int | uuid.UUID,
+        obj_id: str | int | uuid.UUID,
         schema: UpdateSchema,
         id_column_name: str = "id",
         auto_commit: bool = True,
@@ -601,9 +616,35 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             await self.session.commit()
         return result.scalar_one_or_none()
 
+    async def update_bulk(
+        self,
+        updates: Sequence[tuple[str | int | uuid.UUID, UpdateSchema]],
+        id_column_name: str = "id",
+        auto_commit: bool = True,
+    ) -> list[Model]:
+        """Update multiple records by (id, schema) tuples."""
+        if not updates:
+            return []
+        self._validate_column_exists(id_column_name)
+        updated = []
+        for obj_id, update_schema in updates:
+            stmt = (
+                update(self.model)
+                .where(getattr(self.model, id_column_name) == obj_id)
+                .values(**update_schema.model_dump(exclude_none=True))
+                .returning(self.model)
+            )
+            result = await self.session.execute(stmt)
+            obj = result.scalar_one_or_none()
+            if obj:
+                updated.append(obj)
+        if auto_commit:
+            await self.session.commit()
+        return updated
+
     async def delete_by_id(
         self,
-        obj_id: int | uuid.UUID,
+        obj_id: str | int | uuid.UUID,
         id_column_name: str = "id",
         auto_commit: bool = True,
     ) -> bool:
@@ -617,9 +658,32 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             await self.session.commit()
         return result.rowcount > 0
 
-    async def custom_query(self, query: str) -> Result[Any]:
-        """Execute raw SQL for complex queries."""
-        return await self.session.execute(text(query))
+    async def delete_by_ids(
+        self,
+        obj_ids: Sequence[str | int | uuid.UUID],
+        id_column_name: str = "id",
+        auto_commit: bool = True,
+    ) -> int:
+        """Delete multiple records by IDs. Returns count deleted."""
+        if not obj_ids:
+            return 0
+        self._validate_column_exists(id_column_name)
+        stmt = delete(self.model).where(
+            getattr(self.model, id_column_name).in_(obj_ids)
+        )
+        result = await self.session.execute(stmt)
+        if auto_commit:
+            await self.session.commit()
+        return result.rowcount
+
+    async def custom_query(
+        self, query: str, params: dict[str, Any] | None = None
+    ) -> Result[Any]:
+        """Execute parameterized raw SQL for complex queries."""
+        stmt = text(query)
+        if params:
+            stmt = stmt.bindparams(**params)
+        return await self.session.execute(stmt)
 
 
 # Example: Domain-specific repository extending base
@@ -663,11 +727,12 @@ class ResourceRepository(BaseRepository[ResourceModel, CreateResourceSchema, Upd
 
 #### Key Characteristics
 
-- **Generic base class**: Reusable CRUD with type parameters
+- **Generic base class**: Reusable CRUD with type parameters (`Model`, `CreateSchema`, `UpdateSchema`)
+- **9 methods**: `create_one`, `create_bulk`, `get_by_id`, `get_multi_by_ids`, `update_by_id`, `update_bulk`, `delete_by_id`, `delete_by_ids`, `custom_query`
 - **`auto_commit` parameter**: Default `True` for standalone operations; pass `False` when deps layer coordinates transactions
 - **Column validation**: Prevents runtime errors on dynamic queries
 - **Domain-specific extensions**: Custom methods in concrete repositories
-- **Escape hatch**: `custom_query()` for complex SQL when needed
+- **Escape hatch**: `custom_query()` for parameterized raw SQL when needed
 
 ---
 
@@ -729,8 +794,8 @@ class BaseCreateSchema(BaseModel):
     """Base schema for create operations."""
 
     model_config = ConfigDict(
-        validate_assignment=True,
-        use_enum_values=True,
+        validate_assignment=True, # Allow assignment validation
+        use_enum_values=True, # Serialize enums as their values
     )
 
 
@@ -738,8 +803,8 @@ class BaseUpdateSchema(BaseModel):
     """Base schema for update operations (all fields optional)."""
 
     model_config = ConfigDict(
-        validate_assignment=True,
-        use_enum_values=True,
+        validate_assignment=True, # Allow assignment validation
+        use_enum_values=True, # Serialize enums as their values
     )
 
 
@@ -915,53 +980,71 @@ The model layer defines **SQLAlchemy ORM models** that map to database tables. M
 #### Full Code Example
 
 ```python
+import re
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
-from sqlalchemy import (
-    BigInteger,
-    DateTime,
-    Float,
-    Index,
-    Integer,
-    MetaData,
-    String,
-    Text,
-    inspect,
+from sqlalchemy import BigInteger, DateTime, Float, Index, String, Text, func
+from sqlalchemy.orm import (
+    DeclarativeBase,
+    Mapped,
+    class_mapper,
+    declared_attr,
+    mapped_column,
+    relationship,
 )
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+from app.core.db import meta
 
 
 class Base(DeclarativeBase):
     """Base class for all SQLAlchemy models."""
 
-    metadata = MetaData()
+    __abstract__ = True
+
+    metadata = meta
+
+    # Common columns — inherited by all models
+    id: Mapped[int] = mapped_column(
+        BigInteger(), autoincrement=True, primary_key=True, index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    @declared_attr.directive
+    def __tablename__(cls) -> str:
+        """Auto-generate table name from class name (CamelCase → snake_case)."""
+        return re.sub(r"(?<!^)(?=[A-Z])", "_", cls.__name__).lower()
 
     def to_dict(
         self,
-        exclude_keys: list[str] | None = None,
+        exclude_keys: set[str] | None = None,
         exclude_none: bool = False,
     ) -> dict[str, Any]:
         """
         Convert model to dictionary for serialization.
 
         Args:
-            exclude_keys: List of column names to exclude
+            exclude_keys: Set of column names to exclude
             exclude_none: If True, exclude columns with None values
 
         Returns:
             Dictionary representation of the model
         """
-        exclude_keys = exclude_keys or []
+        exclude_keys = exclude_keys or set()
         result = {}
 
-        for column in inspect(self).mapper.column_attrs:
-            if column.key in exclude_keys:
+        for key in class_mapper(self.__class__).c.keys():
+            if key in exclude_keys:
                 continue
-            value = getattr(self, column.key)
+            value = getattr(self, key)
             if exclude_none and value is None:
                 continue
-            result[column.key] = value
+            result[key] = value
 
         return result
 
@@ -976,31 +1059,18 @@ class Base(DeclarativeBase):
 
 
 class ResourceModel(Base):
-    """Resource entity model."""
+    """Resource entity model — __tablename__ auto-generated as 'resource_model'."""
 
-    __tablename__ = "resources"
     __table_args__ = (
         Index("ix_resources_category", "category"),
-        Index("ix_resources_created_at", "created_at"),
-        {"schema": "app_data"},  # Optional: specify schema
     )
 
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    # id, created_at, updated_at are inherited from Base
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     value: Mapped[float] = mapped_column(Float, nullable=False)
     category: Mapped[str] = mapped_column(String(50), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        default=datetime.utcnow,
-    )
-    updated_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True),
-        nullable=True,
-        onupdate=datetime.utcnow,
-    )
 
     # Relationship example
     audit_logs: Mapped[list["AuditLogModel"]] = relationship(
@@ -1008,43 +1078,17 @@ class ResourceModel(Base):
         back_populates="resource",
         lazy="selectin",
     )
-
-
-class AuditLogModel(Base):
-    """Audit log for tracking resource changes."""
-
-    __tablename__ = "audit_logs"
-    __table_args__ = {"schema": "app_data"}
-
-    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
-    resource_id: Mapped[int] = mapped_column(
-        BigInteger,
-        ForeignKey("app_data.resources.id"),
-        nullable=False,
-    )
-    action: Mapped[str] = mapped_column(String(50), nullable=False)
-    details: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        default=datetime.utcnow,
-    )
-
-    # Back-reference
-    resource: Mapped["ResourceModel"] = relationship(
-        "ResourceModel",
-        back_populates="audit_logs",
-    )
 ```
 
 #### Key Characteristics
 
-- **Declarative base**: All models inherit from `Base`
+- **`__abstract__ = True`**: Base class is not mapped to a table
+- **Common columns**: `id`, `created_at`, `updated_at` inherited by all models — no need to redeclare
+- **Auto tablename**: `@declared_attr` generates `snake_case` table names from `CamelCase` class names
 - **Type annotations**: Use `Mapped[T]` for all columns
+- **`set[str]`**: `exclude_keys` uses `set` for O(1) lookup instead of `list`
 - **Indexes**: Define in `__table_args__` for query performance
 - **Relationships**: Define with `relationship()` for ORM navigation
-- **Utility methods**: `to_dict()` for serialization, `__repr__` for debugging
-- **Schema support**: Use `__table_args__ = {"schema": "..."}` for multi-schema databases
 
 ---
 
@@ -1079,10 +1123,9 @@ The core layer contains **cross-cutting concerns**: configuration management, ex
 # app/core/config.py - Configuration Management
 # =============================================================================
 
-from functools import lru_cache
-
 from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from yarl import URL
 
 
 class Settings(BaseSettings):
@@ -1136,38 +1179,65 @@ class Settings(BaseSettings):
         """Parse CORS origins from comma-separated string."""
         return [origin.strip() for origin in self.cors_origins.split(",")]
 
+    @computed_field
+    @property
+    def db_url(self) -> URL:
+        """Construct PostgreSQL connection URL using yarl.URL."""
+        return URL.build(
+            scheme="postgresql+asyncpg",
+            host=self.postgres_host,
+            port=self.postgres_port,
+            user=self.postgres_user,
+            password=self.postgres_password,
+            path=f"/{self.postgres_db}",
+        )
 
-@lru_cache
-def get_settings() -> Settings:
-    """Cached settings instance."""
-    return Settings()
 
-
-settings = get_settings()
+settings = Settings()  # type: ignore
 
 
 # =============================================================================
-# app/core/exceptions.py - Exception Hierarchy
+# app/core/exceptions/ - Exception Package Structure
 # =============================================================================
+# app/core/exceptions/
+# ├── base.py            ← AppException, HTTPException
+# ├── domain.py          ← ValidationError, ResourceNotFoundError, etc.
+# ├── http_exceptions.py ← BadRequestException, NotFoundException, etc.
+# └── <service>_exceptions.py ← Service-specific exceptions (firebase, gcs, etc.)
+
+
+# --- app/core/exceptions/base.py ---
 
 from typing import Any
 
-from fastapi import status
 from fastapi.exceptions import HTTPException as FastAPIHTTPException
 
 
 class AppException(Exception):
-    """Base exception for application errors."""
+    """Base exception for all application errors."""
 
-    def __init__(self, message: str, details: Any = None):
+    def __init__(self, message: str = "", exception: Exception | None = None):
         self.message = message
-        self.details = details
+        self.exception = exception
         super().__init__(message)
 
 
-# ---------------------------------------------------------------------------
-# Domain Exceptions (raised by Services, caught by Deps)
-# ---------------------------------------------------------------------------
+class HTTPException(FastAPIHTTPException):
+    """Base HTTP exception with standard interface."""
+
+    def __init__(
+        self,
+        status_code: int,
+        detail: Any = None,
+        headers: dict[str, str] | None = None,
+    ):
+        super().__init__(status_code=status_code, detail=detail, headers=headers)
+
+
+# --- app/core/exceptions/domain.py ---
+
+from app.core.exceptions.base import AppException
+
 
 class ValidationError(AppException):
     """Business rule validation failure."""
@@ -1189,20 +1259,11 @@ class DuplicateResourceError(AppException):
     pass
 
 
-# ---------------------------------------------------------------------------
-# HTTP Exceptions (raised by Deps, handled by FastAPI)
-# ---------------------------------------------------------------------------
+# --- app/core/exceptions/http_exceptions.py ---
 
-class HTTPException(FastAPIHTTPException):
-    """Base HTTP exception with standard interface."""
+from fastapi import status
 
-    def __init__(
-        self,
-        status_code: int,
-        detail: Any = None,
-        headers: dict[str, str] | None = None,
-    ):
-        super().__init__(status_code=status_code, detail=detail, headers=headers)
+from app.core.exceptions.base import HTTPException
 
 
 class BadRequestException(HTTPException):
@@ -1253,19 +1314,16 @@ class ForbiddenException(HTTPException):
 # app/core/db.py - Database Setup
 # =============================================================================
 
+from yarl import URL
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.core.config import settings
 
-# Create async engine with connection pooling
+# Create async engine
 engine = create_async_engine(
-    settings.db_url,
-    pool_size=settings.sqlalchemy_pool_size,
-    max_overflow=settings.sqlalchemy_max_overflow,
-    pool_timeout=settings.sqlalchemy_pool_timeout,
-    pool_recycle=settings.sqlalchemy_pool_recycle,
-    pool_pre_ping=settings.sqlalchemy_pool_pre_ping,
-    echo=settings.debug,  # Log SQL in debug mode
+    settings.db_url.human_repr(),  # yarl URL → string
+    echo=settings.debug,
+    pool_pre_ping=True,
 )
 
 # Session factory
@@ -1277,7 +1335,7 @@ SessionLocal = async_sessionmaker(
 )
 
 
-async def get_db() -> AsyncSession:
+async def get_session() -> AsyncSession:
     """
     Dependency for getting database session.
     Use with FastAPI's Depends().
@@ -1292,12 +1350,51 @@ async def get_db() -> AsyncSession:
 
 #### Key Characteristics
 
-- **Settings**: Use `pydantic-settings` for type-safe configuration
-- **Computed properties**: Derive values from base settings
-- **Exception hierarchy**: Domain exceptions (`AppException` → `ValidationError`, `ResourceNotFoundError`, etc.) for services; HTTP exceptions (`HTTPException` → `BadRequestException`, `NotFoundException`, etc.) for deps
-- **Database factory**: Async session with proper pool settings
-- **Caching**: Use `@lru_cache` for singleton settings
+- **Settings**: Use `pydantic-settings` for type-safe configuration; instantiate directly with `settings = Settings()`
+- **Computed properties**: Derive values from base settings (e.g., `db_url` returns `yarl.URL`)
+- **Exception package**: Domain exceptions in `domain.py`, HTTP exceptions in `http_exceptions.py`, base classes in `base.py`
+- **Database factory**: Async session with `yarl.URL.human_repr()` for URL construction
 - **No business logic**: Pure infrastructure code
+
+---
+
+### 3.8 Middleware Layer
+
+**Location**: `app/middleware/`
+
+#### Responsibility
+
+The middleware layer adds **cross-cutting HTTP concerns** that run on every request/response. Middleware executes before and after route handlers, providing security, logging, and observability without modifying endpoint code.
+
+#### Middleware Components
+
+| Middleware | File | Purpose |
+|-----------|------|---------|
+| **CSRF Protection** | `csrf.py` | Double-submit cookie pattern with `X-CSRF-Token` header validation |
+| **Request Logging** | `logging.py` | Logs request/response details with sanitized bodies; redacts sensitive fields |
+| **Security Headers** | `security_headers.py` | Adds OWASP-recommended headers (HSTS, CSP, X-Frame-Options, etc.) |
+| **Rate Limit Headers** | `rate_limit.py` | Injects `X-RateLimit-*` headers from rate limit dependency state |
+
+#### Key Characteristics
+
+- **Starlette `BaseHTTPMiddleware`**: All middleware extends this base class
+- **Environment-aware**: CSRF skips validation in `LOCAL` environment for easier development
+- **Sensitive data redaction**: Logging middleware sanitizes passwords, tokens, keys before logging
+- **Exempt paths**: CSRF exempts auth endpoints and docs paths
+- **Constant-time comparison**: CSRF uses `secrets.compare_digest` to prevent timing attacks
+- **Header-only**: Middleware adds/validates headers — no business logic or database access
+
+#### Registration Order
+
+Middleware is registered in `app/web.py`. Order matters — outermost middleware runs first:
+
+```python
+# app/web.py
+app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(CSRFMiddleware)
+app.add_middleware(RateLimitHeaderMiddleware)
+app.add_middleware(LoggingMiddleware)
+```
 
 ---
 
@@ -1395,6 +1492,7 @@ flowchart TD
     subgraph "Allowed Imports"
         API[API Layer] --> Deps[Dependency Layer]
         API --> Schemas
+        API --> Core
         Deps --> Services[Service Layer]
         Deps -->|creates instances| Repos[Repository Layer]
         Deps --> Core
@@ -1421,7 +1519,7 @@ flowchart TD
 
 | Layer | Can Import | Cannot Import |
 |-------|------------|---------------|
-| **API** | Deps, Schemas | Services, Repos, Models, Core |
+| **API** | Deps, Schemas, Core | Services, Repos, Models |
 | **Deps** | Services, Repos, Schemas, Core | API, Models |
 | **Service** | Repos, Schemas, Core, Cache | API, Deps, Models |
 | **Repository** | Models, Schemas | API, Deps, Services |
@@ -1688,7 +1786,7 @@ app.dependency_overrides.clear()
 
 ```python
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from app.core.db import get_db
+from app.core.db import get_session
 from app.main import app
 
 # Test database engine
@@ -1698,7 +1796,7 @@ TestSessionLocal = async_sessionmaker(
 )
 
 
-async def override_get_db():
+async def override_get_session():
     """Provide test database session."""
     async with TestSessionLocal() as session:
         try:
@@ -1708,11 +1806,11 @@ async def override_get_db():
             raise
 
 
-# Override get_db for all tests
-app.dependency_overrides[get_db] = override_get_db
+# Override get_session for all tests
+app.dependency_overrides[get_session] = override_get_session
 ```
 
-> **Note**: Override `get_db` (not `SessionLocal`) because deps receive sessions via `Depends(get_db)`. This swaps the session for all deps without changing any business logic.
+> **Note**: Override `get_session` (not `SessionLocal`) because deps receive sessions via `Depends(get_session)`. This swaps the session for all deps without changing any business logic.
 
 ---
 
@@ -1725,7 +1823,7 @@ app.dependency_overrides[get_db] = override_get_db
 @router.post("/process")
 async def process_resource(
     request: ResourceRequest,
-    session: AsyncSession = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
     # Validation logic in endpoint
     if request.value < 0 or request.value > 1000:
@@ -1790,7 +1888,7 @@ class ResourceService:
 # ❌ WRONG: Deps ignores domain exceptions (lets them crash)
 async def get_resource_result(
     resource_id: int,
-    session: AsyncSession = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
     repo = ResourceRepository(session)
     service = ResourceService(repo)
@@ -1809,7 +1907,7 @@ class ResourceService:
 
 async def get_resource_result(
     resource_id: int,
-    session: AsyncSession = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ) -> ResourceResponse:
     repo = ResourceRepository(session)
     service = ResourceService(repo)
@@ -1853,7 +1951,7 @@ async def get_resource(resource: ResourceResponse = Depends(get_resource)):
 ```python
 # ❌ WRONG: Service imports from API layer
 # app/services/resource_service.py
-from app.api.v1.deps.resource import get_db  # Circular!
+from app.api.v1.deps.resource import get_session  # Circular!
 
 
 # ✅ CORRECT: Service receives repos as constructor parameter
@@ -1964,7 +2062,7 @@ class ShippingService:
 # ❌ WRONG: auto_commit=False but no commit — SILENT DATA LOSS
 async def create_order_with_audit(
     request: OrderRequest,
-    session: AsyncSession = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
     order_repo = OrderRepository(session)
     audit_repo = AuditRepository(session)
@@ -1979,7 +2077,7 @@ async def create_order_with_audit(
 # ✅ CORRECT: Explicit commit after all operations
 async def create_order_with_audit(
     request: OrderRequest,
-    session: AsyncSession = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ):
     order_repo = OrderRepository(session)
     audit_repo = AuditRepository(session)
@@ -1999,7 +2097,7 @@ async def create_order_with_audit(
 ```python
 # ❌ WRONG: Endpoint catches domain exception directly
 @router.get("/{id}")
-async def get_resource(resource_id: int, session: AsyncSession = Depends(get_db)):
+async def get_resource(resource_id: int, session: AsyncSession = Depends(get_session)):
     repo = ResourceRepository(session)
     service = ResourceService(repo)
     try:
@@ -2020,7 +2118,7 @@ async def get_resource(
 # Deps layer catches and translates:
 async def get_resource_dep(
     resource_id: int,
-    session: AsyncSession = Depends(get_db),
+    session: AsyncSession = Depends(get_session),
 ) -> ResourceResponse:
     repo = ResourceRepository(session)
     service = ResourceService(repo)
