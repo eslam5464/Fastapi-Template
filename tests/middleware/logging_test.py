@@ -131,7 +131,9 @@ class TestLoggingMiddleware:
             assert "/api/error" in error_call[0][0]
 
             # Check keyword args
-            assert "request_body" in error_call[1]
+            assert (
+                "request_body" in error_call[1]
+            ), f"Expected 'request_body' in log kwargs, got {error_call[1].keys()}"
             assert error_call[1]["request_body"] == {"key": "value"}
             assert error_call[1]["request_query_params"] == {"param": "value"}
             assert error_call[1]["request_path_params"] == {"id": "123"}
