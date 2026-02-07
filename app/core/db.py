@@ -33,7 +33,7 @@ meta = MetaData(
     },
 )
 
-async_session_factory = async_sessionmaker(
+SessionLocal = async_sessionmaker(
     autocommit=False,
     autoflush=False,
     expire_on_commit=False,
@@ -51,10 +51,9 @@ session_factory = sessionmaker(
 
 
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
-    async with async_session_factory() as session:
+    async with SessionLocal() as session:
         try:
             yield session
-            await session.commit()
         except Exception:
             await session.rollback()
             raise

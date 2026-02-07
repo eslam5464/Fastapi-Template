@@ -1,7 +1,7 @@
-from app.core.exceptions.base import CustomException
+from app.core.exceptions.base import AppException
 
 
-class AppStoreException(CustomException):
+class AppStoreException(AppException):
     """
     Exception related to App Store operations
     """

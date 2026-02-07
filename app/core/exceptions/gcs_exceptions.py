@@ -1,9 +1,9 @@
 from google.api_core.exceptions import NotFound
 
-from app.core.exceptions.base import CustomException
+from app.core.exceptions.base import AppException
 
 
-class GCSError(CustomException):
+class GCSError(AppException):
     """
     Base exception for Google cloud service
     """

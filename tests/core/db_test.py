@@ -5,7 +5,7 @@ from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker
 
 from app.core.config import settings
-from app.core.db import async_session_factory, engine, get_session, meta
+from app.core.db import SessionLocal, engine, get_session, meta
 
 
 class TestDatabaseEngine:
@@ -89,19 +89,18 @@ class TestSessionFactory:
 
     def test_session_factory_configuration(self):
         """Test that session factory is properly configured."""
-        assert isinstance(async_session_factory, async_sessionmaker)
+        assert isinstance(SessionLocal, async_sessionmaker)
 
         # Verify it's bound to the engine
         assert (
-            async_session_factory.kw.get("bind") == engine
-            or async_session_factory.kw.get("class_") == AsyncSession
+            SessionLocal.kw.get("bind") == engine or SessionLocal.kw.get("class_") == AsyncSession
         )
 
     def test_session_factory_expire_on_commit(self):
         """Test that expire_on_commit is set to False."""
         # The factory should have expire_on_commit=False
         # This prevents expiration of objects after commit
-        assert async_session_factory.kw.get("expire_on_commit") == False
+        assert SessionLocal.kw.get("expire_on_commit") == False
 
 
 @pytest.mark.anyio
@@ -124,8 +123,8 @@ class TestGetSession:
             except StopAsyncIteration:
                 pass
 
-    async def test_commits_on_success(self):
-        """Test that session commits on successful execution."""
+    async def test_no_commit_on_success(self):
+        """Test that session does NOT commit — repos own commits via auto_commit."""
         session_generator = get_session()
         session = await anext(session_generator)
 
@@ -139,12 +138,10 @@ class TestGetSession:
                     except StopAsyncIteration:
                         pass
 
-                    # Commit should be called
-                    mock_commit.assert_called_once()
-                    # Rollback should not be called
+                    # Commit should NOT be called — repos handle commits
+                    mock_commit.assert_not_called()
+                    # Rollback should not be called on success
                     mock_rollback.assert_not_called()
-                    # Close should be called twice (once by async with, once in finally)
-                    assert mock_close.call_count == 2
 
     async def test_rollback_on_exception(self):
         """Test that session rolls back on exception."""
@@ -162,11 +159,11 @@ class TestGetSession:
 
                     # Rollback should be called
                     mock_rollback.assert_called_once()
-                    # Close should be called twice (once by async with, once in finally)
-                    assert mock_close.call_count == 2
+                    # Close should be called once (by async with)
+                    assert mock_close.call_count == 1
 
-    async def test_closes_session_in_finally(self):
-        """Test that session is always closed in finally block."""
+    async def test_closes_session_in_context_manager(self):
+        """Test that session is always closed by async with context manager."""
         session_generator = get_session()
         session = await anext(session_generator)
 
@@ -179,25 +176,8 @@ class TestGetSession:
                     except StopAsyncIteration:
                         pass
 
-                    # Close should always be called twice (once by async with, once in finally)
-                    assert mock_close.call_count == 2
-
-    async def test_closes_session_even_on_exception(self):
-        """Test that session is closed even when exception occurs."""
-        session_generator = get_session()
-        session = await anext(session_generator)
-
-        with patch.object(session, "commit", new_callable=AsyncMock):
-            with patch.object(session, "rollback", new_callable=AsyncMock):
-                with patch.object(session, "close", new_callable=AsyncMock) as mock_close:
-                    # Throw exception
-                    try:
-                        await session_generator.athrow(RuntimeError("Database error"))
-                    except RuntimeError:
-                        pass
-
-                    # Close should still be called twice (once by async with, once in finally)
-                    assert mock_close.call_count == 2
+                    # Close should always be called once (by async with)
+                    assert mock_close.call_count == 1
 
     async def test_session_is_async_session_instance(self):
         """Test that yielded session is AsyncSession instance."""

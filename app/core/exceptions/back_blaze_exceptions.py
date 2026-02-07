@@ -1,9 +1,9 @@
 from b2sdk.v2.exception import NonExistentBucket
 
-from app.core.exceptions.base import CustomException
+from app.core.exceptions.base import AppException
 
 
-class BlackBlazeError(CustomException):
+class BlackBlazeError(AppException):
     """
     Base exception for black blaze b2
     """

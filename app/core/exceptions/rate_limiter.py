@@ -1,7 +1,7 @@
-from app.core.exceptions.base import CustomException
+from app.core.exceptions.base import AppException
 
 
-class RateLimiterException(CustomException):
+class RateLimiterException(AppException):
     """
     Base exception for Rate Limiter
     """

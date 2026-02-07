@@ -3,9 +3,10 @@ from typing import Any, Optional
 from fastapi import HTTPException as FastAPIHTTPException
 
 
-class CustomException(Exception):
+class AppException(Exception):
     """
-    Base for all custom exceptions
+    Base for all custom/domain exceptions.
+    Services raise AppException subclasses; deps catch and translate to HTTP exceptions.
     """
 
     def __init__(self, message, exception: Exception | None = None):

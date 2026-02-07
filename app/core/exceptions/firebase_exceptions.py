@@ -1,7 +1,7 @@
-from app.core.exceptions.base import CustomException
+from app.core.exceptions.base import AppException
 
 
-class FirebaseError(CustomException):
+class FirebaseError(AppException):
     """
     Base exception for Firebase
     """

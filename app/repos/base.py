@@ -52,16 +52,20 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
                 f"Column '{column_name}' is not a valid SQLAlchemy column on model {self.model.__name__}"
             )
 
-    async def create_one(self, schema: CreateSchema, exclude_none: bool = True) -> Model:
+    async def create_one(
+        self, schema: CreateSchema, exclude_none: bool = True, auto_commit: bool = True
+    ) -> Model:
         """
         Create a new object in the database.
 
         Args:
             schema (CreateSchema): The data to create the object.
             exclude_none (bool): Whether to exclude None values from the creation.
+            auto_commit (bool): Whether to commit the transaction. Pass False when
+                deps layer coordinates multi-step transactions.
 
         Returns:
-            Model: The created object.
+            created_object (Model): The created object.
 
         Raises:
             Exception: If the object creation fails.
@@ -72,11 +76,15 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             .returning(self.model)
         )
         result = await self.session.execute(stmt)
-        await self.session.commit()
+        if auto_commit:
+            await self.session.commit()
         return result.scalar_one()
 
     async def create_bulk(
-        self, schemas: Sequence[CreateSchema], exclude_none: bool = True
+        self,
+        schemas: Sequence[CreateSchema],
+        exclude_none: bool = True,
+        auto_commit: bool = True,
     ) -> Sequence[Model]:
         """
         Create multiple objects in the database.
@@ -84,9 +92,11 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         Args:
             schemas (Sequence[CreateSchema]): The list of data to create objects.
             exclude_none (bool): Whether to exclude None values from the creation.
+            auto_commit (bool): Whether to commit the transaction. Pass False when
+                deps layer coordinates multi-step transactions.
 
         Returns:
-            Sequence[Model]: The Sequence of created objects.
+            created_objects (Sequence[Model]): The Sequence of created objects.
 
         Raises:
             Exception: If the bulk creation fails.
@@ -97,7 +107,8 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         values = [schema.model_dump(exclude_none=exclude_none) for schema in schemas]
         stmt = insert(self.model).values(values).returning(self.model)
         result = await self.session.execute(stmt)
-        await self.session.commit()
+        if auto_commit:
+            await self.session.commit()
 
         return result.scalars().all()
 
@@ -142,7 +153,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             obj_ids (Sequence[str | int | uuid.UUID]): The IDs of the objects to retrieve
 
         Returns:
-            Sequence[Model]: A Sequence of retrieved objects.
+            retrieved_objects (Sequence[Model]): A Sequence of retrieved objects.
         """
         self._validate_column_exists(id_column_name)
         stmt = (
@@ -161,6 +172,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         schema: UpdateSchema,
         id_column_name: str = "id",
         exclude_none: bool = True,
+        auto_commit: bool = True,
     ) -> Model | None:
         """
         Update an object by its ID.
@@ -170,9 +182,11 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             schema (UpdateSchema): The data to update the object.
             id_column_name (str): The name of the ID column in the model.
             exclude_none (bool): Whether to exclude None values from the update.
+            auto_commit (bool): Whether to commit the transaction. Pass False when
+                deps layer coordinates multi-step transactions.
 
         Returns:
-            Model | None: The updated object or None if not found.
+            updated_object (Model | None): The updated object or None if not found.
 
         Raises:
             ValueError: If the id_column_name doesn't exist on the model.
@@ -190,7 +204,8 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             .returning(self.model)
         )
         result = await self.session.execute(stmt)
-        await self.session.commit()
+        if auto_commit:
+            await self.session.commit()
 
         return result.scalar_one_or_none()
 
@@ -199,6 +214,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         updates: Sequence[tuple[str | int | uuid.UUID, UpdateSchema]],
         id_column_name: str = "id",
         exclude_none: bool = True,
+        auto_commit: bool = True,
     ) -> list[Model]:
         """
         Update multiple objects by their IDs.
@@ -207,9 +223,11 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             updates (Sequence[tuple[str | int | uuid.UUID, UpdateSchema]]): List of tuples containing (id, update_data).
             id_column_name (str): The name of the ID column in the model.
             exclude_none (bool): Whether to exclude None values from the update.
+            auto_commit (bool): Whether to commit the transaction. Pass False when
+                deps layer coordinates multi-step transactions.
 
         Returns:
-            list[Model]: A list of updated objects.
+            updated_objects (list[Model]): A list of updated objects.
 
         Raises:
             ValueError: If the id_column_name doesn't exist on the model.
@@ -233,13 +251,15 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             if updated_obj:
                 updated_objects.append(updated_obj)
 
-        await self.session.commit()
+        if auto_commit:
+            await self.session.commit()
         return updated_objects
 
     async def delete_by_id(
         self,
         obj_id: str | int | uuid.UUID,
         id_column_name: str = "id",
+        auto_commit: bool = True,
     ) -> bool:
         """
         Delete an object by its ID.
@@ -247,9 +267,11 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         Args:
             obj_id (str | int | uuid.UUID): The ID of the object to delete.
             id_column_name (str): The name of the ID column in the model.
+            auto_commit (bool): Whether to commit the transaction. Pass False when
+                deps layer coordinates multi-step transactions.
 
         Returns:
-            bool: True if the object was deleted, False otherwise.
+            is_deleted (bool): True if the object was deleted, False otherwise.
 
         Raises:
             ValueError: If the id_column_name doesn't exist on the model.
@@ -257,7 +279,8 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         self._validate_column_exists(id_column_name)
         stmt = delete(self.model).where(getattr(self.model, id_column_name) == obj_id)
         result = await self.session.execute(stmt)
-        await self.session.commit()
+        if auto_commit:
+            await self.session.commit()
 
         return result.rowcount > 0
 
@@ -265,16 +288,19 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         self,
         obj_ids: Sequence[str | int | uuid.UUID],
         id_column_name: str = "id",
+        auto_commit: bool = True,
     ) -> int:
         """
         Delete multiple objects by their IDs.
 
         Args:
-            obj_ids (Sequence[int | uuid.UUID]): The IDs of the objects to delete.
+            obj_ids (Sequence[str | int | uuid.UUID]): The IDs of the objects to delete.
             id_column_name (str): The name of the ID column in the model.
+            auto_commit (bool): Whether to commit the transaction. Pass False when
+                deps layer coordinates multi-step transactions.
 
         Returns:
-            int: The number of objects deleted.
+            deleted_count (int): The number of objects deleted.
 
         Raises:
             ValueError: If the id_column_name doesn't exist on the model.
@@ -285,7 +311,8 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         self._validate_column_exists(id_column_name)
         stmt = delete(self.model).where(getattr(self.model, id_column_name).in_(obj_ids))
         result = await self.session.execute(stmt)
-        await self.session.commit()
+        if auto_commit:
+            await self.session.commit()
 
         return result.rowcount
 
@@ -305,7 +332,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             params (dict[str, Any] | None): Dictionary of parameter names to values
 
         Returns:
-            Result: The result of the executed query.
+            result (Result): The result of the executed query.
 
         Example:
             await repo.custom_query(
