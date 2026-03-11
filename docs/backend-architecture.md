@@ -84,6 +84,15 @@ flowchart TB
 | **Testability** | Each layer can be tested in isolation with mocks |
 | **Reusability** | Lower layers are reusable across multiple higher-layer consumers |
 
+### Normative Rules (MUST / SHOULD / MAY)
+
+- **MUST**: Database session ownership remains in the Deps layer during request handling.
+- **MUST**: Services raise domain exceptions only (never HTTP exceptions).
+- **MUST**: Deps translate domain exceptions to HTTP exceptions.
+- **SHOULD**: Endpoints remain thin controllers (target: 1-5 lines of logic).
+- **SHOULD**: Repository mutation methods expose `auto_commit` for transaction orchestration.
+- **MAY**: Schema and Model layers import Core only for shared primitives (e.g., enums, base classes).
+
 ### Quick Reference Table
 
 | Layer | Location | Responsibility | Depends On |
@@ -92,9 +101,9 @@ flowchart TB
 | **Deps** | `app/api/*/deps/` | Dependency injection, session management, repo creation, exception translation | Services, Repos, Schemas, Core |
 | **Service** | `app/services/` | Business logic, domain rules, domain exceptions; receives repos via injection | Repos, Schemas, Cache |
 | **Repository** | `app/repos/` | Data access, CRUD with `auto_commit` support | Models, Schemas |
-| **Schema** | `app/schemas/` | Validation, serialization, API contracts | None (leaf) |
-| **Model** | `app/models/` | Database table mapping (ORM) | None (leaf) |
-| **Core** | `app/core/` | Configuration, exceptions (HTTP + domain), database setup | None (leaf) |
+| **Schema** | `app/schemas/` | Validation, serialization, API contracts | Core (shared primitives only) |
+| **Model** | `app/models/` | Database table mapping (ORM) | Core (shared primitives only) |
+| **Core** | `app/core/` | Configuration, exceptions (HTTP + domain), database setup | None (lowest layer) |
 
 ---
 
@@ -1444,7 +1453,6 @@ sequenceDiagram
 | Service → Deps | Error path | Domain exceptions (`AppException` subclasses) |
 | Deps → API | Error path | HTTP exceptions (`HTTPException` subclasses) |
 | API → Client | Response body | Pydantic schema (serialized automatically) |
-| API → Client | Response body | Pydantic schema (serialized automatically) |
 
 ### Error Propagation Flow
 
@@ -1504,7 +1512,7 @@ flowchart TD
         Repos --> Schemas
     end
 
-    subgraph "Leaf Layers (No App Imports)"
+    subgraph "Low-level Layers (restricted imports)"
         Core[Core Layer]
         Schemas[Schema Layer]
         Models
@@ -1541,7 +1549,7 @@ from app.services.resource_service import ResourceService  # Circular!
 from app.repos.resource_repo import ResourceRepository  # OK
 ```
 
-**Solution for shared types**: Move to Schema layer (leaf layer)
+**Solution for shared types**: Move to Schema layer (low-level shared contracts)
 
 ```python
 # ✅ CORRECT: Shared types in schemas
