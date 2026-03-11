@@ -8,11 +8,11 @@ from faker import Faker
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from jose import jwt
+from pwdlib import PasswordHash
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.sql import text
 
 from app import repos
-from app.core.auth import get_password_hash
 from app.core.config import settings
 from app.core.db import get_session
 from app.main import app
@@ -20,12 +20,13 @@ from app.models import Base, User
 from app.schemas import Token, UserCreate
 
 DEFAULT_PASSWORD = "P@ssword123"
+_PASSWORD_HASH = PasswordHash.recommended()
 
 
 @pytest.fixture(scope="session")
-def pre_hashed_password():
+def pre_hashed_password() -> str:
     """Pre-compute the hashed password once for all tests to avoid repeated bcrypt operations."""
-    return get_password_hash(DEFAULT_PASSWORD)
+    return _PASSWORD_HASH.hash(DEFAULT_PASSWORD)
 
 
 @pytest.fixture(scope="session")
