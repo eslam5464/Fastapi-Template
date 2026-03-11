@@ -7,15 +7,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app import repos
 from app.core.db import get_session
 from app.core.exceptions import http_exceptions
-from app.core.exceptions.domain import (
+from app.models.user import User
+from app.schemas import TokenPayload, UserCreate, UserSignup
+from app.services.auth_service import AuthService
+from app.services.exceptions.auth import (
     DuplicateResourceError,
     ResourceNotFoundError,
     ValidationError,
 )
-from app.core.types import TokenPairDict
-from app.models.user import User
-from app.schemas import TokenPayload, UserSignup
-from app.services.auth_service import AuthService
+from app.services.types.auth import TokenPairDict
 
 # OAuth2 password bearer scheme for token authentication
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
@@ -24,6 +24,11 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 def _get_auth_service(db: AsyncSession) -> AuthService:
     """Create AuthService with UserRepo injected."""
     return AuthService(user_repo=repos.UserRepo(db))
+
+
+def get_auth_service(db: Annotated[AsyncSession, Depends(get_session)]) -> AuthService:
+    """Dependency provider for AuthService."""
+    return _get_auth_service(db)
 
 
 async def get_current_user(
@@ -77,8 +82,17 @@ async def generate_access_token(
         BadRequestException: If registration fails (e.g., duplicate email).
     """
     service = _get_auth_service(db)
+    hashed_password = service.get_password_hash(user_in.password.get_secret_value())
     try:
-        return await service.register_user(user_in)
+        return await service.register_user(
+            UserCreate(
+                first_name="",
+                last_name="",
+                username=user_in.username,
+                email=user_in.email,
+                hashed_password=hashed_password,
+            )
+        )
     except DuplicateResourceError as e:
         raise http_exceptions.BadRequestException(detail=str(e))
 

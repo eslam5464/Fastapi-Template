@@ -1,28 +1,27 @@
-from datetime import UTC, datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
-from jose import jwt
-from jose.exceptions import JWTError
 from loguru import logger
 
 from app.api.v1.deps.auth import (
     generate_access_token,
     generate_refresh_token,
+    get_auth_service,
     get_current_user,
     login_user_for_access_token,
     oauth2_scheme,
 )
 from app.core import responses
-from app.core.config import settings
 from app.core.exceptions import http_exceptions
-from app.core.types import TokenPairDict
 from app.models.user import User
 from app.schemas import (
     LogoutResponse,
     Token,
 )
+from app.services.auth_service import AuthService
 from app.services.cache.token_blacklist import token_blacklist
+from app.services.exceptions.auth import ValidationError
+from app.services.types.auth import TokenPairDict
 
 router = APIRouter()
 
@@ -97,6 +96,7 @@ async def refresh_token(
 async def logout(
     token: Annotated[str, Depends(oauth2_scheme)],
     current_user: Annotated[User, Depends(get_current_user)],
+    auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> LogoutResponse:
     """
     Logout endpoint that revokes the current access token.
@@ -108,33 +108,19 @@ async def logout(
         https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html
     """
     try:
-        payload = jwt.decode(
-            token=token,
-            key=settings.secret_key,
-            algorithms=settings.jwt_algorithm,
-        )
-
-        jti: str | None = payload.get("jti")
-        exp: int | None = payload.get("exp")
-
-        if not jti or not exp:
-            raise http_exceptions.UnauthorizedException(
-                detail="Invalid token format",
-                headers={"WWW-Authenticate": "Bearer"},
-            )
-
-        # Calculate remaining TTL
-        now = int(datetime.now(UTC).timestamp())
-        ttl = max(exp - now, 1)  # At least 1 second TTL
+        revoke_payload = await auth_service.get_logout_revoke_payload(token)
 
         # Add token to blacklist
-        await token_blacklist.revoke_token(jti=jti, ttl_seconds=ttl)
+        await token_blacklist.revoke_token(
+            jti=revoke_payload["jti"],
+            ttl_seconds=revoke_payload["ttl_seconds"],
+        )
 
         # Return validated Pydantic response
         return LogoutResponse(message="Successfully logged out", revoked=True)
-    except JWTError:
+    except ValidationError as ex:
         raise http_exceptions.UnauthorizedException(
-            detail="Invalid token",
+            detail=str(ex),
             headers={"WWW-Authenticate": "Bearer"},
         )
     except http_exceptions.UnauthorizedException as ex:

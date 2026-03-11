@@ -2,10 +2,10 @@ from faker import Faker
 from loguru import logger
 from sqlalchemy import insert
 
-from app.core.auth import get_password_hash
 from app.core.db import session_factory
 from app.models import User
 from app.schemas import UserCreate
+from app.services.auth_service import AuthService
 from app.services.task_queue import celery_app
 
 
@@ -24,7 +24,7 @@ def seed_fake_users_task(self, count: int = 100) -> int:
     logger.info(f"Starting seed task {self.request.id} to create {count} users")
 
     faker = Faker()
-    hashed_password = get_password_hash("TestPassword123")
+    hashed_password = AuthService().get_password_hash("TestPassword123")
     all_users: list[UserCreate] = []
 
     for _ in range(count):
