@@ -76,6 +76,11 @@ app/
 │   ├── gcs.py              # Google Cloud Storage service
 │   ├── firebase.py         # Firebase authentication & messaging
 │   ├── firestore.py        # Firestore NoSQL database
+│   ├── email/              # Email delivery services
+│   │   ├── base.py         # Abstract email service base class
+│   │   ├── resend.py       # Resend provider implementation
+│   │   ├── brevo.py        # Brevo provider implementation
+│   │   └── static/html/    # HTML email templates
 │   ├── cache/              # Caching services
 │   │   ├── base.py         # Redis connection base
 │   │   ├── manager.py      # Cache manager service
@@ -289,6 +294,16 @@ NoSQL document database integration:
 - **Automatic Initialization**: Singleton pattern with service account credentials
 - **Logging**: Comprehensive debug and error logging for all operations
 
+#### Email Delivery Services
+
+Provider-based email delivery with shared contracts and strict validation:
+
+- **Base Contract**: Abstract base service for consistent provider behavior
+- **Providers**: Resend and Brevo implementations
+- **Validation**: Pydantic request/response models for payload safety
+- **Templates**: File-based HTML templates under `app/services/email/static/html`
+- **Error Handling**: Domain-specific service exceptions
+
 #### Cache & Rate Limiting Services
 
 Redis-based caching and rate limiting infrastructure:
@@ -394,11 +409,20 @@ Request → Extract Token → Validate Token → Get User → Execute Handler
 ```python
 class Settings(BaseSettings):
     # Database
-    database_url: str
+    postgres_host: str
+    postgres_port: int
+    postgres_user: str
+    postgres_password: str
+    postgres_db: str
 
     # Security
     secret_key: str
-    access_token_expire_minutes: int = 30
+    access_token_expire_seconds: int = 3600
+    refresh_token_expire_seconds: int = 86400
+
+    # Email providers
+    resend_api_key: SecretStr
+    brevo_api_key: SecretStr
 
     # Server
     backend_host: str = "0.0.0.0"
@@ -525,9 +549,9 @@ compression = "gz"
 ```bash
 # Environment variables for centralized logging
 OPENOBSERVE_URL=https://observe.example.com
-OPENOBSERVE_TOKEN=base64_encoded_credentials
-OPENOBSERVE_ORG=default
-OPENOBSERVE_STREAM=default
+OPENOBSERVE_ACCESS_KEY=base64_encoded_credentials
+OPENOBSERVE_ORG_ID=default
+OPENOBSERVE_STREAM_NAME=default
 OPENOBSERVE_BATCH_SIZE=10
 OPENOBSERVE_FLUSH_INTERVAL=5.0
 ```

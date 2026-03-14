@@ -292,10 +292,17 @@ services:
     ports:
       - "8799:8799"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:password@db:5432/fastapi_app
+      - POSTGRES_HOST=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=fastapi_app
+      - POSTGRES_DB_SCHEMA=fastapi_template
       - B2_APPLICATION_KEY_ID=${B2_APPLICATION_KEY_ID}
       - B2_APPLICATION_KEY=${B2_APPLICATION_KEY}
       - B2_BUCKET_NAME=${B2_BUCKET_NAME}
+      - resend_api_key=${resend_api_key}
+      - brevo_api_key=${brevo_api_key}
     env_file:
       - .env.prod
     volumes:
@@ -675,7 +682,7 @@ from sqlalchemy.orm import selectinload
 
 # Use connection pooling
 engine = create_async_engine(
-    DATABASE_URL,
+    str(settings.db_url),
     pool_size=20,
     max_overflow=10,
     pool_pre_ping=True
@@ -766,12 +773,27 @@ LOG_LEVEL=INFO
 
 # Centralized log aggregation (Optional - OpenObserve, Grafana Loki, etc.)
 OPENOBSERVE_URL=https://observe.yourdomain.com
-OPENOBSERVE_TOKEN=your_base64_encoded_token
-OPENOBSERVE_ORG=production
-OPENOBSERVE_STREAM=fastapi-app
+OPENOBSERVE_ACCESS_KEY=your_base64_encoded_token
+OPENOBSERVE_ORG_ID=production
+OPENOBSERVE_STREAM_NAME=fastapi-app
 OPENOBSERVE_BATCH_SIZE=50
 OPENOBSERVE_FLUSH_INTERVAL=5.0
 ```
+
+#### Email Provider Setup for Production
+
+If your application sends emails via the service layer:
+
+1. Create API keys in both providers (or only the provider you use).
+2. Store keys in your secret manager and inject them at runtime.
+3. Configure environment variables:
+
+    ```env
+    resend_api_key=your_resend_api_key_here
+    brevo_api_key=your_brevo_api_key_here
+    ```
+
+4. Ensure the optional email dependencies are installed in your build image (`uv sync --extra email`).
 
 #### Log Features in Production
 
@@ -903,7 +925,7 @@ echo -n "admin:ComplexPassword123" | base64
 
 # Configure in application .env
 OPENOBSERVE_URL=https://observe.yourdomain.com
-OPENOBSERVE_TOKEN=YWRtaW46Q29tcGxleFBhc3N3b3JkMTIz
+OPENOBSERVE_ACCESS_KEY=YWRtaW46Q29tcGxleFBhc3N3b3JkMTIz
 ```
 
 #### Grafana Loki

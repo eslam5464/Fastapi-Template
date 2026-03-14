@@ -20,7 +20,8 @@ A production-ready FastAPI project template with modern best practices, async su
 - **🚦 Rate Limiting** - Sliding window rate limiting with microsecond precision
 - **🌩️ Google Cloud Storage** - GCS bucket integration for file management
 - **💳 Apple Pay** - App Store Server API integration for in-app purchase verification
-- **🧪 Comprehensive Testing** - ~90% test coverage with 510+ passing tests
+- **📧 Email Providers** - Brevo and Resend email service integrations
+- **🧪 Comprehensive Testing** - Coverage reporting with unit and integration test suites
 - **⚙️ Background Jobs** - Celery with Redis for async task processing and scheduled jobs
 
 ## 🚀 Quick Start
@@ -63,6 +64,9 @@ A production-ready FastAPI project template with modern best practices, async su
    # Install dependencies
    uv sync --all-groups
 
+   # Install optional integrations as needed
+   uv sync --all-groups --all-extras
+
    # Install pre-commit hooks
    pre-commit install
    ```
@@ -71,6 +75,7 @@ A production-ready FastAPI project template with modern best practices, async su
 
    ```bash
    uv sync --all-groups --native-tls
+   uv sync --native-tls --all-extras
    ```
 
 3. **Set up environment variables**
@@ -177,11 +182,11 @@ uv run pytest tests/ --cov=app --cov-report=term --cov-report=html
 # Open htmlcov/index.html in your browser
 ```
 
-**Test Statistics:**
+**Coverage Scope:**
 
-- ✅ 510+ passing tests
-- 📊 ~90% code coverage
-- 🎯 Tests cover: API endpoints, authentication, database operations, services, middleware, and utilities
+- ✅ Unit, service, and integration tests
+- 📊 Terminal and HTML coverage reports
+- 🎯 Tests cover API endpoints, authentication, database operations, services, middleware, and utilities
 
 ### Security Analysis
 
@@ -269,15 +274,22 @@ Configure via environment variables or `.env` file:
 
 ```env
 # Database
-DATABASE_URL=postgresql+asyncpg://user:password@localhost/dbname
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your-postgres-password
+POSTGRES_DB=postgres
+POSTGRES_DB_SCHEMA=fastapi_template
 
 # Security
 SECRET_KEY=your-secret-key
-ACCESS_TOKEN_EXPIRE_MINUTES=30
+ACCESS_TOKEN_EXPIRE_SECONDS=2582000
+REFRESH_TOKEN_EXPIRE_SECONDS=2592000
 
 # Server
-BACKEND_HOST=0.0.0.0
+BACKEND_HOST=localhost
 BACKEND_PORT=8799
+CURRENT_ENVIRONMENT=local
 
 # Redis (for caching and rate limiting)
 REDIS_HOST=localhost
@@ -292,6 +304,10 @@ RATE_LIMIT_WINDOW=60
 # Celery & Background Tasks
 ENABLE_DATA_SEEDING=false
 SEEDING_USER_COUNT=100
+
+# Email Providers
+resend_api_key=your_resend_api_key_here
+brevo_api_key=your_brevo_api_key_here
 ```
 
 ## 📦 Dependencies
@@ -311,6 +327,19 @@ Key dependencies include:
 - **B2SDK** - BackBlaze B2 cloud storage integration
 - **Firebase Admin** - Firebase authentication and messaging
 - **Google Cloud Storage** - GCS integration
+- **Brevo / Resend** - Email delivery providers (optional `email` extra)
+
+### Optional Dependency Extras
+
+Install optional provider groups only when needed:
+
+```bash
+uv sync --extra email
+uv sync --extra cloud-service
+uv sync --extra cache
+uv sync --extra task-queue
+uv sync --extra apple-services
+```
 
 ## 🤝 Contributing
 

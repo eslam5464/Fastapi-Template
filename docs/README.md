@@ -136,6 +136,7 @@ This template is built with:
 - **Firebase Admin** - Firebase authentication, FCM, and Firestore
 - **Google Cloud Storage** - GCS bucket integration
 - **App Store Server API** - Apple Pay in-app purchase verification
+- **Brevo / Resend** - Email delivery provider integrations
 
 ---
 

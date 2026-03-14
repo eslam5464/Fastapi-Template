@@ -34,6 +34,7 @@ This API template includes the following services:
 - **Firebase Cloud Messaging** - Push notification service for mobile and web applications (available as a service layer)
 - **Firestore Database** - NoSQL document database for flexible data storage (available as a service layer)
 - **Apple Pay** - App Store Server API integration for in-app purchase verification (available as a service layer)
+- **Email Delivery (Resend/Brevo)** - Provider-based email service layer with Pydantic-validated payloads and template support (available as a service layer)
 
 For integration examples:
 

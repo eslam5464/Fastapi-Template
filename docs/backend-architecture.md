@@ -1168,7 +1168,8 @@ class Settings(BaseSettings):
 
     # Security
     secret_key: str = "change-me-in-production"
-    access_token_expire_minutes: int = 30
+    access_token_expire_seconds: int = 3600
+    refresh_token_expire_seconds: int = 86400
 
     # CORS
     cors_origins: str = "http://localhost:3000"

@@ -37,6 +37,9 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 # Create and activate virtual environment with dependencies
 uv sync
 
+# Optional integrations (install only what you use)
+uv sync --extra email --extra cloud-service --extra cache --extra task-queue --extra apple-services
+
 # Activate the environment
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
@@ -66,23 +69,32 @@ Edit `.env` with your configuration:
 
 ```env
 # Database Configuration
-DATABASE_URL=postgresql+asyncpg://username:password@localhost:5432/fastapi_template
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=your-postgres-password
+POSTGRES_DB=postgres
+POSTGRES_DB_SCHEMA=fastapi_template
 
 # Security Settings
 SECRET_KEY=your-super-secret-key-here
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-REFRESH_TOKEN_EXPIRE_DAYS=7
+ACCESS_TOKEN_EXPIRE_SECONDS=2582000
+REFRESH_TOKEN_EXPIRE_SECONDS=2592000
 
 # Server Configuration
-BACKEND_HOST=0.0.0.0
+BACKEND_HOST=localhost
 BACKEND_PORT=8799
 CURRENT_ENVIRONMENT=local
 
 # CORS Settings (for development)
-CORS_ORIGINS=["http://localhost:3000", "http://localhost:8080"]
+CORS_ORIGINS=localhost,0.0.0.0
 
 # Logging
 LOG_LEVEL=DEBUG
+
+# Email Providers
+resend_api_key=your_resend_api_key_here
+brevo_api_key=your_brevo_api_key_here
 ```
 
 ### 4. Database Setup
@@ -268,13 +280,17 @@ tests/
 
 ```bash
 # Install test dependencies
-uv add pytest pytest-asyncio pytest-cov httpx
+uv sync --group test
 
 # Create test database
 createdb fastapi_template_test
 
-# Set test environment variable
-export DATABASE_URL=postgresql+asyncpg://username:password@localhost:5432/fastapi_template_test
+# Set base database env vars (test DB is derived as <POSTGRES_DB>_test)
+export POSTGRES_HOST=localhost
+export POSTGRES_PORT=5432
+export POSTGRES_USER=postgres
+export POSTGRES_PASSWORD=your-postgres-password
+export POSTGRES_DB=fastapi_template
 ```
 
 #### Execute Tests
@@ -336,7 +352,7 @@ from app.core.db import get_session, Base
 
 @pytest.fixture
 async def async_session():
-    engine = create_async_engine(settings.database_url_test)
+    engine = create_async_engine(settings.db_test_url)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
@@ -431,9 +447,9 @@ For production deployments, configure remote log shipping:
 ```bash
 # Add to .env for centralized logging
 OPENOBSERVE_URL=https://observe.example.com
-OPENOBSERVE_TOKEN=your_base64_token
-OPENOBSERVE_ORG=your_organization
-OPENOBSERVE_STREAM=fastapi_logs
+OPENOBSERVE_ACCESS_KEY=your_base64_token
+OPENOBSERVE_ORG_ID=your_organization
+OPENOBSERVE_STREAM_NAME=fastapi_logs
 OPENOBSERVE_BATCH_SIZE=10
 OPENOBSERVE_FLUSH_INTERVAL=5.0
 ```
@@ -956,8 +972,9 @@ pg_ctl status
 # Check database exists
 psql -l | grep fastapi_template
 
-# Verify connection string
-echo $DATABASE_URL
+# Verify database env vars
+echo $POSTGRES_HOST
+echo $POSTGRES_DB
 ```
 
 #### Migration Issues
