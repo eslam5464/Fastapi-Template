@@ -88,22 +88,39 @@ flowchart TB
 
 - **MUST**: Database session ownership remains in the Deps layer during request handling.
 - **MUST**: Services raise domain exceptions only (never HTTP exceptions).
-- **MUST**: Deps translate domain exceptions to HTTP exceptions.
+- **MUST**: Service input/output contracts are defined as `TypedDict` in `app/services/types/`.
+- **MUST**: Multi-step atomic operations are coordinated in the Deps layer.
+- **MUST**: Core exceptions are HTTP-only; domain exceptions live outside core (for example `app/services/exceptions/` or `app/domains/<domain>/exceptions.py`).
+- **MUST**: API owns domain-to-HTTP exception translation.
+- **MUST**: API has the final `except Exception` with `logger.exception(...)` for traceback visibility.
+- **SHOULD**: API translates domain exceptions to HTTP exceptions using service method docstrings as exception contracts.
 - **SHOULD**: Endpoints remain thin controllers (target: 1-5 lines of logic).
 - **SHOULD**: Repository mutation methods expose `auto_commit` for transaction orchestration.
+- **SHOULD**: Write endpoints use idempotency keys and optimistic concurrency controls (for example `version` columns or ETags).
+- **SHOULD**: Services keep external dependencies minimal for easier Python/runtime migration.
+- **MAY**: Services use Pydantic models for complex internal validation, then return `TypedDict` contracts.
 - **MAY**: Schema and Model layers import Core only for shared primitives (e.g., enums, base classes).
+
+### Exception Taxonomy
+
+| Exception Type | Recommended Location | Raised By | Translated By | Notes |
+|----------------|----------------------|-----------|---------------|-------|
+| **Domain Exceptions** | `app/services/exceptions/` or `app/domains/<domain>/exceptions.py` | Service layer | API layer | Express business-rule failures (never HTTP-aware) |
+| **HTTP Exceptions** | `app/core/exceptions.py` | API layer | FastAPI | Final transport-level representation |
+| **Infrastructure Exceptions** | `app/services/exceptions/` (or provider-specific modules) | Infra services/repos | Service or API | Wrap SDK/DB errors into domain-safe exceptions |
 
 ### Quick Reference Table
 
 | Layer | Location | Responsibility | Depends On |
 |-------|----------|----------------|------------|
-| **API** | `app/api/` | HTTP routing, authentication, response codes | Deps, Schemas |
-| **Deps** | `app/api/*/deps/` | Dependency injection, session management, repo creation, exception translation | Services, Repos, Schemas, Core |
-| **Service** | `app/services/` | Business logic, domain rules, domain exceptions; receives repos via injection | Repos, Schemas, Cache |
+| **API** | `app/api/` | HTTP routing, domain-to-HTTP translation, final exception logging | Deps, Schemas |
+| **Deps** | `app/api/*/deps/` | Dependency injection, session management, repo creation, atomic transaction orchestration | Services, Repos, Schemas, Core |
+| **Service** | `app/services/` | Business logic, domain rules, domain exceptions; returns `TypedDict` contracts | Repos, `app/services/types`, Cache |
+| **Service Types** | `app/services/types/` | `TypedDict` input/output contracts for service boundaries | `typing` (and optional Pydantic for validation helpers) |
 | **Repository** | `app/repos/` | Data access, CRUD with `auto_commit` support | Models, Schemas |
 | **Schema** | `app/schemas/` | Validation, serialization, API contracts | Core (shared primitives only) |
 | **Model** | `app/models/` | Database table mapping (ORM) | Core (shared primitives only) |
-| **Core** | `app/core/` | Configuration, exceptions (HTTP + domain), database setup | None (lowest layer) |
+| **Core** | `app/core/` | Configuration, HTTP exceptions, database setup | None (lowest layer) |
 
 ---
 
@@ -143,6 +160,15 @@ This architecture is a **modular monolith** using layered separation. It is desi
 | Transaction control | **`auto_commit` parameter** | Flexible per-operation; deps layer can coordinate multi-step transactions |
 | Session ownership | **Deps layer only** | Sessions injected via `Depends(get_session)`, never reach services — clean separation |
 
+### Template Profiles
+
+This guide is a generic template and can be adapted via explicit profiles:
+
+- **Strict profile**: Core keeps HTTP exceptions only; domain exceptions live in service/domain modules.
+- **Legacy compatibility profile**: Existing projects may temporarily centralize more exception types in core during migration.
+
+This document currently follows the **Strict profile**.
+
 ---
 
 ## 📚 Layer Reference
@@ -153,7 +179,7 @@ This architecture is a **modular monolith** using layered separation. It is desi
 
 #### Responsibility
 
-The API layer handles **HTTP concerns only**: routing, authentication, status codes, and response formatting. It should be a **thin controller** that delegates all business logic to dependencies or services.
+The API layer handles **HTTP concerns first** and triggers application behavior by **calling service methods**. Endpoints should stay thin, but they can orchestrate the final service call and use `try/except` to translate domain/custom exceptions into the appropriate HTTP exceptions.
 
 #### ✅ What Belongs Here
 
@@ -162,27 +188,37 @@ The API layer handles **HTTP concerns only**: routing, authentication, status co
 - Response status code manipulation
 - OpenAPI documentation (summary, description, responses)
 - Request/response type hints
+- Calling injected service methods to run use-case logic
+- `try/except` blocks that map custom exceptions to HTTP exceptions
+- Final fallback `except Exception` with `logger.exception(...)`
 
 #### ❌ What Does NOT Belong Here
 
 - Business logic or validation rules
 - Database queries or session management
 - Data transformation logic
-- Error handling beyond HTTP status codes
-- Direct repository or service instantiation
+- Service/repository instantiation details (use deps for construction)
+- Manual session lifecycle handling (`commit`, `rollback`, `close`)
 
 #### Full Code Example
 
 ```python
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, status
+from loguru import logger
 
-from app.api.v1.deps.resource import get_resource_result
+from app.api.v1.deps.resource import get_resource_service
+from app.core import exceptions, responses
+from app.services.exceptions.resource import (
+    AppException,
+    ResourceNotFoundError,
+    ValidationError,
+)
 from app.schemas.resource import (
     ResourceRequest,
     ResourceResponse,
-    ResourceErrorResponse,
+    ProcessingOption,
 )
 
 router = APIRouter(tags=["Resources"], prefix="/resources")
@@ -194,34 +230,49 @@ router = APIRouter(tags=["Resources"], prefix="/resources")
     summary="Process a resource",
     description="""
     Processes the given resource with the specified parameters.
-
-    Returns 206 Partial Content if some items failed processing.
     """,
     responses={
-        status.HTTP_400_BAD_REQUEST: {"model": ResourceErrorResponse},
-        status.HTTP_206_PARTIAL_CONTENT: {"model": ResourceResponse},
+        status.HTTP_400_BAD_REQUEST: {"model": responses.BadRequestResponse},
+        status.HTTP_404_NOT_FOUND: {"model": responses.NotFoundResponse},
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {"model": responses.InternalServerErrorResponse},
     },
 )
 async def process_resource(
-    response: Response,
-    result: Annotated[ResourceResponse, Depends(get_resource_result)],
+    request: ResourceRequest,
+    option: ProcessingOption = ProcessingOption.DEFAULT,
+    service = Depends(get_resource_service),
 ) -> ResourceResponse:
-    """
-    Thin controller - all logic lives in the dependency.
-    Only handles HTTP response code manipulation.
-    """
-    if result.has_errors:
-        response.status_code = status.HTTP_206_PARTIAL_CONTENT
-    return result
+    try:
+        return await service.process(request, option)
+    except ResourceNotFoundError as e:
+        raise exceptions.NotFoundException(detail=str(e))
+    except ValidationError as ex:
+        raise exceptions.BadRequestException(detail=str(ex))
+    except AppException as e:
+        raise exceptions.BadRequestException(detail=e.message)
+    except Exception:
+        logger.exception("Unhandled error in process_resource")
+        raise
 ```
+
+#### Error Mapping Matrix (Template)
+
+| Domain Exception | HTTP Exception | Status | Response Model |
+|------------------|----------------|--------|----------------|
+| `ValidationError` | `BadRequestException` | 400 | `BadRequestResponse` |
+| `ResourceNotFoundError` | `NotFoundException` | 404 | `NotFoundResponse` |
+| `AppException` | `BadRequestException` | 400 | `BadRequestResponse` |
+| Any unexpected `Exception` | Re-raise after logging | 500 | `InternalServerErrorResponse` |
 
 #### Key Characteristics
 
-- Endpoints are **thin controllers** (1-5 lines of logic)
-- Business logic is **delegated** to dependency functions
+- Endpoints are **thin controllers** (small orchestration + service call)
+- Use-cases run through **injected services**
 - Response models are **explicitly declared** for OpenAPI
 - Error responses are **documented** in the `responses` parameter
-- Status code manipulation is the **only logic** allowed
+- Custom/domain exceptions are translated with `try/except`
+- Final fallback is `except Exception` + `logger.exception(...)` in API only
+- Service method docstrings define exception contracts that API maps to HTTP errors
 
 ---
 
@@ -231,7 +282,7 @@ async def process_resource(
 
 #### Responsibility
 
-The dependency layer is a **factory and orchestration layer**. It creates repository and service instances, manages database sessions, translates domain exceptions to HTTP exceptions, and coordinates multiple service calls. It acts as the **glue** between HTTP and business logic.
+The dependency layer is a **session ownership and service wiring layer**. It controls database session lifecycle, builds repository/service instances, and can prepare helper inputs or context needed before API calls service methods.
 
 > **Critical rule**: The database session **never leaves this layer**. Services receive repositories, not sessions.
 
@@ -239,14 +290,14 @@ The dependency layer is a **factory and orchestration layer**. It creates reposi
 
 - Creating repository instances and injecting them into services
 - Receiving database sessions via `Depends(get_session)` and creating repos
-- Orchestrating multiple service calls
-- Catching domain exceptions and converting to HTTP exceptions
+- Session-aware setup (transaction boundaries, helper objects, service context)
+- Lightweight orchestration that supports API/service interaction
 - Query/body parameter extraction with validation
 - Coordinating multi-step transactions (`auto_commit=False` + explicit `session.commit()`)
 
 #### ❌ What Does NOT Belong Here
 
-- Complex business logic (move to services)
+- Complex domain/business rules (move to services)
 - Direct database queries (use repositories)
 - Data transformation beyond basic mapping
 - Validation rules (use schemas)
@@ -257,80 +308,41 @@ The dependency layer is a **factory and orchestration layer**. It creates reposi
 ```python
 from typing import Annotated
 
-from fastapi import Body, Depends, Query
+from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_session
-from app.core.exceptions.domain import (
-    AppException,
-    ResourceNotFoundError,
-    ValidationError,
-)
-from app.core.exceptions.http_exceptions import (
-    BadRequestException,
-    NotFoundException,
-)
-from app.schemas.resource import (
-    ResourceRequest,
-    ResourceResponse,
-    ProcessingOption,
-)
+from app.schemas.resource import ResourceRequest, ResourceResponse
 from app.repos.resource_repository import ResourceRepository
 from app.repos.audit_repository import AuditRepository
 from app.services.resource_service import ResourceService
 
 
-async def get_resource_result(
-    request: Annotated[ResourceRequest, Body(...)],
-    option: Annotated[
-        ProcessingOption,
-        Query(default=ProcessingOption.DEFAULT, description="Processing mode"),
-    ],
+async def get_resource_service(
     session: Annotated[AsyncSession, Depends(get_session)],
-) -> ResourceResponse:
+) -> ResourceService:
     """
-    Dependency function that orchestrates service calls.
-    Session injected via Depends(get_session) — repos created here, never in services.
+    Build and return a service instance.
+    Session stays in the deps layer and is only used to build repositories.
     """
-    # Session stays here — services never see it
     resource_repo = ResourceRepository(session)
     audit_repo = AuditRepository(session)
-    service = ResourceService(resource_repo, audit_repo)
-
-    try:
-        return await service.process(request, option)
-    except ResourceNotFoundError as e:
-        raise NotFoundException(detail=str(e))
-    except ValidationError as e:
-        raise BadRequestException(detail=str(e))
-    except AppException as e:
-        raise BadRequestException(detail=e.message)
+    return ResourceService(resource_repo, audit_repo)
 
 
 async def get_resource_atomic(
-    request: Annotated[ResourceRequest, Body(...)],
+    service: Annotated[ResourceService, Depends(get_resource_service)],
+    request: ResourceRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ResourceResponse:
     """
-    Example: multi-step atomic operation using auto_commit=False.
-    Deps layer controls the transaction boundary.
-    Session injected via Depends(get_session) — deps layer commits explicitly.
+    Example dependency that coordinates transaction control for service calls.
+    This is useful when multiple service operations must commit atomically.
     """
-    resource_repo = ResourceRepository(session)
-    audit_repo = AuditRepository(session)
-    service = ResourceService(resource_repo, audit_repo)
-
     try:
-        # Service uses auto_commit=False for atomic multi-step operations
-        result = await service.process_batch(
-            request, auto_commit=False
-        )
-        # Deps layer owns the commit
+        result = await service.process_batch(request, auto_commit=False)
         await session.commit()
         return result
-    except AppException as e:
-        await session.rollback()
-        raise BadRequestException(detail=e.message)
     except Exception:
         await session.rollback()
         raise
@@ -341,10 +353,10 @@ async def get_resource_atomic(
 #### Key Characteristics
 
 - **Factory pattern**: Creates repo instances and injects into services
-- **Session injection**: Receives session via `Depends(get_session)` — session never reaches services
-- **Exception translation**: Catches domain exceptions, raises HTTP exceptions
+- **Session ownership**: Deps receives/manages sessions via `Depends(get_session)`
+- **Service wiring**: API receives ready-to-use services from deps
 - **Transaction coordination**: Uses `auto_commit=False` + explicit `commit()` for atomic operations
-- **Thin logic**: Complex rules go in services
+- **Support logic only**: Complex domain rules stay in services
 
 ---
 
@@ -354,13 +366,15 @@ async def get_resource_atomic(
 
 #### Responsibility
 
-The service layer contains **all business logic and domain rules**. It orchestrates repository calls, performs validation, transforms data, and implements the core functionality of your application. Services receive **repository instances** as constructor parameters — they never see or hold database sessions.
+The service layer contains **all business logic and domain rules**. It orchestrates repository calls, performs validation, transforms data, and implements core use-cases. Services receive **repository instances** as constructor parameters, never sessions, and expose **TypedDict-first contracts** defined in `app/services/types/`.
 
 #### ✅ What Belongs Here
 
 - Business logic and domain rules
 - Orchestrating multiple repository calls
 - Data validation and transformation
+- TypedDict input/output contracts in `app/services/types/`
+- Optional Pydantic validation for complex payload normalization
 - Cache integration and lookups
 - Complex calculations and algorithms
 - Raising domain exceptions for business rule violations
@@ -371,13 +385,14 @@ The service layer contains **all business logic and domain rules**. It orchestra
 - Creating database sessions (deps layer owns sessions)
 - Creating repository instances (receive as constructor parameter)
 - Direct SQL queries (use repositories)
-- Request/response formatting (use schemas)
+- Returning framework-coupled response objects as service contracts
 - Holding session references
+- Broad, unnecessary SDK dependencies in core domain services
 
 #### Full Code Example
 
 ```python
-from app.core.exceptions import (
+from app.services.exceptions.resource import (
     AppException,
     ResourceNotFoundError,
     ValidationError,
@@ -385,11 +400,12 @@ from app.core.exceptions import (
 )
 from app.repos.resource_repository import ResourceRepository
 from app.repos.audit_repository import AuditRepository
-from app.schemas.resource import (
-    ResourceItem,
-    ResourceResponse,
+from app.schemas.resource import CreateResourceSchema
+from app.services.types.resource import (
+    ProcessedItem,
     ProcessingOption,
-    CreateResourceSchema,
+    ResourceInput,
+    ResourceOutput,
 )
 from app.services.cache.resource_cache import resource_cache
 
@@ -411,12 +427,15 @@ class ResourceService:
 
     async def process(
         self,
-        item: ResourceItem,
+        item: ResourceInput,
         option: ProcessingOption,
-    ) -> ResourceResponse:
+    ) -> ResourceOutput:
         """
         Process a resource item with full business logic.
-        Raises domain exceptions on failure — deps layer catches and translates.
+
+        Raises:
+            ValidationError: Invalid business input.
+            ProcessingError: Persistence/audit failure.
         """
         # Step 1: Validate against cache
         self._validate_item(item)
@@ -424,11 +443,11 @@ class ResourceService:
         # Step 2: Apply business rules
         processed = self._apply_rules(item, option)
 
-        # Step 3: Persist via repository
+        # Step 3: Build repository create schema and persist
         create_schema = CreateResourceSchema(
-            name=processed.name,
-            value=processed.value,
-            metadata=processed.metadata,
+            name=processed["name"],
+            value=processed["value"],
+            metadata=processed["metadata"],
         )
         created = await self.resource_repo.create_one(create_schema)
 
@@ -439,47 +458,60 @@ class ResourceService:
             details={"option": option.value},
         )
 
-        # Step 5: Return response schema
-        return ResourceResponse.model_validate(created)
+        # Step 5: Return TypedDict service contract
+        return ResourceOutput(
+            id=created.id,
+            name=created.name,
+            value=created.value,
+            status=created.status,
+        )
 
-    async def get_resource(self, resource_id: int) -> ResourceResponse:
+    async def get_resource(self, resource_id: int) -> ResourceOutput:
         """Retrieve a single resource by ID."""
         model = await self.resource_repo.get_by_id(resource_id)
         if model is None:
             raise ResourceNotFoundError(f"Resource {resource_id} not found")
-        return ResourceResponse.model_validate(model)
+        return ResourceOutput(
+            id=model.id,
+            name=model.name,
+            value=model.value,
+            status=model.status,
+        )
 
-    def _validate_item(self, item: ResourceItem) -> None:
+    def _validate_item(self, item: ResourceInput) -> None:
         """
         Pure validation logic using cache lookup.
         Raises ValidationError on failure.
         """
-        cached = resource_cache.get(item.category)
+        cached = resource_cache.get(item["category"])
         if not cached:
-            raise ValidationError(f"Unknown category: {item.category}")
-        if item.value < cached.min_value or item.value > cached.max_value:
+            raise ValidationError(f"Unknown category: {item['category']}")
+        if item["value"] < cached.min_value or item["value"] > cached.max_value:
             raise ValidationError("Value out of allowed range")
 
     def _apply_rules(
-        self, item: ResourceItem, option: ProcessingOption
+        self, item: ResourceInput, option: ProcessingOption
     ) -> ProcessedItem:
         """Pure function: applies business rules to transform data."""
         multiplier = 1.0 if option == ProcessingOption.DEFAULT else 1.5
         return ProcessedItem(
-            name=item.name.upper(),
-            value=item.value * multiplier,
-            metadata={"original_value": item.value, "option": option.value},
+            name=item["name"].upper(),
+            value=item["value"] * multiplier,
+            metadata={"original_value": item["value"], "option": option.value},
         )
 ```
 
 #### Key Characteristics
 
 - **Receives repositories**: Repos injected via constructor — no session awareness
+- **TypedDict-first contracts**: Service inputs/outputs live in `app/services/types/`
+- **Pydantic optionality**: Use Pydantic only when validation complexity justifies it
 - **Raises domain exceptions**: `ValidationError`, `ResourceNotFoundError`, etc. — never returns error result types
 - **Pure functions**: For validation and transformation logic
 - **Clear steps**: Processing flows are explicit and documented
 - **Repository integration**: Uses injected repos for all data access
 - **Cache integration**: Uses singleton caches for metadata lookups
+- **Minimal dependencies**: Keep each service lightweight for portability and Python-version migration
 - **Threshold**: If a service constructor takes **>5 repositories**, it’s doing too much — split into smaller services
 
 > **Infrastructure services**: Not all services follow the repo-injection pattern. Infrastructure services like `firebase.py`, `gcs.py`, `back_blaze_b2.py`, and `firestore.py` wrap external SDKs and don't use repositories. They live in `app/services/` alongside domain services and are typically used by deps or other services directly.
@@ -740,6 +772,7 @@ class ResourceRepository(BaseRepository[ResourceModel, CreateResourceSchema, Upd
 - **9 methods**: `create_one`, `create_bulk`, `get_by_id`, `get_multi_by_ids`, `update_by_id`, `update_bulk`, `delete_by_id`, `delete_by_ids`, `custom_query`
 - **`auto_commit` parameter**: Default `True` for standalone operations; pass `False` when deps layer coordinates transactions
 - **Column validation**: Prevents runtime errors on dynamic queries
+- **Indexing discipline**: Frequently filtered/sorted fields should have explicit indexes
 - **Domain-specific extensions**: Custom methods in concrete repositories
 - **Escape hatch**: `custom_query()` for parameterized raw SQL when needed
 
@@ -1176,15 +1209,6 @@ class Settings(BaseSettings):
 
     @computed_field
     @property
-    def db_url(self) -> str:
-        """Construct PostgreSQL connection URL."""
-        return (
-            f"postgresql+asyncpg://{self.postgres_user}:{self.postgres_password}"
-            f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
-        )
-
-    @computed_field
-    @property
     def cors_origins_list(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""
         return [origin.strip() for origin in self.cors_origins.split(",")]
@@ -1207,29 +1231,19 @@ settings = Settings()  # type: ignore
 
 
 # =============================================================================
-# app/core/exceptions/ - Exception Package Structure
+# app/core/exceptions.py - Exception Structure
 # =============================================================================
-# app/core/exceptions/
-# ├── base.py            ← AppException, HTTPException
-# ├── domain.py          ← ValidationError, ResourceNotFoundError, etc.
-# ├── http_exceptions.py ← BadRequestException, NotFoundException, etc.
-# └── <service>_exceptions.py ← Service-specific exceptions (firebase, gcs, etc.)
+# Core contains HTTP exceptions only.
+# Domain/service exceptions should not be defined in app/core/exceptions.py.
+# app/core/exceptions.py ← Single file containing HTTPException base + HTTP exception classes
 
 
-# --- app/core/exceptions/base.py ---
-
-from typing import Any
+# --- app/core/exceptions.py ---
 
 from fastapi.exceptions import HTTPException as FastAPIHTTPException
+from fastapi import status
 
-
-class AppException(Exception):
-    """Base exception for all application errors."""
-
-    def __init__(self, message: str = "", exception: Exception | None = None):
-        self.message = message
-        self.exception = exception
-        super().__init__(message)
+from typing import Any
 
 
 class HTTPException(FastAPIHTTPException):
@@ -1242,38 +1256,6 @@ class HTTPException(FastAPIHTTPException):
         headers: dict[str, str] | None = None,
     ):
         super().__init__(status_code=status_code, detail=detail, headers=headers)
-
-
-# --- app/core/exceptions/domain.py ---
-
-from app.core.exceptions.base import AppException
-
-
-class ValidationError(AppException):
-    """Business rule validation failure."""
-    pass
-
-
-class ResourceNotFoundError(AppException):
-    """Requested resource does not exist."""
-    pass
-
-
-class ProcessingError(AppException):
-    """Error during business logic processing."""
-    pass
-
-
-class DuplicateResourceError(AppException):
-    """Attempted to create a resource that already exists."""
-    pass
-
-
-# --- app/core/exceptions/http_exceptions.py ---
-
-from fastapi import status
-
-from app.core.exceptions.base import HTTPException
 
 
 class BadRequestException(HTTPException):
@@ -1320,6 +1302,19 @@ class ForbiddenException(HTTPException):
         )
 
 
+# --- app/core/responses.py ---
+
+from pydantic import BaseModel
+
+
+class BadRequestResponse(BaseModel):
+    detail: str = "Bad request"
+
+
+class InternalServerErrorResponse(BaseModel):
+    detail: str = "Response details"
+
+
 # =============================================================================
 # app/core/db.py - Database Setup
 # =============================================================================
@@ -1362,7 +1357,8 @@ async def get_session() -> AsyncSession:
 
 - **Settings**: Use `pydantic-settings` for type-safe configuration; instantiate directly with `settings = Settings()`
 - **Computed properties**: Derive values from base settings (e.g., `db_url` returns `yarl.URL`)
-- **Exception package**: Domain exceptions in `domain.py`, HTTP exceptions in `http_exceptions.py`, base classes in `base.py`
+- **Exception package**: Core holds HTTP exceptions only, imported via `app/core/exceptions.py`
+- **Response package**: Router/OpenAPI responses start from centralized `app/core/responses.py` defaults and extend with endpoint-specific responses
 - **Database factory**: Async session with `yarl.URL.human_repr()` for URL construction
 - **No business logic**: Pure infrastructure code
 
@@ -1414,6 +1410,7 @@ app.add_middleware(LoggingMiddleware)
 
 ```mermaid
 sequenceDiagram
+    autonumber
     participant Client
     participant API as API Layer
     participant Deps as Dependency Layer
@@ -1427,16 +1424,16 @@ sequenceDiagram
     Deps->>Deps: Parse Body/Query params
     Deps->>Deps: Receive session (Depends) + create repos
     Deps->>Service: service = Service(repos)
-    Deps->>Service: service.process()
+    Deps-->>API: Return wired service instance
+    API->>Service: service.process()
     Service->>Service: Validate business rules
     Service->>Repo: repo.create_one()
     Repo->>DB: INSERT
     DB-->>Repo: Model instance
     Repo-->>Service: Model
-    Service->>Service: Transform to response
-    Service-->>Deps: ResponseSchema (or raises domain exception)
-    Deps->>Deps: Catch domain exception → raise HTTP exception
-    Deps-->>API: ResponseSchema
+    Service->>Service: Build TypedDict response contract
+    Service-->>API: TypedDict (or raises domain exception)
+    API->>API: Catch domain exception → raise HTTP exception
     API-->>Client: HTTP Response (JSON)
 ```
 
@@ -1445,15 +1442,14 @@ sequenceDiagram
 | From | To | Type |
 |------|-----|------|
 | Client → API | Request body | Pydantic schema (validated automatically) |
-| API → Deps | Depends result | Response schema |
+| API → Deps | Depends result | Wired service instance + context |
 | Deps → Service | Constructor | Repository instances (injected) |
 | Deps → Service | Method params | Schemas + primitives |
 | Service → Repo | CRUD operations | Create/Update schemas |
 | Repo → Service | Query results | SQLAlchemy Models |
-| Service → Deps | Return value | Response schemas |
-| Service → Deps | Error path | Domain exceptions (`AppException` subclasses) |
-| Deps → API | Error path | HTTP exceptions (`HTTPException` subclasses) |
-| API → Client | Response body | Pydantic schema (serialized automatically) |
+| Service → API | Return value | `TypedDict` response contracts (`app/services/types`) |
+| Service → API | Error path | Domain exceptions (`app/services/exceptions/...`) |
+| API → Client | Response body | Pydantic response schema or serialized `TypedDict` |
 
 ### Error Propagation Flow
 
@@ -1467,28 +1463,28 @@ flowchart TD
         B --> C{Handle DB result?}
         C -->|None result| D[Raise ResourceNotFoundError]
         C -->|DB exception| E[Raise ProcessingError]
-        C -->|Success| F[Return ResponseSchema]
+        C -->|Success| F[Return TypedDict contract]
     end
 
     subgraph "Dependency Layer"
-        D --> G[Catch domain exception]
-        E --> G
-        G --> H[Raise HTTP exception]
-        F --> I[Return to API]
+        D --> I[Bubble domain exception]
+        E --> I
+        F --> I
     end
 
     subgraph "API Layer"
-        H --> J[FastAPI returns error response]
-        I --> K[Return success to Client]
+        I --> L{try/except mapping}
+        L -->|Domain exception| J[Raise HTTP exception]
+        L -->|Success| K[Return success to Client]
     end
 ```
 
 **Error Handling Rules**:
 
 1. **Repository**: Raises SQLAlchemy exceptions or returns `None`
-2. **Service**: Catches DB exceptions and raises domain exceptions (`ValidationError`, `ResourceNotFoundError`, `ProcessingError`)
-3. **Dependency**: Catches domain exceptions and raises HTTP exceptions (`BadRequestException`, `NotFoundException`)
-4. **API**: FastAPI automatically handles `HTTPException` and returns the appropriate status code
+2. **Service**: Raises domain exceptions (`ValidationError`, `ResourceNotFoundError`, `ProcessingError`) and returns `TypedDict` contracts
+3. **Dependency**: Owns session, repository wiring, and atomic transaction boundaries (`commit`/`rollback`)
+4. **API**: Uses `try/except` to map domain exceptions to HTTP exceptions and has final `except Exception` + `logger.exception(...)`
 
 ---
 
@@ -1595,7 +1591,7 @@ from app.schemas.common import ResourceStatus
 import pytest
 from unittest.mock import AsyncMock
 
-from app.core.exceptions import ValidationError, ResourceNotFoundError
+from app.services.exceptions.resource import ValidationError, ResourceNotFoundError
 from app.services.resource_service import ResourceService
 from app.schemas.resource import ResourceItem, ProcessingOption
 
@@ -1852,9 +1848,16 @@ async def process_resource(
 # ✅ CORRECT: Thin endpoint, logic in service
 @router.post("/process")
 async def process_resource(
-    result: ResourceResponse = Depends(get_resource_result),
-):
-    return result  # All logic in dependency/service
+    request: ResourceRequest,
+    service: ResourceService = Depends(get_resource_service),
+) -> ResourceResponse:
+    try:
+        return await service.process(request)
+    except ValidationError as ex:
+        raise exceptions.BadRequestException(detail=str(ex))
+    except Exception:
+        logger.exception("Unhandled error in process_resource")
+        raise
 ```
 
 ### 2. Database Calls from Services (Skipping Repository)
@@ -1905,27 +1908,29 @@ async def get_resource_result(
     # If service raises ResourceNotFoundError, it crashes with 500!
 
 
-# ✅ CORRECT: Service raises domain exception → Deps catches → raises HTTP exception
+# ✅ CORRECT: Service raises domain exception → API maps to HTTP exception
 class ResourceService:
-    async def get_resource(self, resource_id: int) -> ResourceResponse:
+    async def get_resource(self, resource_id: int) -> ResourceOutput:
         model = await self.resource_repo.get_by_id(resource_id)
         if model is None:
             raise ResourceNotFoundError(f"Resource {resource_id} not found")
-        return ResourceResponse.model_validate(model)
+        return ResourceOutput(id=model.id, name=model.name)
 
 
-async def get_resource_result(
+@router.get("/{resource_id}")
+async def get_resource(
     resource_id: int,
-    session: AsyncSession = Depends(get_session),
+    service: ResourceService = Depends(get_resource_service),
 ) -> ResourceResponse:
-    repo = ResourceRepository(session)
-    service = ResourceService(repo)
     try:
         return await service.get_resource(resource_id)
     except ResourceNotFoundError as e:
         raise NotFoundException(detail=str(e))
     except AppException as e:
         raise BadRequestException(detail=e.message)
+    except Exception:
+        logger.exception("Unhandled error in get_resource")
+        raise
 ```
 
 ### 4. Tight Coupling Between Layers
@@ -1942,17 +1947,17 @@ async def get_resource(resource: ResourceModel = Depends(get_resource)):
     return {"id": resource.id, "name": resource.name}
 
 
-# ✅ CORRECT: Service returns schema
+# ✅ CORRECT: Service returns TypedDict contract
 class ResourceService:
-    async def get_resource(self, id: int) -> ResourceResponse | None:
+    async def get_resource(self, id: int) -> ResourceOutput | None:
         model = await self.repo.get_by_id(id)
         if model is None:
             return None
-        return ResourceResponse.model_validate(model)  # Convert to schema
+        return ResourceOutput(id=model.id, name=model.name)
 
 @router.get("/{id}", response_model=ResourceResponse)
-async def get_resource(resource: ResourceResponse = Depends(get_resource)):
-    return resource  # Already a schema
+async def get_resource(resource: ResourceOutput = Depends(get_resource)):
+    return ResourceResponse.model_validate(resource)  # Convert at API boundary
 ```
 
 ### 5. Circular Imports
@@ -2101,40 +2106,51 @@ async def create_order_with_audit(
         raise
 ```
 
-### 10. Letting Domain Exceptions Leak to API Layer
+### 10. Inconsistent Exception Translation Strategy
 
 ```python
-# ❌ WRONG: Endpoint catches domain exception directly
+# ❌ WRONG: Endpoint ignores documented service exception contracts
 @router.get("/{id}")
 async def get_resource(resource_id: int, session: AsyncSession = Depends(get_session)):
     repo = ResourceRepository(session)
     service = ResourceService(repo)
-    try:
-        return await service.get_resource(resource_id)
-    except ResourceNotFoundError:  # Domain exception in API layer!
-        raise HTTPException(404, "Not found")
+    return await service.get_resource(resource_id)  # uncaught domain exception => 500
 
 
-# ✅ CORRECT: Deps layer handles domain → HTTP translation
-# Endpoint stays clean:
+# ✅ CORRECT: API maps domain exceptions to HTTP consistently
 @router.get("/{id}", response_model=ResourceResponse)
 async def get_resource(
-    result: ResourceResponse = Depends(get_resource_dep),
-):
-    return result  # Thin controller
-
-
-# Deps layer catches and translates:
-async def get_resource_dep(
     resource_id: int,
-    session: AsyncSession = Depends(get_session),
+    service: ResourceService = Depends(get_resource_service),
 ) -> ResourceResponse:
-    repo = ResourceRepository(session)
-    service = ResourceService(repo)
     try:
         return await service.get_resource(resource_id)
     except ResourceNotFoundError as e:
         raise NotFoundException(detail=str(e))
+    except ValidationError as ex:
+        raise exceptions.BadRequestException(detail=str(ex))
+    except Exception:
+        logger.exception("Unhandled error in get_resource")
+        raise
+```
+
+### 11. Missing Idempotency and Concurrency Controls on Write APIs
+
+```python
+# ❌ WRONG: Write endpoint can produce duplicate writes on retries
+@router.post("/orders")
+async def create_order(request: CreateOrderRequest, service: OrderService = Depends(get_order_service)):
+    return await service.create(request)
+
+
+# ✅ CORRECT: Idempotency + optimistic concurrency for safe retries
+@router.post("/orders")
+async def create_order(
+    request: CreateOrderRequest,
+    idempotency_key: str = Header(..., alias="Idempotency-Key"),
+    service: OrderService = Depends(get_order_service),
+) -> OrderResponse:
+    return await service.create_with_idempotency(request, idempotency_key=idempotency_key)
 ```
 
 ---
@@ -2478,6 +2494,56 @@ class AggregationService:
         return f"{strategy.get_sql_function()}({column})"
 ```
 
+### Outbox Pattern (Reliable Side Effects)
+
+Use an outbox table for critical side effects (events, emails, webhooks) that must be committed atomically with state changes.
+
+```python
+# Service pseudo-flow using outbox for reliable publish-after-commit
+async def create_order(self, request: CreateOrderSchema, auto_commit: bool = True) -> OrderOutput:
+    order = await self.order_repo.create_one(request, auto_commit=False)
+    await self.outbox_repo.add_event(
+        topic="order.created",
+        payload={"order_id": order.id},
+        auto_commit=False,
+    )
+    if auto_commit:
+        await self.order_repo.session.commit()
+    return OrderOutput(id=order.id, status=order.status)
+```
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as Client
+    participant API as API Endpoint
+    participant S as OrderService
+    participant DB as Database (orders + outbox)
+    participant W as Outbox Worker
+    participant B as Message Broker
+
+    C->>API: POST /orders
+    API->>S: create_order(request)
+    S->>DB: BEGIN TRANSACTION
+    S->>DB: INSERT order row
+    S->>DB: INSERT outbox event (order.created)
+    S->>DB: COMMIT
+    S-->>API: OrderOutput
+    API-->>C: 201 Created
+
+    loop Background polling / streaming
+        W->>DB: Fetch pending outbox events
+        W->>B: Publish event
+        alt Publish succeeds
+            W->>DB: Mark event as processed
+        else Publish fails
+            W->>DB: Increment retry count + schedule retry
+        end
+    end
+```
+
+Outbox workers then read pending events and publish them to message brokers with retry and dead-letter handling.
+
 ---
 
 ## 📊 Scalability Limits & When to Outgrow
@@ -2601,10 +2667,15 @@ This guide provides a complete reference for building maintainable FastAPI appli
 2. **Dependencies flow DOWN** — higher layers import from lower layers, never the reverse
 3. **Thin controllers** — Endpoints delegate to dependencies/services
 4. **Services receive repos** — Repositories are injected via constructor; sessions stay in the deps layer
-5. **Domain exceptions flow up** — Services raise domain exceptions, deps translate to HTTP exceptions
-6. **Repositories abstract data** — All database access goes through repositories with `auto_commit` support
-7. **Schemas validate** — Pydantic handles all input/output validation
-8. **Test each layer appropriately** — Unit tests for services (mock repos), integration for repos (real DB), E2E for endpoints
-9. **Know your limits** — This architecture serves 1–15 developers and up to ~150 endpoints; beyond that, evolve to domain-driven modules
+5. **TypedDict-first contracts** — Define service input/output in `app/services/types/`; use Pydantic only when needed
+6. **Minimal service dependencies** — Keep services lightweight to ease migration across Python/runtime changes
+7. **Domain exceptions flow up** — Services raise domain exceptions; API maps them to HTTP via `try/except` and final `logger.exception(...)`
+8. **Atomic workflows in Deps** — Multi-step operations commit/rollback in the dependency layer
+9. **Repositories abstract data** — All database access goes through repositories with `auto_commit` support
+10. **Schemas validate** — Pydantic handles API boundary validation
+11. **Test each layer appropriately** — Unit tests for services (mock repos), integration for repos (real DB), E2E for endpoints
+12. **Know your limits** — This architecture serves 1–15 developers and up to ~150 endpoints; beyond that, evolve to domain-driven modules
+13. **Protect writes** — Use idempotency keys and optimistic concurrency controls for retry-safe APIs
+14. **Guarantee side effects** — Use outbox pattern when DB state and external publishing must stay consistent
 
 Copy this document to any FastAPI project as a foundation for consistent, maintainable architecture.
