@@ -4,8 +4,24 @@ from .auth import (
     TokenPairDict,
     TokenWithJtiDict,
 )
+from .email import (
+    EmailAttachment,
+    EmailProviderLiteral,
+    EmailSendPayload,
+    EmailSendPayloadInput,
+    EmailSendResult,
+    EmailTag,
+    EmailTemplate,
+)
 
 __all__ = [
+    "EmailAttachment",
+    "EmailProviderLiteral",
+    "EmailSendPayload",
+    "EmailSendPayloadInput",
+    "EmailSendResult",
+    "EmailTag",
+    "EmailTemplate",
     "JWTPayloadDict",
     "LogoutRevokePayloadDict",
     "TokenPairDict",

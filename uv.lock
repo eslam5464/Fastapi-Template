@@ -334,6 +334,21 @@ wheels = [
 ]
 
 [[package]]
+name = "brevo-python"
+version = "4.0.7"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "httpx" },
+    { name = "pydantic" },
+    { name = "pydantic-core" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ae/40/980301e403738d8d7d3405f38c13d67551620e065541a538a2e6c25c9838/brevo_python-4.0.7.tar.gz", hash = "sha256:bb545fee783a0c2ef08c9fa1fefc6557ecf736fec5edc41f80bdd451926fbf26", size = 423160 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6d/a4/a0d5f62f1ae2c7eb842c0c86a6105610d245b76000da804344c2c995c10f/brevo_python-4.0.7-py3-none-any.whl", hash = "sha256:22112a6a69540854588af44507f9bd8aff73a84abaa49fb4e6fc2641099325e4", size = 865813 },
+]
+
+[[package]]
 name = "cachecontrol"
 version = "0.14.3"
 source = { registry = "https://pypi.org/simple" }
@@ -771,11 +786,8 @@ dependencies = [
     { name = "app-store-server-library", extra = ["async"] },
     { name = "asyncpg" },
     { name = "b2sdk" },
-    { name = "celery", extra = ["redis"] },
     { name = "email-validator" },
     { name = "fastapi" },
-    { name = "firebase-admin" },
-    { name = "gcloud-aio-storage" },
     { name = "gunicorn" },
     { name = "httptools", marker = "sys_platform == 'linux'" },
     { name = "loguru" },
@@ -795,12 +807,30 @@ dependencies = [
     { name = "yarl" },
 ]
 
+[package.optional-dependencies]
+apple-services = [
+    { name = "app-store-server-library", extra = ["async"] },
+]
+cache = [
+    { name = "redis" },
+]
+cloud-service = [
+    { name = "firebase-admin" },
+    { name = "gcloud-aio-storage" },
+]
+email = [
+    { name = "brevo-python" },
+    { name = "resend" },
+]
+task-queue = [
+    { name = "celery", extra = ["redis"] },
+    { name = "redis" },
+]
+
 [package.dev-dependencies]
 dev = [
-    { name = "black" },
-]
-security = [
     { name = "bandit" },
+    { name = "black" },
 ]
 test = [
     { name = "faker" },
@@ -816,13 +846,15 @@ requires-dist = [
     { name = "aiohttp", specifier = ">=3.13.2" },
     { name = "alembic", specifier = ">=1.16.5" },
     { name = "app-store-server-library", extras = ["async"], specifier = ">=2.0.0" },
+    { name = "app-store-server-library", extras = ["async"], marker = "extra == 'apple-services'", specifier = ">=2.0.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "b2sdk", specifier = ">=2.10.1" },
-    { name = "celery", extras = ["redis"], specifier = ">=5.3.1" },
+    { name = "brevo-python", marker = "extra == 'email'", specifier = ">=4.0.7" },
+    { name = "celery", extras = ["redis"], marker = "extra == 'task-queue'", specifier = ">=5.3.1" },
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "fastapi", specifier = ">=0.116.2" },
-    { name = "firebase-admin", specifier = ">=7.1.0" },
-    { name = "gcloud-aio-storage", specifier = ">=9.6.1" },
+    { name = "firebase-admin", marker = "extra == 'cloud-service'", specifier = ">=7.1.0" },
+    { name = "gcloud-aio-storage", marker = "extra == 'cloud-service'", specifier = ">=9.6.1" },
     { name = "gunicorn", specifier = ">=23.0.0" },
     { name = "httptools", marker = "sys_platform == 'linux'", specifier = ">=0.6.4" },
     { name = "loguru", specifier = ">=0.7.3" },
@@ -835,6 +867,9 @@ requires-dist = [
     { name = "python-jose", specifier = ">=3.5.0" },
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "redis", specifier = ">=7.1.0" },
+    { name = "redis", marker = "extra == 'cache'", specifier = ">=7.1.0" },
+    { name = "redis", marker = "extra == 'task-queue'", specifier = ">=7.1.0" },
+    { name = "resend", marker = "extra == 'email'", specifier = ">=2.23.0" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.43" },
     { name = "tzdata", specifier = ">=2025.2" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.35.0" },
@@ -843,8 +878,10 @@ requires-dist = [
 ]
 
 [package.metadata.requires-dev]
-dev = [{ name = "black", specifier = ">=25.9.0" }]
-security = [{ name = "bandit", specifier = ">=1.8.6" }]
+dev = [
+    { name = "bandit", specifier = ">=1.8.6" },
+    { name = "black", specifier = ">=25.9.0" },
+]
 test = [
     { name = "faker", specifier = ">=37.8.0" },
     { name = "httpx", specifier = ">=0.28.1" },
@@ -2057,6 +2094,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c9/74/b3ff8e6c8446842c3f5c837e9c3dfcfe2018ea6ecef224c710c85ef728f4/requests-2.32.5.tar.gz", hash = "sha256:dbba0bac56e100853db0ea71b82b4dfd5fe2bf6d3754a8893c3af500cec7d7cf", size = 134517 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/1e/db/4254e3eabe8020b458f1a747140d32277ec7a271daf1d235b70dc0b4e6e3/requests-2.32.5-py3-none-any.whl", hash = "sha256:2462f94637a34fd532264295e186976db0f5d453d1cdd31473c85a6a161affb6", size = 64738 },
+]
+
+[[package]]
+name = "resend"
+version = "2.23.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+    { name = "typing-extensions" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/96/a3/20003e7d14604fef778bd30c69604df3560a657a95a5c29a9688610759b6/resend-2.23.0.tar.gz", hash = "sha256:df613827dcc40eb1c9de2e5ff600cd4081b89b206537dec8067af1a5016d23c7", size = 31416 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e3/35/64df775b8cd95e89798fd7b1b7fcafa975b6b09f559c10c0650e65b33580/resend-2.23.0-py2.py3-none-any.whl", hash = "sha256:eca6d28a1ffd36c1fc489fa83cb6b511f384792c9f07465f7c92d96c8b4d5636", size = 52599 },
 ]
 
 [[package]]

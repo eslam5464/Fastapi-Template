@@ -5,7 +5,7 @@ from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
 
-from pydantic import Field, computed_field
+from pydantic import Field, SecretStr, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
@@ -150,6 +150,10 @@ class Settings(BaseSettings):
     celery_result_db: int = 2  # Database index for the Celery result backend
     celery_timezone: str = "UTC"
     celery_task_time_limit: int = 300  # Maximum time limit (default is 5 minutes)
+
+    # Email API keys
+    resend_api_key: SecretStr
+    brevo_api_key: SecretStr
 
     @computed_field
     @property
