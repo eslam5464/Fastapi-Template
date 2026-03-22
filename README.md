@@ -101,25 +101,36 @@ A production-ready FastAPI project template with modern best practices, async su
       python main.py
    ```
 
-The API will be available at `http://localhost:8799` with interactive documentation at `http://localhost:8799/docs`.
+The API will be available at `http://localhost:8799` with interactive documentation at:
+
+- `http://localhost:8799/v1/docs`
+- `http://localhost:8799/v2/docs`
 
 ## 📖 Documentation
 
 Detailed documentation is available in the [docs/](docs/) folder:
 
-- **[Architecture](docs/architecture.md)** - Project structure and design patterns
-- **[API Reference](docs/api.md)** - Endpoint documentation and examples
-- **[Development Guide](docs/development.md)** - Setup, testing, and contribution guidelines
-- **[Deployment](docs/deployment.md)** - Production deployment strategies
+- **[LLM Index](docs/llms.txt)** - Canonical documentation entrypoint for AI and quick doc navigation
+- **[Architecture Overview](docs/architecture/overview.md)** - Current system design and versioned routing model
+- **[Backend Architecture Guide](docs/backend-architecture.md)** - Layered architecture deep dive
+- **[API Reference](docs/api/reference.md)** - Versioned endpoint and auth reference
+- **[Getting Started](docs/guides/getting-started.md)** - Setup and first run
+- **[Development Guide](docs/guides/development.md)** - Local workflow and quality commands
+- **[Contributing](docs/guides/contributing.md)** - Contribution and PR standards
+- **[Deployment Guide](docs/guides/deployment.md)** - Production deployment checklist
+- **[Strategy Vision](docs/strategy/vision.md)** - Product and technical direction
+- **[Roadmap](docs/strategy/roadmap.md)** - Milestones and priorities
+- **[Changelog](docs/changelog/CHANGELOG.md)** - Release history
 
 ## 🏗️ Project Structure
 
 ```text
 ├── app/
 │   ├── api/                 # API routes and endpoints
-│   │   └── v1/             # API version 1
-│   │       ├── endpoints/  # Individual endpoint modules
-│   │       └── deps/       # Dependencies (auth, database)
+│   │   ├── v1/             # API version 1
+│   │   │   ├── endpoints/  # Individual endpoint modules
+│   │   │   └── deps/       # Dependencies (auth, database)
+│   │   └── v2/             # API version 2
 │   ├── core/               # Core functionality
 │   │   ├── auth.py         # Authentication utilities
 │   │   ├── config.py       # Configuration management

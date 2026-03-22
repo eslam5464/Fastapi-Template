@@ -1,0 +1,21 @@
+# FastAPI Template
+
+> FastAPI Template is a production-ready backend starter using FastAPI, async SQLAlchemy, PostgreSQL, Redis, and layered architecture. The project currently runs a versioned API surface mounted under /v1 and /v2 with per-version OpenAPI/Swagger/ReDoc endpoints. This repository is in active backend development with strong test coverage and explicit service/repository boundaries.
+
+## Core Documentation
+- [Architecture Overview](architecture/overview.md): Current system design, components, middleware, and versioned API routing
+- [Getting Started](guides/getting-started.md): Prerequisites, environment setup, install, migrations, and first run
+- [Development](guides/development.md): Daily workflow, branching, commits, lint, format, and testing
+- [Contributing](guides/contributing.md): Code standards, PR checklist, review expectations
+- [API Reference](api/reference.md): Endpoints, auth, versioning, and error model
+
+## Strategy
+- [Vision](strategy/vision.md): Problem, target users, success metrics, and constraints
+- [Roadmap](strategy/roadmap.md): Milestones, priorities, and near-term plan
+- [Decisions Log](strategy/decisions-log.md): Product and delivery decisions over time
+
+## Optional
+- [Deployment](guides/deployment.md): Environments, deployment steps, rollback, and health checks
+- [Changelog](changelog/CHANGELOG.md): Keep a Changelog history with unreleased changes
+- [Runbooks](runbooks/): Operational playbooks for repeated production tasks
+- [ADRs](architecture/decisions/): Architecture Decision Records

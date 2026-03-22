@@ -20,7 +20,7 @@ A comprehensive, reusable guide for building maintainable FastAPI applications u
 4. [Data Flow](#-data-flow)
 5. [Dependency Direction Rules](#-dependency-direction-rules)
 6. [Testing Strategy](#-testing-strategy)
-7. [Anti-patterns Catalog](#-anti-patterns-catalog)
+7. Anti-patterns Catalog
 8. [Decision Trees](#-decision-trees)
 9. [Patterns Catalog](#-patterns-catalog)
 10. [Scalability Limits & When to Outgrow](#-scalability-limits--when-to-outgrow)
@@ -83,6 +83,14 @@ flowchart TB
 | **Unidirectional Flow** | Data flows down through layers; responses bubble up |
 | **Testability** | Each layer can be tested in isolation with mocks |
 | **Reusability** | Lower layers are reusable across multiple higher-layer consumers |
+
+### Project Versioning Snapshot
+
+- Root application exposes operational routes only (for example `/health`).
+- Global docs routes are disabled on root (`/docs`, `/redoc`, `/openapi.json`).
+- Versioned mounted apps own API docs and OpenAPI contracts: `/v1/docs`, `/v1/redoc`, `/v1/openapi.json`.
+- Versioned mounted apps also expose: `/v2/docs`, `/v2/redoc`, `/v2/openapi.json`.
+- API endpoint paths follow mounted prefixes (`/v1/...`, `/v2/...`).
 
 ### Normative Rules (MUST / SHOULD / MAY)
 
@@ -1622,10 +1630,10 @@ The middleware layer adds **cross-cutting HTTP concerns** that run on every requ
 
 #### Registration Order
 
-Middleware is registered in `app/web.py`. Order matters — outermost middleware runs first:
+Middleware is registered in `app/main.py`. Order matters — outermost middleware runs first:
 
 ```python
-# app/web.py
+# app/main.py
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CSRFMiddleware)
 app.add_middleware(RateLimitHeaderMiddleware)
@@ -2003,7 +2011,7 @@ async def test_process_resource_endpoint(client: AsyncClient):
     }
 
     # Act
-    response = await client.post("/api/v1/resources/process", json=payload)
+    response = await client.post("/v1/resources/process", json=payload)
 
     # Assert
     assert response.status_code == 200
@@ -2019,7 +2027,7 @@ async def test_process_resource_validation_error(client: AsyncClient):
     payload = {"name": "test"}
 
     # Act
-    response = await client.post("/api/v1/resources/process", json=payload)
+    response = await client.post("/v1/resources/process", json=payload)
 
     # Assert
     assert response.status_code == 422
@@ -2045,7 +2053,7 @@ app.dependency_overrides[get_resource_service] = override_get_resource_service
 
 # Run tests
 client = TestClient(app)
-response = client.post("/api/v1/resources/process", json={...})
+response = client.post("/v1/resources/process", json={...})
 
 # Clean up
 app.dependency_overrides.clear()
