@@ -18,14 +18,17 @@ SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 
 # Paths exempt from CSRF protection (auth endpoints using JWT)
 EXEMPT_PATHS = {
-    "/api/v1/auth/login",
-    "/api/v1/auth/signup",
-    "/api/v1/auth/refresh-token",
-    "/api/v1/auth/logout",
+    "/v1/auth/login",
+    "/v1/auth/signup",
+    "/v1/auth/refresh-token",
+    "/v1/auth/logout",
     "/health",
-    "/docs",
-    "/redoc",
-    "/openapi.json",
+    "/v1/docs",
+    "/v1/redoc",
+    "/v1/openapi.json",
+    "/v2/docs",
+    "/v2/redoc",
+    "/v2/openapi.json",
 }
 
 
@@ -59,7 +62,14 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             return True
 
         # Check if path starts with any exempt prefix (for swagger assets, etc.)
-        exempt_prefixes = ("/docs", "/redoc", "/openapi")
+        exempt_prefixes = (
+            "/v1/docs",
+            "/v1/redoc",
+            "/v1/openapi",
+            "/v2/docs",
+            "/v2/redoc",
+            "/v2/openapi",
+        )
         return any(path.startswith(prefix) for prefix in exempt_prefixes)
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:

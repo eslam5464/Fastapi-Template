@@ -4,6 +4,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from loguru import logger
 
 from app.api.routes import api_router
+from app.api.v1.router import api_v1_router
+from app.api.v2.router import api_v2_router
 from app.core.config import Environment, settings
 from app.core.logger import configure_uvicorn_logging, setup_logger, shutdown_logger
 from app.middleware.csrf import CSRFMiddleware
@@ -83,12 +85,33 @@ app = FastAPI(
     title=settings.app_title,
     version=settings.app_version,
     description=settings.app_description,
-    openapi_url=("/openapi.json" if settings.current_environment in ALLOWED_ENVIRONMENTS else None),
-    docs_url="/docs" if settings.current_environment in ALLOWED_ENVIRONMENTS else None,
-    redoc_url="/redoc" if settings.current_environment in ALLOWED_ENVIRONMENTS else None,
+    openapi_url=None,
+    docs_url=None,
+    redoc_url=None,
     lifespan=lifespan,
     generate_unique_id_function=lambda route: f"{route.tags[0]}-{route.name}",
 )
+
+
+def _create_versioned_app(version: str) -> FastAPI:
+    """Create a mounted FastAPI sub-app with version-specific docs endpoints."""
+    docs_enabled = settings.current_environment in ALLOWED_ENVIRONMENTS
+    return FastAPI(
+        title=f"{settings.app_title} {version.upper()}",
+        version=settings.app_version,
+        description=settings.app_description,
+        openapi_url="/openapi.json" if docs_enabled else None,
+        docs_url="/docs" if docs_enabled else None,
+        redoc_url="/redoc" if docs_enabled else None,
+        generate_unique_id_function=lambda route: f"{route.tags[0]}-{route.name}",
+    )
+
+
+v1_app = _create_versioned_app("v1")
+v1_app.include_router(api_v1_router)
+
+v2_app = _create_versioned_app("v2")
+v2_app.include_router(api_v2_router)
 
 # Set CORS middleware with restricted configuration
 # Reference: https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html
@@ -122,3 +145,7 @@ app.add_middleware(LoggingMiddleware)
 
 # Include API router
 app.include_router(api_router)
+
+# Mount versioned API apps
+app.mount("/v1", v1_app)
+app.mount("/v2", v2_app)

@@ -293,8 +293,10 @@ class TestAppConfiguration:
         # Check that routes are registered
         routes = [route.path for route in app.routes]
 
-        # Should have API routes
-        assert any("/api/" in route for route in routes)
+        # Should have root health route and mounted versioned apps
+        assert "/health" in routes
+        assert "/v1" in routes
+        assert "/v2" in routes
 
     def test_app_cors_configuration(self):
         """Test CORS middleware configuration."""
@@ -319,3 +321,43 @@ class TestAppConfiguration:
         with patch("app.main.settings.current_environment", Environment.PRD):
             # In PRODUCTION, should be disabled
             assert Environment.PRD not in ALLOWED_ENVIRONMENTS
+
+
+@pytest.mark.anyio
+class TestAppEndpoints:
+    """Integration tests for root and versioned docs endpoints."""
+
+    async def test_health_endpoint_is_unversioned(self, client):
+        """Healthcheck should remain available at root path."""
+        response = await client.get("/health")
+
+        assert response.status_code == 200
+        assert response.json() == {"status": "healthy"}
+
+    async def test_root_docs_endpoints_are_disabled(self, client):
+        """Root docs endpoints should not be exposed after versioned split."""
+        docs_paths = ["/docs", "/redoc", "/openapi.json"]
+
+        for path in docs_paths:
+            response = await client.get(path)
+            assert response.status_code == 404
+
+    async def test_v1_docs_endpoints_are_available_in_allowed_envs(self, client):
+        """Mounted v1 app should expose its own docs endpoints in allowed envs."""
+        if app.openapi_url is None and Environment.LOCAL not in ALLOWED_ENVIRONMENTS:
+            pytest.skip("Docs are disabled in this environment")
+
+        docs_paths = ["/v1/docs", "/v1/redoc", "/v1/openapi.json"]
+        for path in docs_paths:
+            response = await client.get(path)
+            assert response.status_code == 200
+
+    async def test_v2_docs_endpoints_are_available_in_allowed_envs(self, client):
+        """Mounted v2 app should expose its own docs endpoints in allowed envs."""
+        if app.openapi_url is None and Environment.LOCAL not in ALLOWED_ENVIRONMENTS:
+            pytest.skip("Docs are disabled in this environment")
+
+        docs_paths = ["/v2/docs", "/v2/redoc", "/v2/openapi.json"]
+        for path in docs_paths:
+            response = await client.get(path)
+            assert response.status_code == 200

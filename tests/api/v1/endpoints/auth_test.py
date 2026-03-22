@@ -13,7 +13,7 @@ from tests.utils import generate_user_credentials
 
 
 class TestLogin:
-    """Test suite for POST /api/v1/auth/login endpoint"""
+    """Test suite for POST /v1/auth/login endpoint"""
 
     @pytest.mark.anyio
     async def test_login_success(
@@ -24,7 +24,7 @@ class TestLogin:
     ):
         """Test successful login with valid credentials"""
         response = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "username": user.username,
                 "password": default_password,
@@ -55,7 +55,7 @@ class TestLogin:
     ):
         """Test login fails with incorrect password"""
         response = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "username": user.username,
                 "password": "WrongPassword123!",
@@ -73,7 +73,7 @@ class TestLogin:
     ):
         """Test login fails with non-existent username"""
         response = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "username": "NonExistent123!@#User",
                 "password": "P@ssword123",
@@ -92,7 +92,7 @@ class TestLogin:
         """Test login fails when required fields are missing"""
         # Missing password
         response = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "username": "TestUser123!@#",
             },
@@ -101,7 +101,7 @@ class TestLogin:
 
         # Missing username
         response = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "password": "P@ssword123",
             },
@@ -110,7 +110,7 @@ class TestLogin:
 
 
 class TestSignup:
-    """Test suite for POST /api/v1/auth/signup endpoint"""
+    """Test suite for POST /v1/auth/signup endpoint"""
 
     @pytest.mark.anyio
     async def test_signup_success(
@@ -120,7 +120,7 @@ class TestSignup:
         """Test successful user signup"""
         user_credentials = generate_user_credentials()
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": user_credentials["username"],
                 "email": user_credentials["email"],
@@ -153,7 +153,7 @@ class TestSignup:
         """Test signup fails when email already exists"""
         user_credentials = generate_user_credentials()
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": user_credentials["username"],
                 "email": user.email,
@@ -177,7 +177,7 @@ class TestSignup:
         user_credentials = generate_user_credentials()
         # Username without special character
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": "TestUser 123",
                 "email": user_credentials["email"],
@@ -188,7 +188,7 @@ class TestSignup:
 
         # Username without uppercase
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": "testuser123!@#",
                 "email": user_credentials["email"],
@@ -199,7 +199,7 @@ class TestSignup:
 
         # Username without lowercase
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": "TESTUSER123!@#",
                 "email": user_credentials["email"],
@@ -210,7 +210,7 @@ class TestSignup:
 
         # Username without number
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": "TestUser!@#",
                 "email": user_credentials["email"],
@@ -228,7 +228,7 @@ class TestSignup:
         user_credentials = generate_user_credentials()
         # Password without special character
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": user_credentials["username"],
                 "email": user_credentials["email"],
@@ -239,7 +239,7 @@ class TestSignup:
 
         # Password without uppercase
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": user_credentials["username"],
                 "email": user_credentials["email"],
@@ -250,7 +250,7 @@ class TestSignup:
 
         # Password without lowercase
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": user_credentials["username"],
                 "email": user_credentials["email"],
@@ -261,7 +261,7 @@ class TestSignup:
 
         # Password without number
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": user_credentials["username"],
                 "email": user_credentials["email"],
@@ -272,7 +272,7 @@ class TestSignup:
 
         # Password too short
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": user_credentials["username"],
                 "email": user_credentials["email"],
@@ -289,7 +289,7 @@ class TestSignup:
         """Test signup fails with invalid email format"""
         user_credentials = generate_user_credentials()
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": user_credentials["username"],
                 "email": "invalid-email",
@@ -307,7 +307,7 @@ class TestSignup:
         """Test signup fails when username is too short"""
         user_credentials = generate_user_credentials()
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": "Ab",
                 "email": user_credentials["email"],
@@ -326,7 +326,7 @@ class TestSignup:
         user_credentials = generate_user_credentials()
         long_username = "A" * 51 + "1!@#bC"  # Over 50 characters
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": long_username,
                 "email": user_credentials["email"],
@@ -345,7 +345,7 @@ class TestSignup:
         """Test signup fails when required fields are missing"""
         # Missing username
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "email": faker.safe_email(),
                 "password": "P@ssword123",
@@ -355,7 +355,7 @@ class TestSignup:
 
         # Missing email
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": "TestUser123!@#",
                 "password": "P@ssword123",
@@ -365,7 +365,7 @@ class TestSignup:
 
         # Missing password
         response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": "TestUser123!@#",
                 "email": faker.safe_email(),
@@ -375,7 +375,7 @@ class TestSignup:
 
 
 class TestRefreshToken:
-    """Test suite for POST /api/v1/auth/refresh-token endpoint"""
+    """Test suite for POST /v1/auth/refresh-token endpoint"""
 
     @pytest.mark.anyio
     async def test_refresh_token_success(
@@ -397,7 +397,7 @@ class TestRefreshToken:
         )
 
         response = await client.post(
-            "/api/v1/auth/refresh-token",
+            "/v1/auth/refresh-token",
             json={"refresh_token": refresh_token},
         )
 
@@ -422,7 +422,7 @@ class TestRefreshToken:
     ):
         """Test refresh token fails with invalid token"""
         response = await client.post(
-            "/api/v1/auth/refresh-token",
+            "/v1/auth/refresh-token",
             json={"refresh_token": "invalid.token.here"},
         )
 
@@ -450,7 +450,7 @@ class TestRefreshToken:
         )
 
         response = await client.post(
-            "/api/v1/auth/refresh-token",
+            "/v1/auth/refresh-token",
             json={"refresh_token": expired_token},
         )
 
@@ -475,7 +475,7 @@ class TestRefreshToken:
         )
 
         response = await client.post(
-            "/api/v1/auth/refresh-token",
+            "/v1/auth/refresh-token",
             json={"refresh_token": token_without_sub},
         )
 
@@ -503,7 +503,7 @@ class TestRefreshToken:
         )
 
         response = await client.post(
-            "/api/v1/auth/refresh-token",
+            "/v1/auth/refresh-token",
             json={"refresh_token": refresh_token},
         )
 
@@ -530,7 +530,7 @@ class TestRefreshToken:
         )
 
         response = await client.post(
-            "/api/v1/auth/refresh-token",
+            "/v1/auth/refresh-token",
             json={"refresh_token": wrong_token},
         )
 
@@ -545,7 +545,7 @@ class TestRefreshToken:
     ):
         """Test refresh token fails when refresh_token field is missing"""
         response = await client.post(
-            "/api/v1/auth/refresh-token",
+            "/v1/auth/refresh-token",
             json={},
         )
 
@@ -558,7 +558,7 @@ class TestRefreshToken:
     ):
         """Test refresh token fails with empty string"""
         response = await client.post(
-            "/api/v1/auth/refresh-token",
+            "/v1/auth/refresh-token",
             json={"refresh_token": ""},
         )
 
@@ -581,7 +581,7 @@ class TestAuthenticationIntegration:
 
         # 1. Signup
         signup_response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": username,
                 "email": email,
@@ -595,7 +595,7 @@ class TestAuthenticationIntegration:
 
         # 2. Login with the new user
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "username": username,
                 "password": password,
@@ -607,7 +607,7 @@ class TestAuthenticationIntegration:
 
         # 3. Refresh the token
         refresh_response = await client.post(
-            "/api/v1/auth/refresh-token",
+            "/v1/auth/refresh-token",
             json={"refresh_token": login_data["refresh_token"]},
         )
         assert refresh_response.status_code == 200
@@ -626,7 +626,7 @@ class TestAuthenticationIntegration:
         """Test that different users get different independent tokens"""
         # Login as first user
         response1 = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "username": user.username,
                 "password": default_password,
@@ -637,7 +637,7 @@ class TestAuthenticationIntegration:
 
         # Login as second user
         response2 = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "username": other_user.username,
                 "password": default_password,
@@ -673,7 +673,7 @@ class TestAuthenticationIntegration:
     ):
         """Test that tokens have correct expiration times"""
         response = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "username": user.username,
                 "password": default_password,
@@ -951,7 +951,7 @@ class TestAuthenticatedEndpoints:
         """Test using access token to access protected endpoints"""
         # First login to get token
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "username": user.username,
                 "password": default_password,
@@ -963,7 +963,7 @@ class TestAuthenticatedEndpoints:
 
         # Use the access token to access a protected endpoint
         response = await client.get(
-            "/api/v1/users/me",
+            "/v1/users/me",
             headers={"Authorization": f"Bearer {access_token}"},
         )
 
@@ -983,7 +983,7 @@ class TestAuthenticatedEndpoints:
 
         # 1. Signup and get initial tokens
         signup_response = await client.post(
-            "/api/v1/auth/signup",
+            "/v1/auth/signup",
             data={
                 "username": username,
                 "email": email,
@@ -1009,7 +1009,7 @@ class TestAuthenticatedEndpoints:
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
 
             refresh_response = await client.post(
-                "/api/v1/auth/refresh-token",
+                "/v1/auth/refresh-token",
                 json={"refresh_token": initial_refresh_token},
             )
         assert refresh_response.status_code == 200

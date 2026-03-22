@@ -133,7 +133,7 @@ class TestRefreshTokenTypeValidation:
             mock_blacklist.is_revoked = AsyncMock(return_value=False)
 
             response = await client.post(
-                "/api/v1/auth/refresh-token",
+                "/v1/auth/refresh-token",
                 json={"refresh_token": access_token},
             )
 
@@ -164,7 +164,7 @@ class TestRefreshTokenTypeValidation:
             mock_blacklist.is_revoked = AsyncMock(return_value=False)
 
             response = await client.post(
-                "/api/v1/auth/refresh-token",
+                "/v1/auth/refresh-token",
                 json={"refresh_token": token_no_type},
             )
 
@@ -197,7 +197,7 @@ class TestRefreshTokenTypeValidation:
             mock_blacklist.is_revoked = AsyncMock(return_value=True)
 
             response = await client.post(
-                "/api/v1/auth/refresh-token",
+                "/v1/auth/refresh-token",
                 json={"refresh_token": refresh_token},
             )
 

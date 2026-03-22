@@ -65,11 +65,12 @@ class TestCSRFMiddlewareConstants:
 
     def test_exempt_paths(self):
         """Test exempt paths from CSRF protection."""
-        assert "/api/v1/auth/login" in EXEMPT_PATHS
-        assert "/api/v1/auth/signup" in EXEMPT_PATHS
-        assert "/api/v1/auth/refresh-token" in EXEMPT_PATHS
+        assert "/v1/auth/login" in EXEMPT_PATHS
+        assert "/v1/auth/signup" in EXEMPT_PATHS
+        assert "/v1/auth/refresh-token" in EXEMPT_PATHS
         assert "/health" in EXEMPT_PATHS
-        assert "/docs" in EXEMPT_PATHS
+        assert "/v1/docs" in EXEMPT_PATHS
+        assert "/v2/docs" in EXEMPT_PATHS
 
 
 @pytest.mark.anyio
@@ -81,7 +82,7 @@ class TestCSRFMiddlewareLocalEnvironment:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "POST"
-        request.url = MagicMock(path="/api/v1/users")
+        request.url = MagicMock(path="/v1/users")
         request.cookies = {}  # No CSRF cookie
         request.headers = {}  # No CSRF header
 
@@ -108,7 +109,7 @@ class TestCSRFMiddlewareSafeMethods:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "GET"
-        request.url = MagicMock(path="/api/v1/users")
+        request.url = MagicMock(path="/v1/users")
         request.cookies = {}
 
         response = MagicMock(spec=_StreamingResponse)
@@ -130,7 +131,7 @@ class TestCSRFMiddlewareSafeMethods:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "HEAD"
-        request.url = MagicMock(path="/api/v1/users")
+        request.url = MagicMock(path="/v1/users")
         request.cookies = {}
 
         response = MagicMock(spec=_StreamingResponse)
@@ -152,7 +153,7 @@ class TestCSRFMiddlewareSafeMethods:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "OPTIONS"
-        request.url = MagicMock(path="/api/v1/users")
+        request.url = MagicMock(path="/v1/users")
         request.cookies = {}
 
         response = MagicMock(spec=_StreamingResponse)
@@ -179,7 +180,7 @@ class TestCSRFMiddlewareExemptPaths:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "POST"
-        request.url = MagicMock(path="/api/v1/auth/login")
+        request.url = MagicMock(path="/v1/auth/login")
         request.cookies = {}  # No CSRF cookie
 
         response = MagicMock(spec=_StreamingResponse)
@@ -200,7 +201,7 @@ class TestCSRFMiddlewareExemptPaths:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "POST"
-        request.url = MagicMock(path="/api/v1/auth/signup")
+        request.url = MagicMock(path="/v1/auth/signup")
         request.cookies = {}
 
         response = MagicMock(spec=_StreamingResponse)
@@ -221,7 +222,7 @@ class TestCSRFMiddlewareExemptPaths:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "POST"
-        request.url = MagicMock(path="/api/v1/auth/refresh-token")
+        request.url = MagicMock(path="/v1/auth/refresh-token")
         request.cookies = {}
 
         response = MagicMock(spec=_StreamingResponse)
@@ -238,11 +239,11 @@ class TestCSRFMiddlewareExemptPaths:
             assert result == response
 
     async def test_docs_path_prefix_exempt(self):
-        """Test paths starting with /docs are exempt."""
+        """Test paths starting with /v1/docs are exempt."""
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "POST"
-        request.url = MagicMock(path="/docs/oauth2-redirect")
+        request.url = MagicMock(path="/v1/docs/oauth2-redirect")
         request.cookies = {}
 
         response = MagicMock(spec=_StreamingResponse)
@@ -268,7 +269,7 @@ class TestCSRFMiddlewareValidation:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "POST"
-        request.url = MagicMock(path="/api/v1/users")
+        request.url = MagicMock(path="/v1/users")
         request.cookies = {}  # No CSRF cookie
         request.headers = {CSRF_HEADER_NAME: "some-token"}
 
@@ -288,7 +289,7 @@ class TestCSRFMiddlewareValidation:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "POST"
-        request.url = MagicMock(path="/api/v1/users")
+        request.url = MagicMock(path="/v1/users")
         request.cookies = {CSRF_COOKIE_NAME: "cookie-token"}
         request.headers = {}  # No CSRF header
 
@@ -308,7 +309,7 @@ class TestCSRFMiddlewareValidation:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "POST"
-        request.url = MagicMock(path="/api/v1/users")
+        request.url = MagicMock(path="/v1/users")
         request.cookies = {CSRF_COOKIE_NAME: "cookie-token-123"}
         request.headers = {CSRF_HEADER_NAME: "different-token-456"}
 
@@ -328,7 +329,7 @@ class TestCSRFMiddlewareValidation:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "POST"
-        request.url = MagicMock(path="/api/v1/users")
+        request.url = MagicMock(path="/v1/users")
 
         csrf_token = generate_csrf_token()
         request.cookies = {CSRF_COOKIE_NAME: csrf_token}
@@ -352,7 +353,7 @@ class TestCSRFMiddlewareValidation:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "PUT"
-        request.url = MagicMock(path="/api/v1/users/1")
+        request.url = MagicMock(path="/v1/users/1")
         request.cookies = {}
         request.headers = {}
 
@@ -370,7 +371,7 @@ class TestCSRFMiddlewareValidation:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "DELETE"
-        request.url = MagicMock(path="/api/v1/users/1")
+        request.url = MagicMock(path="/v1/users/1")
         request.cookies = {}
         request.headers = {}
 
@@ -388,7 +389,7 @@ class TestCSRFMiddlewareValidation:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "PATCH"
-        request.url = MagicMock(path="/api/v1/users/1")
+        request.url = MagicMock(path="/v1/users/1")
         request.cookies = {}
         request.headers = {}
 
@@ -411,7 +412,7 @@ class TestCSRFMiddlewareCookieSetup:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "GET"
-        request.url = MagicMock(path="/api/v1/users")
+        request.url = MagicMock(path="/v1/users")
         request.cookies = {}  # No existing cookie
 
         response = MagicMock(spec=_StreamingResponse)
@@ -439,7 +440,7 @@ class TestCSRFMiddlewareCookieSetup:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "GET"
-        request.url = MagicMock(path="/api/v1/users")
+        request.url = MagicMock(path="/v1/users")
         request.cookies = {CSRF_COOKIE_NAME: "existing-token"}
 
         response = MagicMock(spec=_StreamingResponse)
@@ -463,7 +464,7 @@ class TestCSRFMiddlewareCookieSetup:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "GET"
-        request.url = MagicMock(path="/api/v1/users")
+        request.url = MagicMock(path="/v1/users")
         request.cookies = {}
 
         response = MagicMock(spec=_StreamingResponse)
@@ -487,7 +488,7 @@ class TestCSRFMiddlewareCookieSetup:
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "GET"
-        request.url = MagicMock(path="/api/v1/users")
+        request.url = MagicMock(path="/v1/users")
         request.cookies = {}
 
         response = MagicMock(spec=_StreamingResponse)
@@ -523,24 +524,24 @@ class TestCSRFMiddlewareIsExempt:
         """Test prefix matching for exemption."""
         middleware = CSRFMiddleware(MagicMock())
 
-        # Test /docs prefix
+        # Test /v1/docs prefix
         request = MagicMock(spec=Request)
-        request.url = MagicMock(path="/docs/oauth2-redirect")
+        request.url = MagicMock(path="/v1/docs/oauth2-redirect")
         assert middleware._is_exempt(request) is True
 
-        # Test /redoc prefix
-        request.url = MagicMock(path="/redoc")
+        # Test /v2/redoc prefix
+        request.url = MagicMock(path="/v2/redoc")
         assert middleware._is_exempt(request) is True
 
-        # Test /openapi prefix
-        request.url = MagicMock(path="/openapi.json")
+        # Test /v1/openapi prefix
+        request.url = MagicMock(path="/v1/openapi.json")
         assert middleware._is_exempt(request) is True
 
     async def test_non_exempt_path(self):
         """Test non-exempt path."""
         middleware = CSRFMiddleware(MagicMock())
         request = MagicMock(spec=Request)
-        request.url = MagicMock(path="/api/v1/users")
+        request.url = MagicMock(path="/v1/users")
 
         assert middleware._is_exempt(request) is False
 

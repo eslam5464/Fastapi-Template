@@ -15,7 +15,7 @@ from sqlalchemy.sql import text
 from app import repos
 from app.core.config import settings
 from app.core.db import get_session
-from app.main import app
+from app.main import app, v1_app, v2_app
 from app.models import Base, User
 from app.schemas import Token, UserCreate
 
@@ -63,6 +63,8 @@ async def test_app() -> AsyncGenerator[FastAPI, None]:
             yield session
 
     app.dependency_overrides[get_session] = override_get_session
+    v1_app.dependency_overrides[get_session] = override_get_session
+    v2_app.dependency_overrides[get_session] = override_get_session
 
     yield app
 
@@ -73,6 +75,8 @@ async def test_app() -> AsyncGenerator[FastAPI, None]:
 
     # Clear any application dependencies
     app.dependency_overrides.clear()
+    v1_app.dependency_overrides.clear()
+    v2_app.dependency_overrides.clear()
 
 
 @pytest_asyncio.fixture

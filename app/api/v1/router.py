@@ -5,7 +5,7 @@ from app.api.v1.deps.rate_limit import rate_limit_auth
 from app.api.v1.endpoints import auth, user
 from app.core import responses
 
-api_v1_router = APIRouter(prefix="/api/v1")
+api_v1_router = APIRouter()
 
 
 api_v1_router.include_router(

@@ -13,7 +13,7 @@ from app.models import User
 
 
 class TestLogoutEndpoint:
-    """Test suite for POST /api/v1/auth/logout endpoint."""
+    """Test suite for POST /v1/auth/logout endpoint."""
 
     @pytest.mark.anyio
     async def test_logout_success(
@@ -25,7 +25,7 @@ class TestLogoutEndpoint:
         """Test successful logout with valid access token."""
         # First login to get tokens
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "username": user.username,
                 "password": default_password,
@@ -44,7 +44,7 @@ class TestLogoutEndpoint:
 
                 # Logout
                 response = await client.post(
-                    "/api/v1/auth/logout",
+                    "/v1/auth/logout",
                     headers={"Authorization": f"Bearer {access_token}"},
                 )
 
@@ -63,7 +63,7 @@ class TestLogoutEndpoint:
     ):
         """Test logout fails with invalid token."""
         response = await client.post(
-            "/api/v1/auth/logout",
+            "/v1/auth/logout",
             headers={"Authorization": "Bearer invalid.token.here"},
         )
 
@@ -92,7 +92,7 @@ class TestLogoutEndpoint:
         )
 
         response = await client.post(
-            "/api/v1/auth/logout",
+            "/v1/auth/logout",
             headers={"Authorization": f"Bearer {expired_token}"},
         )
 
@@ -104,7 +104,7 @@ class TestLogoutEndpoint:
         client: AsyncClient,
     ):
         """Test logout fails without authorization header."""
-        response = await client.post("/api/v1/auth/logout")
+        response = await client.post("/v1/auth/logout")
 
         assert response.status_code == 401
 
@@ -133,7 +133,7 @@ class TestLogoutEndpoint:
             mock_blacklist_deps.get_user_revocation_time = AsyncMock(return_value=None)
 
             response = await client.post(
-                "/api/v1/auth/logout",
+                "/v1/auth/logout",
                 headers={"Authorization": f"Bearer {token_no_jti}"},
             )
 
@@ -165,7 +165,7 @@ class TestLogoutEndpoint:
             mock_get_user.return_value = user
 
             response = await client.post(
-                "/api/v1/auth/logout",
+                "/v1/auth/logout",
                 headers={"Authorization": f"Bearer {token_no_exp}"},
             )
 
@@ -193,7 +193,7 @@ class TestLogoutEndpoint:
         )
 
         response = await client.post(
-            "/api/v1/auth/logout",
+            "/v1/auth/logout",
             headers={"Authorization": f"Bearer {wrong_key_token}"},
         )
 
@@ -209,7 +209,7 @@ class TestLogoutEndpoint:
         """Test logout handles internal errors gracefully."""
         # First login to get tokens
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "username": user.username,
                 "password": default_password,
@@ -227,7 +227,7 @@ class TestLogoutEndpoint:
                 mock_blacklist.revoke_token = AsyncMock(side_effect=Exception("Database error"))
 
                 response = await client.post(
-                    "/api/v1/auth/logout",
+                    "/v1/auth/logout",
                     headers={"Authorization": f"Bearer {access_token}"},
                 )
 
@@ -249,7 +249,7 @@ class TestTokenRevocationIntegration:
         """Test that a revoked access token is rejected on subsequent requests."""
         # Login to get tokens
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "username": user.username,
                 "password": default_password,
@@ -268,7 +268,7 @@ class TestTokenRevocationIntegration:
 
                 # Logout
                 logout_response = await client.post(
-                    "/api/v1/auth/logout",
+                    "/v1/auth/logout",
                     headers={"Authorization": f"Bearer {access_token}"},
                 )
                 assert logout_response.status_code == 200
@@ -280,7 +280,7 @@ class TestTokenRevocationIntegration:
 
             # Try to use the revoked token
             response = await client.get(
-                "/api/v1/users/me",
+                "/v1/users/me",
                 headers={"Authorization": f"Bearer {access_token}"},
             )
 
@@ -298,7 +298,7 @@ class TestTokenRevocationIntegration:
         """Test that tokens issued before user revocation time are rejected."""
         # Login to get tokens
         login_response = await client.post(
-            "/api/v1/auth/login",
+            "/v1/auth/login",
             data={
                 "username": user.username,
                 "password": default_password,
@@ -318,7 +318,7 @@ class TestTokenRevocationIntegration:
 
             # Try to use the token
             response = await client.get(
-                "/api/v1/users/me",
+                "/v1/users/me",
                 headers={"Authorization": f"Bearer {access_token}"},
             )
 

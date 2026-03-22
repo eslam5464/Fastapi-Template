@@ -18,7 +18,7 @@ from app.services.exceptions.auth import (
 from app.services.types.auth import TokenPairDict
 
 # OAuth2 password bearer scheme for token authentication
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v1/auth/login")
 
 
 def _get_auth_service(db: AsyncSession) -> AuthService:
