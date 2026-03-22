@@ -122,6 +122,7 @@ class TestSecurityHeadersMiddleware:
         middleware = SecurityHeadersMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "GET"
+        request.url = MagicMock(path="/v1/users/me")
 
         response = MagicMock(spec=_StreamingResponse)
         response.status_code = 200
@@ -138,6 +139,54 @@ class TestSecurityHeadersMiddleware:
             csp = result.headers["Content-Security-Policy"]
             assert "default-src 'self'" in csp
             assert "script-src" in csp
+
+    async def test_docs_path_uses_docs_csp_allowlist(self):
+        """Docs routes should allow required CDN assets for Swagger/ReDoc."""
+        middleware = SecurityHeadersMiddleware(MagicMock())
+        request = MagicMock(spec=Request)
+        request.method = "GET"
+        request.url = MagicMock(path="/v1/docs")
+
+        response = MagicMock(spec=_StreamingResponse)
+        response.status_code = 200
+        response.headers = {}
+
+        async def call_next(req):
+            return response
+
+        with patch("app.middleware.security_headers.settings") as mock_settings:
+            mock_settings.current_environment = Environment.DEV
+
+            result = await middleware.dispatch(request, call_next)
+
+            csp = result.headers["Content-Security-Policy"]
+            assert "https://cdn.jsdelivr.net" in csp
+            assert "https://unpkg.com" in csp
+            assert "'unsafe-inline'" in csp
+
+    async def test_non_docs_path_uses_strict_csp(self):
+        """Non-doc routes should not allow docs CDN or unsafe inline scripts."""
+        middleware = SecurityHeadersMiddleware(MagicMock())
+        request = MagicMock(spec=Request)
+        request.method = "GET"
+        request.url = MagicMock(path="/v1/users/me")
+
+        response = MagicMock(spec=_StreamingResponse)
+        response.status_code = 200
+        response.headers = {}
+
+        async def call_next(req):
+            return response
+
+        with patch("app.middleware.security_headers.settings") as mock_settings:
+            mock_settings.current_environment = Environment.DEV
+
+            result = await middleware.dispatch(request, call_next)
+
+            csp = result.headers["Content-Security-Policy"]
+            assert "script-src 'self';" in csp
+            assert "https://cdn.jsdelivr.net" not in csp
+            assert "'unsafe-inline'" not in csp
 
 
 @pytest.mark.anyio

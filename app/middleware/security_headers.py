@@ -5,6 +5,38 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.core.config import Environment, settings
 
+DEFAULT_CSP = (
+    "default-src 'self'; "
+    "script-src 'self'; "
+    "style-src 'self'; "
+    "img-src 'self' data: https:; "
+    "font-src 'self'; "
+    "frame-ancestors 'none'; "
+    "form-action 'self'; "
+    "base-uri 'self'"
+)
+
+DOCS_CSP = (
+    "default-src 'self'; "
+    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com; "
+    "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://unpkg.com "
+    "https://fonts.googleapis.com; "
+    "img-src 'self' data: https:; "
+    "font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; "
+    "connect-src 'self'; "
+    "frame-ancestors 'none'; "
+    "form-action 'self'; "
+    "base-uri 'self'; "
+    "worker-src 'self' blob:"
+)
+
+DOCS_PATH_PREFIXES = (
+    "/v1/docs",
+    "/v1/redoc",
+    "/v2/docs",
+    "/v2/redoc",
+)
+
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     """
@@ -25,8 +57,22 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     Reference: https://cheatsheetseries.owasp.org/cheatsheets/HTTP_Headers_Cheat_Sheet.html
     """
 
+    @staticmethod
+    def _get_request_path(request: Request) -> str:
+        """Extract request path safely for mocked requests in tests."""
+        url = getattr(request, "url", None)
+        if not url:
+            return ""
+        return getattr(url, "path", "") or ""
+
+    @staticmethod
+    def _is_docs_ui_path(path: str) -> bool:
+        """Check whether a request targets versioned Swagger/ReDoc endpoints."""
+        return any(path.startswith(prefix) for prefix in DOCS_PATH_PREFIXES)
+
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
         response: Response = await call_next(request)
+        request_path = self._get_request_path(request)
 
         # Prevent MIME-type sniffing
         response.headers["X-Content-Type-Options"] = "nosniff"
@@ -53,17 +99,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
                 "max-age=31536000; includeSubDomains; preload"
             )
 
-        # Content Security Policy - restrictive default
-        # Adjust based on your application's needs (fonts, images, scripts sources)
+        # Use a docs-friendly CSP only for Swagger/ReDoc routes.
         response.headers["Content-Security-Policy"] = (
-            "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "  # Allow inline for Swagger UI
-            "style-src 'self' 'unsafe-inline'; "  # Allow inline for Swagger UI
-            "img-src 'self' data: https:; "
-            "font-src 'self' https:; "
-            "frame-ancestors 'none'; "
-            "form-action 'self'; "
-            "base-uri 'self'"
+            DOCS_CSP if self._is_docs_ui_path(request_path) else DEFAULT_CSP
         )
 
         # Prevent caching of sensitive responses (can be overridden per-endpoint)
