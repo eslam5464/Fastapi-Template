@@ -109,6 +109,81 @@ flowchart TB
 | **HTTP Exceptions** | `app/core/exceptions.py` | API layer | FastAPI | Final transport-level representation |
 | **Infrastructure Exceptions** | `app/services/exceptions/` (or provider-specific modules) | Infra services/repos | Service or API | Wrap SDK/DB errors into domain-safe exceptions |
 
+### Mandatory Docstring Standard (Google)
+
+All new or modified public callables in this architecture MUST follow the Google Python docstring guide, except API endpoint functions:
+
+- <https://google.github.io/styleguide/pyguide.html#381-docstrings>
+
+API endpoint functions SHOULD NOT define function docstrings. Endpoint documentation MUST live in router metadata (`summary`, `description`, `responses`).
+
+For all non-endpoint docstrings, `Args` entries MUST use this format:
+
+- `arg_name (Type): description`
+
+#### Required Coverage by Layer
+
+| Layer Artifact | Required Sections |
+|----------------|-------------------|
+| API endpoint function | No function docstring; document via router `summary`, `description`, `responses` |
+| Dependency function | Summary, Args, Returns, Note |
+| Service method | Summary, Args, Returns, Raises, Example |
+| Repository method | Summary, Args, Returns, Raises, Performance/Warning (when relevant) |
+| Schema validator | Summary, Args, Returns, Raises |
+| Domain/HTTP exception class | Summary, Args, Note |
+
+#### Template: Service Method
+
+```python
+async def process(self, item: ResourceInput, option: ProcessingOption) -> ResourceOutput:
+    """Process a resource using domain rules and persistence orchestration.
+
+    Args:
+        item (ResourceInput): TypedDict-style service input contract.
+        option (ProcessingOption): Processing mode that affects rule application.
+
+    Returns:
+        ResourceOutput: TypedDict-style service output contract.
+
+    Raises:
+        ValidationError: If domain rules are violated.
+        ProcessingError: If persistence fails after validation.
+
+    Example:
+        >>> output = await service.process(item, ProcessingOption.DEFAULT)
+    """
+```
+
+#### Template: API Endpoint Documentation (Router Metadata)
+
+```python
+@router.post(
+    "/resources",
+    response_model=ResourceResponse,
+    summary="Create a resource",
+    description="Create a resource using validated request data.",
+    responses={
+        status.HTTP_400_BAD_REQUEST: {"model": responses.BadRequestResponse},
+        status.HTTP_404_NOT_FOUND: {"model": responses.NotFoundResponse},
+        status.HTTP_500_INTERNAL_SERVER_ERROR: {"model": responses.InternalServerErrorResponse},
+    },
+)
+async def create_resource(request: ResourceRequest, service: ResourceService) -> ResourceResponse:
+    # No endpoint function docstring: documentation is defined in router metadata.
+    ...
+```
+
+### Exception Contract Matrix (Canonical)
+
+This is the canonical mapping. Keep endpoint-level response docs consistent with this table.
+
+| Domain Exception | HTTP Exception | Status | Response Model |
+|------------------|----------------|--------|----------------|
+| `ValidationError` | `BadRequestException` | 400 | `BadRequestResponse` |
+| `ResourceNotFoundError` | `NotFoundException` | 404 | `NotFoundResponse` |
+| `AppException` | `BadRequestException` | 400 | `BadRequestResponse` |
+| Unexpected `Exception` | Re-raise after `logger.exception(...)` | 500 | `InternalServerErrorResponse` |
+
 ### Quick Reference Table
 
 | Layer | Location | Responsibility | Depends On |
@@ -257,6 +332,8 @@ async def process_resource(
 
 #### Error Mapping Matrix (Template)
 
+Keep this endpoint matrix synchronized with the canonical mapping in Overview.
+
 | Domain Exception | HTTP Exception | Status | Response Model |
 |------------------|----------------|--------|----------------|
 | `ValidationError` | `BadRequestException` | 400 | `BadRequestResponse` |
@@ -321,9 +398,16 @@ from app.services.resource_service import ResourceService
 async def get_resource_service(
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ResourceService:
-    """
-    Build and return a service instance.
-    Session stays in the deps layer and is only used to build repositories.
+    """Build and return a request-scoped `ResourceService`.
+
+    Args:
+        session (AsyncSession): Request-scoped async session from `Depends(get_session)`.
+
+    Returns:
+        ResourceService: Service wired with request-scoped repositories.
+
+    Note:
+        The session never leaves the deps layer; only repositories are injected.
     """
     resource_repo = ResourceRepository(session)
     audit_repo = AuditRepository(session)
@@ -335,9 +419,18 @@ async def get_resource_atomic(
     request: ResourceRequest,
     session: Annotated[AsyncSession, Depends(get_session)],
 ) -> ResourceResponse:
-    """
-    Example dependency that coordinates transaction control for service calls.
-    This is useful when multiple service operations must commit atomically.
+    """Execute an atomic service flow with explicit transaction control.
+
+    Args:
+        service (ResourceService): Injected domain service.
+        request (ResourceRequest): Validated request payload.
+        session (AsyncSession): Request-scoped async session used for commit/rollback.
+
+    Returns:
+        ResourceResponse: Service result for the atomic operation.
+
+    Note:
+        Use this pattern when multiple operations share one transaction boundary.
     """
     try:
         result = await service.process_batch(request, auto_commit=False)
@@ -430,12 +523,21 @@ class ResourceService:
         item: ResourceInput,
         option: ProcessingOption,
     ) -> ResourceOutput:
-        """
-        Process a resource item with full business logic.
+        """Process a resource using validation, rules, persistence, and auditing.
+
+        Args:
+            item (ResourceInput): TypedDict-style service input contract.
+            option (ProcessingOption): Processing mode controlling rule behavior.
+
+        Returns:
+            ResourceOutput: TypedDict-style service output contract.
 
         Raises:
-            ValidationError: Invalid business input.
-            ProcessingError: Persistence/audit failure.
+            ValidationError: If business validation fails.
+            ProcessingError: If persistence or audit operations fail.
+
+        Example:
+            >>> output = await service.process(item, ProcessingOption.DEFAULT)
         """
         # Step 1: Validate against cache
         self._validate_item(item)
@@ -467,7 +569,17 @@ class ResourceService:
         )
 
     async def get_resource(self, resource_id: int) -> ResourceOutput:
-        """Retrieve a single resource by ID."""
+        """Retrieve a single resource by ID.
+
+        Args:
+            resource_id (int): Resource identifier.
+
+        Returns:
+            ResourceOutput: TypedDict-style service output contract.
+
+        Raises:
+            ResourceNotFoundError: If no matching resource exists.
+        """
         model = await self.resource_repo.get_by_id(resource_id)
         if model is None:
             raise ResourceNotFoundError(f"Resource {resource_id} not found")
@@ -479,9 +591,13 @@ class ResourceService:
         )
 
     def _validate_item(self, item: ResourceInput) -> None:
-        """
-        Pure validation logic using cache lookup.
-        Raises ValidationError on failure.
+        """Validate resource input against cache-based constraints.
+
+        Args:
+            item (ResourceInput): TypedDict-style input payload.
+
+        Raises:
+            ValidationError: If category is unknown or value is out of range.
         """
         cached = resource_cache.get(item["category"])
         if not cached:
@@ -492,7 +608,15 @@ class ResourceService:
     def _apply_rules(
         self, item: ResourceInput, option: ProcessingOption
     ) -> ProcessedItem:
-        """Pure function: applies business rules to transform data."""
+        """Apply deterministic domain rules to input data.
+
+        Args:
+            item (ResourceInput): TypedDict-style validated input.
+            option (ProcessingOption): Processing mode that controls transformation intensity.
+
+        Returns:
+            ProcessedItem: Transformed values ready for persistence.
+        """
         multiplier = 1.0 if option == ProcessingOption.DEFAULT else 1.5
         return ProcessedItem(
             name=item["name"].upper(),
@@ -575,14 +699,32 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         self.model = model
 
     def _validate_column_exists(self, column_name: str) -> None:
-        """Validate that a column exists on the model."""
+        """Validate that a column exists on the bound SQLAlchemy model.
+
+        Args:
+            column_name (str): Candidate ORM column attribute name.
+
+        Raises:
+            ValueError: If the column does not exist on the model.
+        """
         if not hasattr(self.model, column_name):
             raise ValueError(
                 f"Column '{column_name}' does not exist on model '{self.model.__name__}'"
             )
 
     async def create_one(self, schema: CreateSchema, auto_commit: bool = True) -> Model:
-        """Create a single record and return the created model."""
+        """Create one record and return the inserted model.
+
+        Args:
+            schema (CreateSchema): Create schema used to build insert values.
+            auto_commit (bool): Whether to commit immediately after insert.
+
+        Returns:
+            Model: Inserted ORM model.
+
+        Example:
+            new_record = await repo.create_one(CreateResourceSchema(name="example"))
+        """
         stmt = (
             insert(self.model)
             .values(**schema.model_dump(exclude_none=True))
@@ -596,7 +738,15 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
     async def create_bulk(
         self, schemas: Sequence[CreateSchema], auto_commit: bool = True
     ) -> list[Model]:
-        """Create multiple records in a single transaction."""
+        """Create multiple records in one operation.
+
+        Args:
+            schemas (Sequence[CreateSchema]): Sequence of create schemas.
+            auto_commit (bool): Whether to commit immediately after insert.
+
+        Returns:
+            list[Model]: Inserted ORM models.
+        """
         if not schemas:
             return []
         values = [schema.model_dump(exclude_none=True) for schema in schemas]
@@ -611,7 +761,15 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         obj_id: str | int | uuid.UUID,
         id_column_name: str = "id",
     ) -> Model | None:
-        """Retrieve a single record by ID."""
+        """Retrieve one record by identifier.
+
+        Args:
+            obj_id (str | int | uuid.UUID): Identifier value.
+            id_column_name (str): Name of identifier column.
+
+        Returns:
+            Model | None: Matching model or `None` when absent.
+        """
         self._validate_column_exists(id_column_name)
         stmt = select(self.model).where(
             getattr(self.model, id_column_name) == obj_id
@@ -626,7 +784,17 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         limit: int = 100,
         id_column_name: str = "id",
     ) -> Sequence[Model]:
-        """Retrieve multiple records by IDs with pagination."""
+        """Retrieve multiple records by identifiers with pagination.
+
+        Args:
+            obj_ids (Sequence[str | int | uuid.UUID]): Identifier collection.
+            skip (int): Number of rows to skip.
+            limit (int): Maximum rows to return.
+            id_column_name (str): Name of identifier column.
+
+        Returns:
+            Sequence[Model]: Matching ORM models.
+        """
         self._validate_column_exists(id_column_name)
         stmt = (
             select(self.model)
@@ -644,7 +812,17 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         id_column_name: str = "id",
         auto_commit: bool = True,
     ) -> Model | None:
-        """Update a record by ID and return the updated model."""
+        """Update one record by identifier.
+
+        Args:
+            obj_id (str | int | uuid.UUID): Identifier value.
+            schema (UpdateSchema): Update schema with mutable fields.
+            id_column_name (str): Name of identifier column.
+            auto_commit (bool): Whether to commit immediately after update.
+
+        Returns:
+            Model | None: Updated model or `None` when not found.
+        """
         self._validate_column_exists(id_column_name)
         stmt = (
             update(self.model)
@@ -663,7 +841,16 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         id_column_name: str = "id",
         auto_commit: bool = True,
     ) -> list[Model]:
-        """Update multiple records by (id, schema) tuples."""
+        """Update multiple records using `(id, schema)` pairs.
+
+        Args:
+            updates (Sequence[tuple[str | int | uuid.UUID, UpdateSchema]]): Sequence of `(identifier, update_schema)` tuples.
+            id_column_name (str): Name of identifier column.
+            auto_commit (bool): Whether to commit immediately after updates.
+
+        Returns:
+            list[Model]: Updated ORM models.
+        """
         if not updates:
             return []
         self._validate_column_exists(id_column_name)
@@ -689,7 +876,16 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         id_column_name: str = "id",
         auto_commit: bool = True,
     ) -> bool:
-        """Delete a record by ID. Returns True if deleted."""
+        """Delete one record by identifier.
+
+        Args:
+            obj_id (str | int | uuid.UUID): Identifier value.
+            id_column_name (str): Name of identifier column.
+            auto_commit (bool): Whether to commit immediately after delete.
+
+        Returns:
+            bool: `True` if a row was deleted, otherwise `False`.
+        """
         self._validate_column_exists(id_column_name)
         stmt = delete(self.model).where(
             getattr(self.model, id_column_name) == obj_id
@@ -705,7 +901,16 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         id_column_name: str = "id",
         auto_commit: bool = True,
     ) -> int:
-        """Delete multiple records by IDs. Returns count deleted."""
+        """Delete multiple records by identifiers.
+
+        Args:
+            obj_ids (Sequence[str | int | uuid.UUID]): Identifier collection.
+            id_column_name (str): Name of identifier column.
+            auto_commit (bool): Whether to commit immediately after delete.
+
+        Returns:
+            int: Number of rows deleted.
+        """
         if not obj_ids:
             return 0
         self._validate_column_exists(id_column_name)
@@ -720,7 +925,15 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
     async def custom_query(
         self, query: str, params: dict[str, Any] | None = None
     ) -> Result[Any]:
-        """Execute parameterized raw SQL for complex queries."""
+        """Execute parameterized raw SQL for advanced queries.
+
+        Args:
+            query (str): SQL statement string.
+            params (dict[str, Any] | None): Optional parameter mapping for bound execution.
+
+        Returns:
+            Result[Any]: SQLAlchemy execution result.
+        """
         stmt = text(query)
         if params:
             stmt = stmt.bindparams(**params)
@@ -740,7 +953,16 @@ class ResourceRepository(BaseRepository[ResourceModel, CreateResourceSchema, Upd
         skip: int = 0,
         limit: int = 100,
     ) -> list[ResourceModel]:
-        """Get resources filtered by category."""
+        """Get resources filtered by category.
+
+        Args:
+            category (str): Category value to filter by.
+            skip (int): Number of rows to skip.
+            limit (int): Maximum rows to return.
+
+        Returns:
+            list[ResourceModel]: Matching resources.
+        """
         stmt = (
             select(self.model)
             .where(self.model.category == category)
@@ -756,7 +978,15 @@ class ResourceRepository(BaseRepository[ResourceModel, CreateResourceSchema, Upd
         start_time: int,
         end_time: int,
     ) -> list[ResourceModel]:
-        """Get resources within a time range."""
+        """Get resources within an inclusive time window.
+
+        Args:
+            start_time (int): Inclusive window start.
+            end_time (int): Inclusive window end.
+
+        Returns:
+            list[ResourceModel]: Matching resources ordered by timestamp.
+        """
         stmt = (
             select(self.model)
             .where(self.model.timestamp.between(start_time, end_time))
@@ -1071,8 +1301,8 @@ class Base(DeclarativeBase):
         Convert model to dictionary for serialization.
 
         Args:
-            exclude_keys: Set of column names to exclude
-            exclude_none: If True, exclude columns with None values
+            exclude_keys (set[str] | None): Set of column names to exclude
+            exclude_none (bool): If True, exclude columns with None values
 
         Returns:
             Dictionary representation of the model
@@ -1562,6 +1792,40 @@ from app.schemas.common import ResourceStatus
 ---
 
 ## 🧪 Testing Strategy
+
+### Definition-of-Done Checklists
+
+Use these checklists before merging architecture changes.
+
+#### API Endpoint Checklist
+
+- [ ] Uses explicit request/response schemas and `response_model`
+- [ ] Delegates use-case logic to injected service
+- [ ] Maps documented domain exceptions to HTTP exceptions
+- [ ] Includes final `except Exception` with `logger.exception(...)`
+- [ ] Documents error responses in OpenAPI `responses`
+
+#### Dependency Function Checklist
+
+- [ ] Owns request-scoped session via `Depends(get_session)`
+- [ ] Wires repositories/services only (no domain rule execution)
+- [ ] Uses explicit commit/rollback when coordinating atomic operations
+- [ ] Does not leak raw session into service interfaces
+
+#### Service Method Checklist
+
+- [ ] Uses TypedDict-first service contracts from `app/services/types/`
+- [ ] Enforces business rule validation in service layer
+- [ ] Raises domain exceptions (never HTTP exceptions)
+- [ ] Uses typed argument docstring format: `arg_name (Type): description`
+- [ ] Includes Google-style docstring with `Raises` contract
+
+#### Repository Method Checklist
+
+- [ ] Keeps persistence-only responsibilities (no business rules)
+- [ ] Exposes `auto_commit` behavior for mutation methods
+- [ ] Uses parameterized SQL/ORM expressions
+- [ ] Has integration tests for custom query behavior
 
 ### Test Pyramid
 
