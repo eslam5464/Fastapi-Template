@@ -2951,3 +2951,175 @@ This guide provides a complete reference for building maintainable FastAPI appli
 14. **Guarantee side effects** — Use outbox pattern when DB state and external publishing must stay consistent
 
 Copy this document to any FastAPI project as a foundation for consistent, maintainable architecture.
+
+---
+
+## 🧪 Testing Strategy (Pytest: Unit, Integration, End-to-End)
+
+This section defines a pytest testing strategy for projects where application code lives in `app/` and tests live in a sibling `tests/` directory.
+
+References (official pytest docs):
+
+- Good Integration Practices: <https://docs.pytest.org/en/stable/explanation/goodpractices.html>
+- How to use fixtures: <https://docs.pytest.org/en/stable/how-to/fixtures.html>
+- How to parametrize tests: <https://docs.pytest.org/en/stable/how-to/parametrize.html>
+- How to use temporary directories and files (`tmp_path`): <https://docs.pytest.org/en/stable/how-to/tmp_path.html>
+- How to mark test functions: <https://docs.pytest.org/en/stable/how-to/mark.html>
+- Configuration reference: <https://docs.pytest.org/en/stable/reference/customize.html>
+
+### Recommended Test Layout
+
+Use a top-level `tests/` folder as a sibling to `app/`, then split test suites by intent:
+
+```text
+.
+├── app/
+│   ├── api/
+│   ├── services/
+│   ├── repos/
+│   └── ...
+├── tests/
+│   ├── unit/
+│   │   └── *_test.py
+│   ├── integration/
+│   │   └── *_test.py
+│   ├── e2e/
+│   │   └── *_test.py
+│   └── conftest.py
+└── pyproject.toml
+```
+
+Why this split helps:
+
+- `unit/` stays fast and deterministic; ideal for frequent local runs.
+- `integration/` can use real infrastructure boundaries (DB/files/network substitutes) and typically runs slower.
+- `e2e/` validates full-system behavior and should run separately in CI because it is the slowest and most environment-dependent.
+
+### Unit Tests (`tests/unit/`)
+
+Follow pytest-first patterns:
+
+- Prefer plain test functions with clear arrange/act/assert flow.
+- Use `@pytest.mark.parametrize` to cover input/output matrices without duplicating test logic.
+- Use fixtures for reusable setup.
+- Mock external dependencies (network, third-party SDKs, filesystem side effects) with `unittest.mock`.
+
+```python
+from unittest.mock import AsyncMock
+
+import pytest
+
+
+@pytest.mark.parametrize(
+    ("left", "right", "expected"),
+    [(1, 2, 3), (10, -2, 8), (0, 0, 0)],
+)
+def test_add(left: int, right: int, expected: int) -> None:
+    assert left + right == expected
+
+
+@pytest.fixture
+def mock_repo() -> AsyncMock:
+    return AsyncMock()
+```
+
+### Integration Tests (`tests/integration/`)
+
+Use integration tests to verify collaboration across components (for example, service + repository + real test DB).
+
+- Use fixture scopes intentionally: `function` for isolation, `module`/`session` for expensive shared setup.
+- Prefer `yield` fixtures for setup/teardown lifecycle.
+- Use built-in `tmp_path` for filesystem interactions.
+- Keep external resource configuration separate (for example, dedicated test env vars, test database URLs, isolated credentials) so integration tests never rely on production settings.
+
+```python
+import pytest
+
+
+@pytest.fixture(scope="session")
+def integration_base_url() -> str:
+    return "http://127.0.0.1:8000"
+
+
+def test_writes_report_file(tmp_path):
+    report = tmp_path / "report.txt"
+    report.write_text("ok", encoding="utf-8")
+    assert report.read_text(encoding="utf-8") == "ok"
+```
+
+### End-to-End Tests (`tests/e2e/`)
+
+Use E2E tests for user-visible, full-stack flows.
+
+- Mark E2E tests explicitly with `@pytest.mark.e2e`.
+- Use appropriate tooling per surface:
+  - Playwright for browser/UI flows.
+- For full API journey validation, use `requests` or `httpx`.
+- For async API test cases, prefer `httpx.AsyncClient` to keep I/O non-blocking and prioritize runtime performance in CI.
+- Run E2E separately from fast test suites in CI.
+
+```python
+import pytest
+
+
+@pytest.mark.e2e
+def test_user_signup_journey() -> None:
+    # Exercise complete user flow against a running environment.
+    assert True
+```
+
+### Pytest Configuration for `app/` + `tests/`
+
+Use `pyproject.toml` as the default and preferred home for all pytest configuration in this project.
+Only use `pytest.ini` when a legacy toolchain or external constraint makes it strictly necessary.
+
+#### `pyproject.toml` (Preferred)
+
+```toml
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--import-mode=importlib -ra"
+markers = [
+  "e2e: end-to-end tests that require full environment",
+]
+```
+
+Notes:
+
+- `--import-mode=importlib` is recommended in pytest good integration practices for new projects to avoid `sys.path`-mutation surprises.
+- Registering markers avoids unknown-marker warnings and improves `pytest --markers` output.
+- `addopts` is optional; keep it minimal and predictable.
+
+### Command-Line Usage
+
+Run only unit tests:
+
+```bash
+uv run pytest tests/unit
+```
+
+Run integration tests:
+
+```bash
+uv run pytest tests/integration
+```
+
+Run E2E tests (marker-based selection):
+
+```bash
+uv run pytest -m e2e
+```
+
+Run all tests:
+
+```bash
+uv run pytest
+```
+
+### CI Execution Model (Recommended)
+
+- Stage 1: run `tests/unit` on every push for fastest feedback.
+- Stage 2: run `tests/integration` after unit tests pass.
+- Stage 3: run `-m e2e` in a dedicated job/environment (often with stricter timeouts/retries and full service dependencies).
+
+This layered execution model aligns with pytest collection and marker selection capabilities while keeping feedback loops fast and deterministic.
