@@ -18,13 +18,18 @@ A comprehensive, reusable guide for building maintainable FastAPI applications u
    - [Core Layer](#37-core-layer)
    - [Middleware Layer](#38-middleware-layer)
 4. [Data Flow](#-data-flow)
-5. [Dependency Direction Rules](#-dependency-direction-rules)
-6. [Testing Strategy](#-testing-strategy)
-7. Anti-patterns Catalog
-8. [Decision Trees](#-decision-trees)
-9. [Patterns Catalog](#-patterns-catalog)
-10. [Scalability Limits & When to Outgrow](#-scalability-limits--when-to-outgrow)
-11. [Summary](#-summary)
+5. [Observability Baseline](#-observability-baseline)
+6. [API Governance](#-api-governance)
+7. [Authorization Model](#-authorization-model-owner-checks-first)
+8. [Dependency Direction Rules](#-dependency-direction-rules)
+9. [Testing Strategy](#-testing-strategy)
+10. Anti-patterns Catalog
+11. [Decision Trees](#-decision-trees)
+12. [Patterns Catalog](#-patterns-catalog)
+13. [Scalability Limits & When to Outgrow](#-scalability-limits--when-to-outgrow)
+14. [Repository Profile Appendix](#-repository-profile-appendix-fastapi-template)
+15. [Summary](#-summary)
+16. [Pytest Implementation Appendix](#-pytest-implementation-appendix-unit-integration-end-to-end)
 
 ---
 
@@ -98,8 +103,9 @@ flowchart TB
 - **MUST**: Services raise domain exceptions only (never HTTP exceptions).
 - **MUST**: Service input/output contracts are defined as `TypedDict` in `app/services/types/`.
 - **MUST**: Multi-step atomic operations are coordinated in the Deps layer.
-- **MUST**: Core exceptions are HTTP-only; domain exceptions live outside core (for example `app/services/exceptions/` or `app/domains/<domain>/exceptions.py`).
-- **MUST**: API owns domain-to-HTTP exception translation.
+- **MUST**: Core transport exceptions are HTTP-aware; domain exceptions live outside core (for example `app/services/exceptions/` or `app/domains/<domain>/exceptions.py`) except explicitly documented compatibility shims.
+- **MUST**: API is the canonical owner of domain-to-HTTP exception translation.
+- **MUST**: If deps performs reusable pre-validation translation (for example auth token validation used across endpoints), the resulting HTTP contract must still be documented and enforced at API boundary.
 - **MUST**: API has the final `except Exception` with `logger.exception(...)` for traceback visibility.
 - **SHOULD**: API translates domain exceptions to HTTP exceptions using service method docstrings as exception contracts.
 - **SHOULD**: Endpoints remain thin controllers (target: 1-5 lines of logic).
@@ -113,8 +119,8 @@ flowchart TB
 
 | Exception Type | Recommended Location | Raised By | Translated By | Notes |
 |----------------|----------------------|-----------|---------------|-------|
-| **Domain Exceptions** | `app/services/exceptions/` or `app/domains/<domain>/exceptions.py` | Service layer | API layer | Express business-rule failures (never HTTP-aware) |
-| **HTTP Exceptions** | `app/core/exceptions.py` | API layer | FastAPI | Final transport-level representation |
+| **Domain Exceptions** | `app/services/exceptions/` or `app/domains/<domain>/exceptions.py` | Service layer | API layer (canonical), optionally deps for reusable pre-validation adapters | Express business-rule failures (never HTTP-aware) |
+| **HTTP Exceptions** | `app/core/exceptions/http_exceptions.py` (+ shared base in `app/core/exceptions/base.py`) | API layer (or deps adapters) | FastAPI | Final transport-level representation |
 | **Infrastructure Exceptions** | `app/services/exceptions/` (or provider-specific modules) | Infra services/repos | Service or API | Wrap SDK/DB errors into domain-safe exceptions |
 
 ### Mandatory Docstring Standard (Google)
@@ -124,6 +130,8 @@ All new or modified public callables in this architecture MUST follow the Google
 - <https://google.github.io/styleguide/pyguide.html#381-docstrings>
 
 API endpoint functions SHOULD NOT define function docstrings. Endpoint documentation MUST live in router metadata (`summary`, `description`, `responses`).
+
+Compatibility note: existing endpoints may still contain short docstrings during migration; prefer router metadata as the long-term source of truth.
 
 For all non-endpoint docstrings, `Args` entries MUST use this format:
 
@@ -250,7 +258,7 @@ This guide is a generic template and can be adapted via explicit profiles:
 - **Strict profile**: Core keeps HTTP exceptions only; domain exceptions live in service/domain modules.
 - **Legacy compatibility profile**: Existing projects may temporarily centralize more exception types in core during migration.
 
-This document currently follows the **Strict profile**.
+This document uses **Strict profile as the default target**, with repository-specific compatibility deviations documented in the appendix.
 
 ---
 
@@ -263,6 +271,8 @@ This document currently follows the **Strict profile**.
 #### Responsibility
 
 The API layer handles **HTTP concerns first** and triggers application behavior by **calling service methods**. Endpoints should stay thin, but they can orchestrate the final service call and use `try/except` to translate domain/custom exceptions into the appropriate HTTP exceptions.
+
+In this repository, API remains the canonical translation boundary. Deps may still perform reusable pre-validation translation for shared adapters (for example auth dependencies) when that removes duplication across endpoints.
 
 #### ✅ What Belongs Here
 
@@ -358,6 +368,13 @@ Keep this endpoint matrix synchronized with the canonical mapping in Overview.
 - Custom/domain exceptions are translated with `try/except`
 - Final fallback is `except Exception` + `logger.exception(...)` in API only
 - Service method docstrings define exception contracts that API maps to HTTP errors
+
+#### Translation Boundary Notes (Repository Pattern)
+
+- Canonical rule: endpoint-level API contract is the source of truth for exception translation.
+- Allowed optimization: deps may map domain exceptions to HTTP exceptions for reusable adapters invoked by multiple endpoints.
+- Guardrail: when deps performs translation, endpoint response docs MUST still include those HTTP outcomes.
+- Guardrail: avoid mixing conflicting mappings for the same domain exception across deps and endpoint for one route.
 
 ---
 
@@ -1634,6 +1651,7 @@ Middleware is registered in `app/main.py`. Order matters — outermost middlewar
 
 ```python
 # app/main.py
+app.add_middleware(CORSMiddleware, ...)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CSRFMiddleware)
 app.add_middleware(RateLimitHeaderMiddleware)
@@ -1723,6 +1741,127 @@ flowchart TD
 2. **Service**: Raises domain exceptions (`ValidationError`, `ResourceNotFoundError`, `ProcessingError`) and returns `TypedDict` contracts
 3. **Dependency**: Owns session, repository wiring, and atomic transaction boundaries (`commit`/`rollback`)
 4. **API**: Uses `try/except` to map domain exceptions to HTTP exceptions and has final `except Exception` + `logger.exception(...)`
+
+---
+
+## 📡 Observability Baseline
+
+This section defines the minimum production observability requirements for this architecture.
+
+### Logging Contract (Mandatory)
+
+- All request lifecycle logs MUST include: `timestamp`, `level`, `message`, `request_id`, `path`, `method`, `status_code`, and `latency_ms`.
+- Sensitive values (passwords, tokens, API keys, secrets) MUST be redacted before logs are emitted.
+- API fallback handlers (`except Exception`) MUST call `logger.exception(...)` to preserve traceback context.
+- Middleware and endpoint logs SHOULD share the same `request_id` so one request can be reconstructed end-to-end.
+
+### Metrics Contract (Mandatory)
+
+Expose and track at least the following metrics:
+
+| Metric | Type | Why it matters |
+|-------|------|----------------|
+| `http_requests_total` | Counter | Throughput and traffic shape |
+| `http_request_duration_ms` | Histogram | Latency SLI/SLO tracking |
+| `http_errors_total` (4xx/5xx) | Counter | Error budget monitoring |
+| `db_query_duration_ms` | Histogram | Database bottleneck visibility |
+| `cache_hit_ratio` | Gauge | Cache effectiveness |
+
+### Tracing Policy (Optional by Default)
+
+- Distributed tracing MAY be enabled when incident analysis needs cross-service timing.
+- If enabled, propagate trace headers (`traceparent`) through outgoing HTTP calls.
+- Keep tracing optional until operational complexity justifies mandatory instrumentation.
+
+---
+
+## 🧭 API Governance
+
+This section standardizes external API behavior so clients see predictable contracts.
+
+### Version Deprecation Lifecycle (Case-by-Case)
+
+- Version deprecation decisions are approved by the service owner for the affected API surface.
+- Every deprecation decision MUST include: impacted routes, migration path, client notice plan, and target sunset date.
+- Backward-compatible changes SHOULD be preferred over new major versions when feasible.
+
+### Pagination Standard (Support Both with Explicit Criteria)
+
+| Pattern | Use when | Strengths | Trade-offs |
+|--------|----------|-----------|-----------|
+| Offset (`limit`, `offset`) | Small/mostly static datasets, admin panels | Simple for humans and SQL tooling | Drift/duplicate risk under frequent writes |
+| Cursor (`limit`, `cursor`) | Large or rapidly changing datasets | Stable paging and better scale behavior | More complex client implementation |
+
+Rules:
+
+- Endpoints MUST document which pagination mode they use.
+- Endpoints MUST enforce explicit maximum `limit` values.
+- Cursor pagination SHOULD sort on stable indexed keys (for example `created_at`, `id`).
+
+### Filtering and Sorting Conventions
+
+- Filtering parameters SHOULD use explicit names (for example `status`, `created_before`, `created_after`).
+- Sorting SHOULD use `sort_by` and `sort_order` (`asc`/`desc`) with documented defaults.
+- Invalid filters/sorts MUST return `400` with a deterministic validation message.
+
+### Error Envelope and Mapping
+
+Keep the canonical exception mapping table as the source of truth and ensure every endpoint `responses` block documents expected errors.
+
+Recommended envelope for machine-consumable errors:
+
+```json
+{
+    "error": {
+        "code": "VALIDATION_ERROR",
+        "message": "Validation failed",
+        "details": [{"field": "email", "issue": "Invalid format"}]
+    },
+    "requestId": "req_123"
+}
+```
+
+### Idempotency and Concurrency Contract (Writes)
+
+- Write endpoints SHOULD accept `Idempotency-Key` for retry safety.
+- Services SHOULD apply optimistic concurrency (`version` field or ETag) for conflicting updates.
+- If idempotency is implemented in deps/service, endpoint docs MUST clearly describe the contract and replay behavior.
+
+---
+
+## 🔐 Authorization Model (Owner Checks First)
+
+This repository starts with owner-based authorization and scales to richer models as needed.
+
+### Owner-Check Default
+
+- Access is granted when the authenticated principal owns the target resource.
+- Ownership rules MUST be explicit per resource type (no hidden assumptions).
+- Authorization checks MUST execute before mutation operations.
+
+### Resource-Specific Policy Map
+
+```python
+OWNER_POLICY_MAP: dict[str, str] = {
+        "user_profile": "user_id",
+        "session": "user_id",
+        "organization_membership": "tenant_id",
+}
+```
+
+Guidance:
+
+- Keep policy keys close to domain language (`order`, `invoice`, `project`).
+- Validate both ownership field presence and principal match.
+- Return `403` for authorization failures, not `404`, unless concealment is an explicit security policy.
+
+### Evolution Path
+
+Move from owner checks to RBAC/ABAC when at least one of these is true:
+
+- Shared resources require role-based collaboration.
+- Cross-tenant administrative actions are introduced.
+- Policy conditions depend on attributes beyond ownership (region, tier, environment).
 
 ---
 
@@ -2085,9 +2224,11 @@ async def override_get_session():
 
 # Override get_session for all tests
 app.dependency_overrides[get_session] = override_get_session
+v1_app.dependency_overrides[get_session] = override_get_session
+v2_app.dependency_overrides[get_session] = override_get_session
 ```
 
-> **Note**: Override `get_session` (not `SessionLocal`) because deps receive sessions via `Depends(get_session)`. This swaps the session for all deps without changing any business logic.
+> **Note**: Override `get_session` (not `SessionLocal`) because deps receive sessions via `Depends(get_session)`. In mounted-version apps, apply the same override to `app`, `v1_app`, and `v2_app`.
 
 ---
 
@@ -2931,6 +3072,52 @@ flowchart TD
 
 ---
 
+## 📎 Repository Profile Appendix (FastAPI Template)
+
+This appendix binds the generic guidance above to this repository's concrete implementation.
+
+### API and Docs Mounting
+
+- Root app keeps docs disabled globally (`openapi_url=None`, `docs_url=None`, `redoc_url=None`).
+- Versioned apps (`/v1`, `/v2`) own their docs/OpenAPI endpoints.
+
+### Middleware Stack (Current)
+
+Current registration order in `app/main.py`:
+
+1. `CORSMiddleware`
+2. `SecurityHeadersMiddleware`
+3. `CSRFMiddleware`
+4. `RateLimitHeaderMiddleware`
+5. `LoggingMiddleware`
+
+### Exception Translation in Practice
+
+- Canonical policy remains API-level translation.
+- Reusable auth adapters in deps may translate domain exceptions to HTTP exceptions to avoid duplication across endpoints.
+- Keep endpoint `responses` documentation aligned with both endpoint and deps-level translation behavior.
+
+### Exception Layout Compatibility Note
+
+- Domain-specific exceptions live under `app/services/exceptions/`.
+- Transport HTTP exceptions live in `app/core/exceptions/http_exceptions.py`.
+- `AppException` currently exists in `app/core/exceptions/base.py` as a compatibility shim.
+
+### Infrastructure Service Injection Rule
+
+- Stateless SDK wrappers MAY be module singletons.
+- Stateful or request-scoped integrations SHOULD be created through deps factories.
+
+### Testing Override Rule for Mounted Apps
+
+When overriding request-scoped dependencies in tests, apply overrides to all mounted apps (`app`, `v1_app`, and `v2_app`) to avoid split behavior across API versions.
+
+### Endpoint Docstring Compatibility Note
+
+Some existing endpoints still include short function docstrings. Treat router metadata as authoritative documentation and normalize endpoint docstrings gradually.
+
+---
+
 ## 📝 Summary
 
 This guide provides a complete reference for building maintainable FastAPI applications using layered architecture. Key takeaways:
@@ -2946,15 +3133,18 @@ This guide provides a complete reference for building maintainable FastAPI appli
 9. **Repositories abstract data** — All database access goes through repositories with `auto_commit` support
 10. **Schemas validate** — Pydantic handles API boundary validation
 11. **Test each layer appropriately** — Unit tests for services (mock repos), integration for repos (real DB), E2E for endpoints
-12. **Know your limits** — This architecture serves 1–15 developers and up to ~150 endpoints; beyond that, evolve to domain-driven modules
-13. **Protect writes** — Use idempotency keys and optimistic concurrency controls for retry-safe APIs
-14. **Guarantee side effects** — Use outbox pattern when DB state and external publishing must stay consistent
+12. **Observe production behavior** — Adopt structured logs, request IDs, and core metrics as mandatory baseline
+13. **Govern API contracts explicitly** — Standardize pagination/filtering/sorting, error contracts, and case-by-case deprecation ownership
+14. **Start authorization with ownership** — Use resource-specific owner policies and evolve to RBAC/ABAC when collaboration complexity grows
+15. **Protect writes** — Use idempotency keys and optimistic concurrency controls for retry-safe APIs
+16. **Guarantee side effects** — Use outbox pattern when DB state and external publishing must stay consistent
+17. **Know your limits** — This architecture serves 1–15 developers and up to ~150 endpoints; beyond that, evolve to domain-driven modules
 
 Copy this document to any FastAPI project as a foundation for consistent, maintainable architecture.
 
 ---
 
-## 🧪 Testing Strategy (Pytest: Unit, Integration, End-to-End)
+## 🧪 Pytest Implementation Appendix (Unit, Integration, End-to-End)
 
 This section defines a pytest testing strategy for projects where application code lives in `app/` and tests live in a sibling `tests/` directory.
 
