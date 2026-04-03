@@ -205,7 +205,7 @@ This is the canonical mapping. Keep endpoint-level response docs consistent with
 | Layer | Location | Responsibility | Depends On |
 |-------|----------|----------------|------------|
 | **API** | `app/api/` | HTTP routing, domain-to-HTTP translation, final exception logging | Deps, Schemas |
-| **Deps** | `app/api/*/deps/` | Dependency injection, session management, repo creation, atomic transaction orchestration | Services, Repos, Schemas, Core |
+| **Deps** | `app/api/*/deps/` with service factories in `deps/services.py` | Dependency injection, session management, service/repo wiring, atomic transaction orchestration | Services, Repos, Schemas, Core |
 | **Service** | `app/services/` | Business logic, domain rules, domain exceptions; returns `TypedDict` contracts | Repos, `app/services/types`, Cache |
 | **Service Types** | `app/services/types/` | `TypedDict` input/output contracts for service boundaries | `typing` (and optional Pydantic for validation helpers) |
 | **Repository** | `app/repos/` | Data access, CRUD with `auto_commit` support | Models, Schemas |
@@ -476,6 +476,55 @@ async def get_resource_atomic(
 - **Transaction coordination**: Uses `auto_commit=False` + explicit `commit()` for atomic operations
 - **Support logic only**: Complex domain rules stay in services
 
+#### File Organization (Canonical)
+
+Use this split to keep dependency code predictable and scalable:
+
+- `services.py`: all `get_*_service()` factories (service wiring only)
+- Domain deps files (for example `auth.py`, `rate_limit.py`): adapters and endpoint-facing dependencies that are not service factories
+- `__init__.py`: package-level re-exports for stable import paths
+
+```text
+app/
+└── api/
+    └── v1/
+        └── deps/
+            ├── services.py      # get_auth_service, get_user_service, ...
+            ├── auth.py          # oauth2_scheme, get_current_user
+            ├── rate_limit.py    # rate_limit_auth, rate_limit_api, ...
+            └── __init__.py      # re-exports
+```
+
+#### Version Isolation Rule
+
+Each API version MUST own its own deps package, even when the implementation is initially identical.
+
+```text
+app/api/v1/deps/
+app/api/v2/deps/
+```
+
+This avoids hidden cross-version coupling and allows each version to evolve independently without import side effects.
+
+#### Package Re-exports (`deps/__init__.py`)
+
+Expose commonly used dependencies through package re-exports so callers do not depend on internal file layout.
+
+Before:
+
+```python
+from app.api.v1.deps.auth import get_current_user
+from app.api.v1.deps.services import get_auth_service
+```
+
+After:
+
+```python
+from app.api.v1.deps import get_current_user, get_auth_service
+```
+
+This keeps imports stable even if internal deps files are reorganized.
+
 ---
 
 ### 3.3 Service Layer
@@ -664,6 +713,29 @@ class ResourceService:
 - **Threshold**: If a service constructor takes **>5 repositories**, it’s doing too much — split into smaller services
 
 > **Infrastructure services**: Not all services follow the repo-injection pattern. Infrastructure services like `firebase.py`, `gcs.py`, `back_blaze_b2.py`, and `firestore.py` wrap external SDKs and don't use repositories. They live in `app/services/` alongside domain services and are typically used by deps or other services directly.
+
+#### Service Design Pattern: Standalone vs Abstract Base
+
+Use standalone services by default. Introduce abstract base services only when multiple implementations must satisfy one contract.
+
+- **Standalone (default)**: single implementation, direct constructor injection, no inheritance requirement
+- **Abstract base (conditional)**: multiple providers/adapters implementing the same interface (for example email provider strategy)
+
+This keeps service design simple for most domains while preserving extensibility where polymorphism is required.
+
+#### Cache Key Naming Convention
+
+Use deterministic cache key structure:
+
+```text
+{service}:{entity}:{identifier}
+```
+
+Examples:
+
+- `cache:user:123`
+- `ratelimit:auth:192.168.1.1`
+- `blacklist:token:abc123`
 
 ---
 
@@ -1249,6 +1321,22 @@ class InputSource(BaseSchema):
 - **Aliases**: Use `alias` for camelCase API convention
 - **StrEnum**: For type-safe string enumerations
 
+#### Naming Convention
+
+Use consistent suffixes so schema intent is obvious at call sites.
+
+| Suffix | Purpose | Example |
+|---|---|---|
+| `*Create` | Input schema for create operations | `UserCreate` |
+| `*Update` | Input schema for partial/full updates | `UserUpdate` |
+| `*Read` / `*Response` | Output schema returned by API | `UserRead`, `UserResponse` |
+| Action-specific (`*Signup`, `*Login`) | Explicit workflow payloads | `UserSignup`, `UserLogin` |
+
+Validation split rule:
+
+- Pydantic schemas validate structure, type, and field format.
+- Services enforce business rules and cross-entity invariants.
+
 ---
 
 ### 3.6 Model Layer
@@ -1616,6 +1704,19 @@ async def get_session() -> AsyncSession:
 - **Response package**: Router/OpenAPI responses start from centralized `app/core/responses.py` defaults and extend with endpoint-specific responses
 - **Database factory**: Async session with `yarl.URL.human_repr()` for URL construction
 - **No business logic**: Pure infrastructure code
+
+#### Lifespan Hooks (Startup/Shutdown)
+
+Use application lifespan to orchestrate infrastructure readiness and cleanup.
+
+- **Startup checks**: verify health for required infrastructure dependencies before serving traffic
+- **Graceful local behavior**: local development may skip strict infrastructure checks when explicitly configured
+- **Shutdown cleanup**: close shared clients/pools (for example Redis-backed services) to prevent leaked connections
+
+When adding a new shared infrastructure service, add both:
+
+1. A startup health check
+2. A shutdown close/dispose step
 
 ---
 
@@ -3130,15 +3231,25 @@ This guide provides a complete reference for building maintainable FastAPI appli
 6. **Minimal service dependencies** — Keep services lightweight to ease migration across Python/runtime changes
 7. **Domain exceptions flow up** — Services raise domain exceptions; API maps them to HTTP via `try/except` and final `logger.exception(...)`
 8. **Atomic workflows in Deps** — Multi-step operations commit/rollback in the dependency layer
-9. **Repositories abstract data** — All database access goes through repositories with `auto_commit` support
-10. **Schemas validate** — Pydantic handles API boundary validation
-11. **Test each layer appropriately** — Unit tests for services (mock repos), integration for repos (real DB), E2E for endpoints
-12. **Observe production behavior** — Adopt structured logs, request IDs, and core metrics as mandatory baseline
-13. **Govern API contracts explicitly** — Standardize pagination/filtering/sorting, error contracts, and case-by-case deprecation ownership
-14. **Start authorization with ownership** — Use resource-specific owner policies and evolve to RBAC/ABAC when collaboration complexity grows
-15. **Protect writes** — Use idempotency keys and optimistic concurrency controls for retry-safe APIs
-16. **Guarantee side effects** — Use outbox pattern when DB state and external publishing must stay consistent
-17. **Know your limits** — This architecture serves 1–15 developers and up to ~150 endpoints; beyond that, evolve to domain-driven modules
+9. **Centralize service factories** — Keep all `get_*_service()` dependencies in `deps/services.py`
+10. **Isolate API versions** — Each version owns its own `deps/` package, even if implementations are initially identical
+11. **Stabilize imports with re-exports** — Use `deps/__init__.py` to expose common dependencies
+12. **Repositories abstract data** — All database access goes through repositories with `auto_commit` support
+13. **Schemas validate shape, services validate business rules** — Keep format/type checks in Pydantic and domain invariants in services
+14. **Use explicit schema naming** — `*Create`, `*Update`, `*Read/*Response`, and action-specific contracts
+15. **Choose service style intentionally** — Standalone by default; abstract base only for multiple implementations
+16. **Standardize cache keys** — Use `{service}:{entity}:{identifier}` naming
+17. **Lifespan owns infra readiness** — Perform startup checks and deterministic shutdown cleanup for shared clients
+18. **Test files use suffix naming only** — Enforce `*_test.py` with pytest `python_files`
+19. **Fixture names communicate role** — `mock_*`, `*_factory`, and real-instance fixture names should be explicit
+20. **Mounted apps require explicit overrides** — Apply dependency overrides to root and each mounted versioned app
+21. **Test each layer appropriately** — Unit tests for services (mock repos), integration for repos (real DB), E2E for endpoints
+22. **Observe production behavior** — Adopt structured logs, request IDs, and core metrics as mandatory baseline
+23. **Govern API contracts explicitly** — Standardize pagination/filtering/sorting, error contracts, and case-by-case deprecation ownership
+24. **Start authorization with ownership** — Use resource-specific owner policies and evolve to RBAC/ABAC when collaboration complexity grows
+25. **Protect writes** — Use idempotency keys and optimistic concurrency controls for retry-safe APIs
+26. **Guarantee side effects** — Use outbox pattern when DB state and external publishing must stay consistent
+27. **Know your limits** — This architecture serves 1–15 developers and up to ~150 endpoints; beyond that, evolve to domain-driven modules
 
 Copy this document to any FastAPI project as a foundation for consistent, maintainable architecture.
 
@@ -3184,6 +3295,44 @@ Why this split helps:
 - `unit/` stays fast and deterministic; ideal for frequent local runs.
 - `integration/` can use real infrastructure boundaries (DB/files/network substitutes) and typically runs slower.
 - `e2e/` validates full-system behavior and should run separately in CI because it is the slowest and most environment-dependent.
+
+### File Naming Convention (Required)
+
+All test files MUST use the `*_test.py` suffix.
+
+- Allowed: `auth_service_test.py`, `user_repo_test.py`
+- Prohibited: `test_auth_service.py`, `test_user_repo.py`
+
+Enforce this with `python_files = ["*_test.py"]` in `[tool.pytest.ini_options]`.
+
+### Fixture Naming Convention
+
+Use fixture names that communicate role immediately:
+
+- `mock_<thing>`: mock or fake dependency
+- `<thing>_factory`: fixture that returns a callable for generating data
+- `<thing>`: real instance fixture (typically integration scope)
+
+```python
+from collections.abc import Callable
+from unittest.mock import AsyncMock
+
+import pytest
+
+
+@pytest.fixture
+def mock_user_repo() -> AsyncMock:
+    return AsyncMock()
+
+
+@pytest.fixture
+def user_factory() -> Callable[..., dict[str, str]]:
+    def _create(**overrides: str) -> dict[str, str]:
+        base = {"email": "test@example.com", "name": "Test User"}
+        return {**base, **overrides}
+
+    return _create
+```
 
 ### Unit Tests (`tests/unit/`)
 
@@ -3237,6 +3386,26 @@ def test_writes_report_file(tmp_path):
     assert report.read_text(encoding="utf-8") == "ok"
 ```
 
+### Dependency Overrides for Mounted Sub-Apps
+
+For mounted FastAPI applications, apply dependency overrides to each mounted app explicitly.
+
+```python
+from app.main import app, v1_app, v2_app
+from app.core.db import get_session
+
+
+def override_get_session():
+    ...
+
+
+app.dependency_overrides[get_session] = override_get_session
+v1_app.dependency_overrides[get_session] = override_get_session
+v2_app.dependency_overrides[get_session] = override_get_session
+```
+
+Do not assume root app overrides propagate into mounted sub-apps.
+
 ### End-to-End Tests (`tests/e2e/`)
 
 Use E2E tests for user-visible, full-stack flows.
@@ -3268,6 +3437,7 @@ Only use `pytest.ini` when a legacy toolchain or external constraint makes it st
 ```toml
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+python_files = ["*_test.py"]
 addopts = "--import-mode=importlib -ra"
 markers = [
   "e2e: end-to-end tests that require full environment",
