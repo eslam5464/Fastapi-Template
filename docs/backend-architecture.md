@@ -107,6 +107,8 @@ flowchart TB
 - **MUST**: API is the canonical owner of domain-to-HTTP exception translation.
 - **MUST**: If deps performs reusable pre-validation translation (for example auth token validation used across endpoints), the resulting HTTP contract must still be documented and enforced at API boundary.
 - **MUST**: API has the final `except Exception` with `logger.exception(...)` for traceback visibility.
+- **MUST**: ORM models use SQLAlchemy Declarative typed mapping only (`DeclarativeBase`, `Mapped[...]`, `mapped_column`, `relationship`).
+- **MUST**: Many-to-many relationships are modeled with an Association Object class in this guide's default policy.
 - **SHOULD**: API translates domain exceptions to HTTP exceptions using service method docstrings as exception contracts.
 - **SHOULD**: Endpoints remain thin controllers (target: 1-5 lines of logic).
 - **SHOULD**: Repository mutation methods expose `auto_commit` for transaction orchestration.
@@ -1475,6 +1477,240 @@ class ResourceModel(Base):
 - **Indexes**: Define in `__table_args__` for query performance
 - **Relationships**: Define with `relationship()` for ORM navigation
 
+#### SQLAlchemy ORM Standards (2.1-aligned)
+
+- **MUST** use Declarative typed mappings only: `DeclarativeBase`, `Mapped[...]`, `mapped_column`, and `relationship`.
+- **MUST** model relationship nullability in both type hints and column constraints (for example `Mapped[int | None]` + `nullable=True`).
+- **MUST** define relationship pairs with `back_populates` for bidirectional navigation unless unidirectional behavior is explicitly required.
+- **MUST** use Association Object mapping for many-to-many relationships in this template guide.
+- **SHOULD** keep loader strategy explicit (`select`, `selectin`, `joined`) at model or query level based on access patterns.
+- **SHOULD** align ORM cascade behavior with database constraints (`ON DELETE`, `passive_deletes`) to avoid contradictory writes.
+
+#### SQLAlchemy Relationship Patterns (2.1-aligned)
+
+##### One-to-Many / Many-to-One (Bidirectional)
+
+```python
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+
+class ParentModel(Base):
+    name: Mapped[str] = mapped_column(nullable=False)
+    children: Mapped[list["ChildModel"]] = relationship(
+        "ChildModel",
+        back_populates="parent",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+
+class ChildModel(Base):
+    parent_id: Mapped[int] = mapped_column(
+        ForeignKey("parent_model.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    parent: Mapped["ParentModel"] = relationship(
+        "ParentModel",
+        back_populates="children",
+    )
+```
+
+##### One-to-One (Uniqueness Enforced)
+
+```python
+from sqlalchemy import ForeignKey, UniqueConstraint
+
+
+class UserModel(Base):
+    profile: Mapped["ProfileModel | None"] = relationship(
+        "ProfileModel",
+        back_populates="user",
+        lazy="selectin",
+        uselist=False,
+    )
+
+
+class ProfileModel(Base):
+    __table_args__ = (UniqueConstraint("user_id", name="uq_profile_user_id"),)
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user_model.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user: Mapped["UserModel"] = relationship(
+        "UserModel",
+        back_populates="profile",
+    )
+```
+
+##### Many-to-Many (Association Object — Canonical)
+
+Use a mapped association class for all many-to-many relationships in this guide.
+
+```python
+from datetime import datetime
+
+from sqlalchemy import ForeignKey, func
+
+
+class UserGroupAssociation(Base):
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user_model.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    group_id: Mapped[int] = mapped_column(
+        ForeignKey("group_model.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    role: Mapped[str] = mapped_column(nullable=False, default="member")
+    assigned_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    user: Mapped["UserModel"] = relationship(
+        "UserModel",
+        back_populates="group_links",
+    )
+    group: Mapped["GroupModel"] = relationship(
+        "GroupModel",
+        back_populates="user_links",
+    )
+
+
+class UserModel(Base):
+    group_links: Mapped[list["UserGroupAssociation"]] = relationship(
+        "UserGroupAssociation",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+
+class GroupModel(Base):
+    user_links: Mapped[list["UserGroupAssociation"]] = relationship(
+        "UserGroupAssociation",
+        back_populates="group",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+```
+
+Compatibility note: plain `secondary=` many-to-many is common in SQLAlchemy, but this template's policy standardizes on Association Object for consistency and extensibility.
+
+#### Association Object Pattern Policy
+
+- **MUST** use a mapped association class for many-to-many relationships.
+- **MUST NOT** maintain writable `secondary` and writable Association Object paths for the same join semantics.
+- **MAY** expose convenience read-only traversal with `viewonly=True` when clearly documented.
+
+```python
+class UserModel(Base):
+    group_links: Mapped[list["UserGroupAssociation"]] = relationship(
+        "UserGroupAssociation",
+        back_populates="user",
+    )
+
+    # Optional convenience path (read-only)
+    groups: Mapped[list["GroupModel"]] = relationship(
+        "GroupModel",
+        secondary="user_group_association",
+        viewonly=True,
+    )
+```
+
+#### Advanced Relationship Topics
+
+##### Self-Referential Relationships
+
+```python
+from sqlalchemy import ForeignKey
+
+
+class NodeModel(Base):
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("node_model.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
+    parent: Mapped["NodeModel | None"] = relationship(
+        "NodeModel",
+        back_populates="children",
+        remote_side="NodeModel.id",
+    )
+    children: Mapped[list["NodeModel"]] = relationship(
+        "NodeModel",
+        back_populates="parent",
+        cascade="all",
+    )
+```
+
+##### Composite Foreign Keys
+
+```python
+from sqlalchemy import ForeignKeyConstraint
+
+
+class ChildVersionModel(Base):
+    parent_id: Mapped[int] = mapped_column(nullable=False)
+    parent_version: Mapped[int] = mapped_column(nullable=False)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["parent_id", "parent_version"],
+            ["parent_versioned_model.id", "parent_versioned_model.version"],
+            ondelete="CASCADE",
+        ),
+    )
+```
+
+Use composite keys only when domain identity is genuinely multi-column.
+
+##### Polymorphic Inheritance
+
+```python
+from sqlalchemy import ForeignKey
+
+
+class AssetModel(Base):
+    type: Mapped[str] = mapped_column(nullable=False)
+    __mapper_args__ = {"polymorphic_on": type, "polymorphic_identity": "asset"}
+
+
+class ImageAssetModel(AssetModel):
+    __tablename__ = "image_asset_model"
+    id: Mapped[int] = mapped_column(
+        ForeignKey("asset_model.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    resolution: Mapped[str] = mapped_column(nullable=False)
+    __mapper_args__ = {"polymorphic_identity": "image"}
+```
+
+Use inheritance mapping only when subtype behavior and lifecycle are materially different.
+
+#### Loader Strategy and Lifecycle Guardrails
+
+| Concern | Guidance |
+|---|---|
+| N+1 avoidance | Prefer `selectinload(...)` when collection access is expected |
+| Fixed always-needed child data | Consider `joinedload(...)` when payload size is predictable |
+| Optional heavy relationship | Keep default lazy and load explicitly at query site |
+| Parent-owned children | Use `cascade="all, delete-orphan"` with clear ownership |
+| DB-level `ON DELETE` | Align ORM with `passive_deletes=True` where parent-driven DB deletion is expected |
+
+Repository checklist for relationship queries:
+
+1. Pick explicit load strategy (`selectinload`/`joinedload`) for returned graph.
+2. Confirm cascade behavior matches domain ownership semantics.
+3. Ensure DB FK delete behavior and ORM configuration are not conflicting.
+
+#### SQLAlchemy Relationship References
+
+- Basic relationship patterns: <https://docs.sqlalchemy.org/en/latest/orm/basic_relationships.html>
+- Association Object pattern: <https://docs.sqlalchemy.org/en/latest/orm/basic_relationships.html#association-object>
+- Cascades and delete behavior: <https://docs.sqlalchemy.org/en/latest/orm/cascades.html>
+- Declarative with typed mappings: <https://docs.sqlalchemy.org/en/latest/orm/declarative_tables.html>
+
 ---
 
 ### 3.7 Core Layer
@@ -2667,6 +2903,45 @@ async def create_order(
     return await service.create_with_idempotency(request, idempotency_key=idempotency_key)
 ```
 
+### 12. Inconsistent SQLAlchemy Relationship Modeling
+
+```python
+# ❌ WRONG: Non-typed relationship, missing reverse mapping, and implicit nullability
+class ParentModel(Base):
+    children = relationship("ChildModel")
+
+
+class ChildModel(Base):
+    parent_id = mapped_column(ForeignKey("parent_model.id"))
+
+
+# ❌ WRONG: Writable secondary path mixed with writable association object path
+class UserModel(Base):
+    groups = relationship("GroupModel", secondary="user_group_association")
+    group_links = relationship("UserGroupAssociation")
+
+
+# ✅ CORRECT: Declarative typed relationships + explicit back_populates
+class UserModel(Base):
+    group_links: Mapped[list["UserGroupAssociation"]] = relationship(
+        "UserGroupAssociation",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )
+
+
+class UserGroupAssociation(Base):
+    user_id: Mapped[int] = mapped_column(ForeignKey("user_model.id", ondelete="CASCADE"), primary_key=True)
+    group_id: Mapped[int] = mapped_column(ForeignKey("group_model.id", ondelete="CASCADE"), primary_key=True)
+    user: Mapped["UserModel"] = relationship("UserModel", back_populates="group_links")
+```
+
+Rules this avoids violating:
+
+- Mixed writable mapping paths for one many-to-many relationship
+- Missing `back_populates` pairs
+- Ambiguous nullability and relationship ownership
+
 ---
 
 ## 🌳 Decision Trees
@@ -2736,6 +3011,65 @@ flowchart TD
 ---
 
 ## 🧩 Patterns Catalog
+
+### Association Object Pattern (Many-to-Many Standard)
+
+Model many-to-many with an explicit association class so relationship metadata and lifecycle are first-class.
+
+```python
+from datetime import datetime
+
+from sqlalchemy import ForeignKey, String, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+
+class UserRoleAssociation(Base):
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user_model.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    role_id: Mapped[int] = mapped_column(
+        ForeignKey("role_model.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    assigned_by: Mapped[str] = mapped_column(String(100), nullable=False)
+    assigned_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+    user: Mapped["UserModel"] = relationship("UserModel", back_populates="role_links")
+    role: Mapped["RoleModel"] = relationship("RoleModel", back_populates="user_links")
+
+
+class UserModel(Base):
+    role_links: Mapped[list["UserRoleAssociation"]] = relationship(
+        "UserRoleAssociation",
+        back_populates="user",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+
+
+class RoleModel(Base):
+    user_links: Mapped[list["UserRoleAssociation"]] = relationship(
+        "UserRoleAssociation",
+        back_populates="role",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+```
+
+Repository query example:
+
+```python
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
+
+stmt = select(UserModel).options(
+    selectinload(UserModel.role_links).selectinload(UserRoleAssociation.role)
+)
+```
+
+Use this pattern consistently instead of writable `secondary=` mappings in this template.
 
 ### Factory Pattern (Aggregate Factories)
 
@@ -3249,7 +3583,11 @@ This guide provides a complete reference for building maintainable FastAPI appli
 24. **Start authorization with ownership** — Use resource-specific owner policies and evolve to RBAC/ABAC when collaboration complexity grows
 25. **Protect writes** — Use idempotency keys and optimistic concurrency controls for retry-safe APIs
 26. **Guarantee side effects** — Use outbox pattern when DB state and external publishing must stay consistent
-27. **Know your limits** — This architecture serves 1–15 developers and up to ~150 endpoints; beyond that, evolve to domain-driven modules
+27. **ORM stays Declarative and typed** — Use `DeclarativeBase`, `Mapped[...]`, `mapped_column`, and typed `relationship(...)`
+28. **Association Object is the many-to-many standard** — Prefer mapped association classes over writable `secondary` paths
+29. **Relationship integrity is explicit** — Pair `back_populates`, nullability typing, and database constraints intentionally
+30. **Advanced relationship patterns are supported** — Self-referential, composite FKs, and polymorphic inheritance are documented with guardrails
+31. **Know your limits** — This architecture serves 1–15 developers and up to ~150 endpoints; beyond that, evolve to domain-driven modules
 
 Copy this document to any FastAPI project as a foundation for consistent, maintainable architecture.
 
