@@ -4,9 +4,10 @@ from typing import Any, Generic, Sequence, Type, TypeVar
 from pydantic import BaseModel
 from sqlalchemy import delete, insert, select, text, update
 from sqlalchemy.engine import Result
+from sqlalchemy.exc import MultipleResultsFound
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Base
+from app.models.base import Base
 
 Model = TypeVar("Model", bound=Base)
 CreateSchema = TypeVar("CreateSchema", bound=BaseModel)
@@ -215,28 +216,43 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         id_column_name: str = "id",
         exclude_none: bool = True,
         auto_commit: bool = True,
+        *,
+        allow_multiple: bool = False,
     ) -> list[Model]:
         """
-        Update multiple objects by their IDs.
+        Update multiple objects by identifier values.
+
+        By default each update tuple is expected to match at most one row. If a
+        tuple matches multiple rows (for example when ``id_column_name`` refers
+        to a non-unique column), the in-flight transaction is rolled back and
+        ``MultipleResultsFound`` is raised. Pass ``allow_multiple=True`` to
+        explicitly opt in to multi-row updates per tuple.
 
         Args:
-            updates (Sequence[tuple[str | int | uuid.UUID, UpdateSchema]]): List of tuples containing (id, update_data).
-            id_column_name (str): The name of the ID column in the model.
+            updates (Sequence[tuple[str | int | uuid.UUID, UpdateSchema]]): List of tuples containing (identifier_value, update_data).
+            id_column_name (str): The name of the identifier column in the model.
             exclude_none (bool): Whether to exclude None values from the update.
             auto_commit (bool): Whether to commit the transaction. Pass False when
                 deps layer coordinates multi-step transactions.
+            allow_multiple (bool): When False (default), enforce a single-row
+                match per update tuple and raise ``MultipleResultsFound`` if a
+                tuple updates more than one row. When True, allow a single
+                tuple to update and return multiple rows.
 
         Returns:
-            updated_objects (list[Model]): A list of updated objects.
+            updated_objects (list[Model]): A flat list of updated objects.
 
         Raises:
             ValueError: If the id_column_name doesn't exist on the model.
+            MultipleResultsFound: If ``allow_multiple`` is False and any update
+                tuple matches more than one row. The session is rolled back
+                before raising, regardless of ``auto_commit``.
         """
         if not updates:
             return []
 
         self._validate_column_exists(id_column_name)
-        updated_objects = []
+        updated_objects: list[Model] = []
 
         for obj_id, update_schema in updates:
             stmt = (
@@ -246,10 +262,28 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
                 .returning(self.model)
             )
             result = await self.session.execute(stmt)
-            updated_obj = result.scalar_one_or_none()
 
-            if updated_obj:
-                updated_objects.append(updated_obj)
+            if allow_multiple:
+                updated_rows = result.scalars().all()
+                if not updated_rows:
+                    continue
+                updated_objects.extend(updated_rows)
+                continue
+
+            try:
+                updated_row = result.scalar_one_or_none()
+            except MultipleResultsFound:
+                await self.session.rollback()
+                raise MultipleResultsFound(
+                    f"update_bulk matched multiple rows for "
+                    f"{self.model.__name__}.{id_column_name} == {obj_id!r}; "
+                    "pass allow_multiple=True to permit multi-row updates."
+                ) from None
+
+            if updated_row is None:
+                continue
+
+            updated_objects.append(updated_row)
 
         if auto_commit:
             await self.session.commit()
@@ -260,29 +294,55 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         obj_id: str | int | uuid.UUID,
         id_column_name: str = "id",
         auto_commit: bool = True,
+        *,
+        allow_multiple: bool = False,
     ) -> bool:
         """
         Delete an object by its ID.
+
+        By default each call is expected to match at most one row. If the
+        identifier matches multiple rows (for example when ``id_column_name``
+        refers to a non-unique column), the in-flight transaction is rolled
+        back and ``MultipleResultsFound`` is raised. Pass
+        ``allow_multiple=True`` to explicitly opt in to multi-row deletes.
 
         Args:
             obj_id (str | int | uuid.UUID): The ID of the object to delete.
             id_column_name (str): The name of the ID column in the model.
             auto_commit (bool): Whether to commit the transaction. Pass False when
                 deps layer coordinates multi-step transactions.
+            allow_multiple (bool): When False (default), enforce a single-row
+                match and raise ``MultipleResultsFound`` if the identifier
+                deletes more than one row. When True, allow a single call to
+                delete multiple rows.
 
         Returns:
-            is_deleted (bool): True if the object was deleted, False otherwise.
+            is_deleted (bool): True if at least one row was deleted, False otherwise.
 
         Raises:
             ValueError: If the id_column_name doesn't exist on the model.
+            MultipleResultsFound: If ``allow_multiple`` is False and the
+                identifier matches more than one row. The session is rolled
+                back before raising, regardless of ``auto_commit``.
         """
         self._validate_column_exists(id_column_name)
-        stmt = delete(self.model).where(getattr(self.model, id_column_name) == obj_id)
+        id_column = getattr(self.model, id_column_name)
+        stmt = delete(self.model).where(id_column == obj_id).returning(id_column)
         result = await self.session.execute(stmt)
+        deleted_count = len(result.scalars().all())
+
+        if deleted_count > 1 and not allow_multiple:
+            await self.session.rollback()
+            raise MultipleResultsFound(
+                f"delete_by_id matched {deleted_count} rows for "
+                f"{self.model.__name__}.{id_column_name} == {obj_id!r}; "
+                "pass allow_multiple=True to permit multi-row deletes."
+            )
+
         if auto_commit:
             await self.session.commit()
 
-        return result.rowcount > 0
+        return bool(deleted_count)
 
     async def delete_by_ids(
         self,
@@ -300,7 +360,9 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
                 deps layer coordinates multi-step transactions.
 
         Returns:
-            deleted_count (int): The number of objects deleted.
+            deleted_count (int): The number of physical rows deleted. When
+                ``id_column_name`` refers to a non-unique column this can
+                exceed ``len(obj_ids)``.
 
         Raises:
             ValueError: If the id_column_name doesn't exist on the model.
@@ -309,12 +371,14 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             return 0
 
         self._validate_column_exists(id_column_name)
-        stmt = delete(self.model).where(getattr(self.model, id_column_name).in_(obj_ids))
+        id_column = getattr(self.model, id_column_name)
+        stmt = delete(self.model).where(id_column.in_(obj_ids)).returning(id_column)
         result = await self.session.execute(stmt)
+        deleted_count = len(result.scalars().all())
         if auto_commit:
             await self.session.commit()
 
-        return result.rowcount
+        return deleted_count
 
     async def custom_query(
         self,
