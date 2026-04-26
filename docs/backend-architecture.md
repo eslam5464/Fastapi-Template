@@ -15,6 +15,15 @@ A comprehensive, reusable guide for building maintainable FastAPI applications u
    - [Repository Layer](#34-repository-layer)
    - [Schema Layer](#35-schema-layer)
    - [Model Layer](#36-model-layer)
+        - [Relationship Configuration Matrix](#relationship-configuration-matrix)
+        - [Nullability and Typing Alignment](#nullability-and-typing-alignment)
+        - [Bidirectional Consistency Rules](#bidirectional-consistency-rules)
+        - [Loader Strategy Deep Dive](#loader-strategy-deep-dive)
+        - [N+1 Detection and Prevention](#n1-detection-and-prevention)
+        - [Cascade and ON DELETE Alignment](#cascade-and-on-delete-alignment)
+        - [Many-to-Many Deletion Semantics](#many-to-many-deletion-semantics)
+        - [Relationship Topology Diagram](#relationship-topology-diagram)
+        - [Relationship Sources and Adaptation Notes](#relationship-sources-and-adaptation-notes)
    - [Core Layer](#37-core-layer)
    - [Middleware Layer](#38-middleware-layer)
 4. [Data Flow](#-data-flow)
@@ -1488,6 +1497,19 @@ class ResourceModel(Base):
 
 #### SQLAlchemy Relationship Patterns (2.1-aligned)
 
+##### Relationship Configuration Matrix
+
+This matrix standardizes relationship choices before implementation. The examples in this section are adapted from official SQLAlchemy relationship and cascade patterns, then aligned to this repository's architecture policy.
+
+| Pattern | FK Location | Cardinality in Python | Canonical Mapping Choice | Notes |
+|---|---|---|---|---|
+| One-to-many | Child table | `Parent.children: list[Child]` | Bidirectional `back_populates` on both sides | Parent collection usually owns cascade policy |
+| Many-to-one | Parent table | `Child.parent: Parent` | Bidirectional with reverse collection | Keep FK nullability and type hints aligned |
+| One-to-one | Child table with unique FK | Scalar on both sides | `uselist=False` + `UniqueConstraint` | Add DB uniqueness, not only ORM convention |
+| Many-to-many (canonical here) | Association table | `Parent.links: list[Association]` | Association Object mapped class | Required in this guide for write paths |
+| Self-referential | Same table | Parent scalar + child list | `remote_side` + explicit `back_populates` | Declare delete/null semantics explicitly |
+| Composite FK | Child table | Depends on parent shape | `ForeignKeyConstraint([...], [...])` | Use only when domain identity is multi-column |
+
 ##### One-to-Many / Many-to-One (Bidirectional)
 
 ```python
@@ -1703,6 +1725,168 @@ Repository checklist for relationship queries:
 1. Pick explicit load strategy (`selectinload`/`joinedload`) for returned graph.
 2. Confirm cascade behavior matches domain ownership semantics.
 3. Ensure DB FK delete behavior and ORM configuration are not conflicting.
+
+#### Nullability and Typing Alignment
+
+Nullability is a contract across three layers: Python typing, ORM mapping, and database schema.
+
+Correct alignment:
+
+```python
+class InvoiceModel(Base):
+    customer_id: Mapped[int] = mapped_column(
+        ForeignKey("customer_model.id", ondelete="RESTRICT"),
+        nullable=False,
+    )
+    customer: Mapped["CustomerModel"] = relationship("CustomerModel", back_populates="invoices")
+
+
+class OptionalReviewerModel(Base):
+    reviewer_id: Mapped[int | None] = mapped_column(
+        ForeignKey("user_model.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    reviewer: Mapped["UserModel | None"] = relationship("UserModel")
+```
+
+Incorrect alignment:
+
+```python
+# ❌ WRONG: Type says non-null but column is nullable.
+class BadReviewerModel(Base):
+    reviewer_id: Mapped[int] = mapped_column(ForeignKey("user_model.id"), nullable=True)
+
+
+# ❌ WRONG: Type says optional but column is non-null.
+class BadOwnerModel(Base):
+    owner_id: Mapped[int | None] = mapped_column(ForeignKey("user_model.id"), nullable=False)
+```
+
+#### Bidirectional Consistency Rules
+
+Use the following guardrails whenever a relationship is bidirectional:
+
+1. Pair `back_populates` names exactly on both sides.
+2. Keep ownership semantics explicit (`delete-orphan` only on the owner side).
+3. Avoid dual writable paths for the same link semantics.
+4. For one-to-one ownership assertions, consider `single_parent=True` when domain rules require exclusive parentage.
+
+Incorrect and corrected pairing:
+
+```python
+# ❌ WRONG: Missing reverse mapping pair.
+class TeamModel(Base):
+    members: Mapped[list["TeamMemberModel"]] = relationship("TeamMemberModel")
+
+
+class TeamMemberModel(Base):
+    team_id: Mapped[int] = mapped_column(ForeignKey("team_model.id"))
+    team: Mapped["TeamModel"] = relationship("TeamModel")
+
+
+# ✅ CORRECT: Explicit paired back_populates.
+class TeamModel(Base):
+    members: Mapped[list["TeamMemberModel"]] = relationship(
+        "TeamMemberModel",
+        back_populates="team",
+        cascade="all, delete-orphan",
+    )
+
+
+class TeamMemberModel(Base):
+    team_id: Mapped[int] = mapped_column(ForeignKey("team_model.id", ondelete="CASCADE"), nullable=False)
+    team: Mapped["TeamModel"] = relationship("TeamModel", back_populates="members")
+```
+
+#### Loader Strategy Deep Dive
+
+Keep default relationship loading conservative, then opt into explicit query-time strategies.
+
+| Strategy | Best For | Trade-off | Common Failure Mode |
+|---|---|---|---|
+| `selectinload(...)` | Collections and nested graphs | More statements than joined load, but avoids row explosion | Forgetting it in list endpoints creates N+1 |
+| `joinedload(...)` | Small, always-needed scalar/child data | Joined rows can duplicate parent rows in large collections | Over-joining large collections increases memory and transfer |
+| Default lazy (`select`) | Optional relationships rarely accessed | Deferred IO at access time can hide performance costs | Implicit lazy loads in hot loops |
+
+Repository-oriented examples:
+
+```python
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload, selectinload
+
+
+# Collection-heavy response shape
+stmt_collection = select(ProjectModel).options(
+    selectinload(ProjectModel.task_links).selectinload(ProjectTaskAssociation.task)
+)
+
+
+# Small scalar child always needed
+stmt_scalar = select(UserModel).options(joinedload(UserModel.profile))
+```
+
+#### N+1 Detection and Prevention
+
+Detection checklist:
+
+1. Enable SQL logs in local profiling runs for suspicious endpoints.
+2. Watch for repetitive SELECT patterns keyed by different parent IDs.
+3. Add targeted tests that assert query counts for high-traffic read paths.
+
+Representative anti-pattern and fix:
+
+```python
+# ❌ WRONG: Implicit lazy loads inside loop.
+for order in orders:
+    for line in order.lines:
+        total += line.price
+
+
+# ✅ CORRECT: Preload collection graph once.
+stmt = select(OrderModel).options(selectinload(OrderModel.lines))
+orders = (await session.scalars(stmt)).all()
+for order in orders:
+    for line in order.lines:
+        total += line.price
+```
+
+#### Cascade and ON DELETE Alignment
+
+Configure ORM cascade and DB-level FK behavior as one contract.
+
+| Intent | Relationship Cascade | FK `ondelete` | `passive_deletes` | Notes |
+|---|---|---|---|---|
+| Child owned by parent | `all, delete-orphan` | `CASCADE` | Usually `True` for large graphs | Canonical ownership model |
+| Child survives parent deletion | omit `delete` | `SET NULL` | `True` when DB enforces | Ensure nullable FK and optional typing |
+| Hard block parent deletion | omit `delete` | `RESTRICT` or default FK | `False` or omitted | DB raises integrity error |
+| Association object cleanup | `all, delete-orphan` on link collection | `CASCADE` on link FKs | Usually not required | Keep writes through association object path |
+
+Critical warning from official cascade semantics:
+
+- Do not configure broad bidirectional delete cascades across both sides of a many-to-many graph unless full-graph deletion is explicitly intended.
+
+#### Many-to-Many Deletion Semantics
+
+Deletion behavior differs by modeling choice:
+
+- `secondary=` relationships auto-manage association-row INSERT/DELETE when collection membership changes.
+- Association Object mapping treats the link as a first-class entity and uses cascade rules on the link collection.
+- This guide's canonical write policy is Association Object; use `secondary=` only for read-only convenience (`viewonly=True`) or explicitly documented compatibility views.
+
+#### Relationship Topology Diagram
+
+```mermaid
+flowchart LR
+    U[UserModel] -->|role_links| URA[UserRoleAssociation]
+    R[RoleModel] -->|user_links| URA
+    URA -->|user| U
+    URA -->|role| R
+```
+
+#### Relationship Sources and Adaptation Notes
+
+- Relationship examples in this section are adapted from SQLAlchemy 2.0 official relationship and cascade patterns, then constrained to this template's architecture policy.
+- Official references describe both `secondary=` many-to-many and Association Object options; this template standardizes write paths on Association Object for consistency and extensibility.
 
 #### SQLAlchemy Relationship References
 
@@ -2921,6 +3105,34 @@ class UserModel(Base):
     group_links = relationship("UserGroupAssociation")
 
 
+# ❌ WRONG: Nullable mismatch between typing and column constraint.
+class InvoiceModel(Base):
+    reviewer_id: Mapped[int] = mapped_column(ForeignKey("user_model.id"), nullable=True)
+
+
+# ❌ WRONG: Bidirectional delete cascade can wipe connected graph unexpectedly.
+class ParentModel(Base):
+    children: Mapped[list["ChildModel"]] = relationship(
+        "ChildModel",
+        back_populates="parents",
+        cascade="all, delete",
+    )
+
+
+class ChildModel(Base):
+    parents: Mapped[list["ParentModel"]] = relationship(
+        "ParentModel",
+        back_populates="children",
+        cascade="all, delete",
+    )
+
+
+# ❌ WRONG: Hidden N+1 from implicit lazy loading in loops.
+for parent in parents:
+    for child in parent.children:
+        process(child)
+
+
 # ✅ CORRECT: Declarative typed relationships + explicit back_populates
 class UserModel(Base):
     group_links: Mapped[list["UserGroupAssociation"]] = relationship(
@@ -2934,6 +3146,35 @@ class UserGroupAssociation(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("user_model.id", ondelete="CASCADE"), primary_key=True)
     group_id: Mapped[int] = mapped_column(ForeignKey("group_model.id", ondelete="CASCADE"), primary_key=True)
     user: Mapped["UserModel"] = relationship("UserModel", back_populates="group_links")
+
+
+# ✅ CORRECT: Keep nullable typing aligned and avoid broad bidirectional delete cascades.
+class InvoiceModel(Base):
+    reviewer_id: Mapped[int | None] = mapped_column(
+        ForeignKey("user_model.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
+
+class ParentModel(Base):
+    children: Mapped[list["ChildModel"]] = relationship(
+        "ChildModel",
+        back_populates="parent",
+        cascade="all, delete-orphan",
+    )
+
+
+class ChildModel(Base):
+    parent_id: Mapped[int] = mapped_column(
+        ForeignKey("parent_model.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    parent: Mapped["ParentModel"] = relationship("ParentModel", back_populates="children")
+
+
+# ✅ CORRECT: Preload relationship graph intentionally.
+stmt = select(ParentModel).options(selectinload(ParentModel.children))
+parents = (await session.scalars(stmt)).all()
 ```
 
 Rules this avoids violating:
@@ -2941,6 +3182,16 @@ Rules this avoids violating:
 - Mixed writable mapping paths for one many-to-many relationship
 - Missing `back_populates` pairs
 - Ambiguous nullability and relationship ownership
+- Unbounded bidirectional delete cascades
+- Hidden N+1 query behavior in hot paths
+
+Common failure-mode checklist for PR review:
+
+- Did each bidirectional relationship declare matching `back_populates` names?
+- Does `Mapped[T | None]` always match `nullable=True` (and vice versa)?
+- Are delete cascades limited to the true ownership side?
+- Are many-to-many write paths using Association Object instead of writable `secondary=`?
+- Are high-traffic list queries explicitly loading relationship graphs?
 
 ---
 
@@ -3067,6 +3318,39 @@ from sqlalchemy.orm import selectinload
 stmt = select(UserModel).options(
     selectinload(UserModel.role_links).selectinload(UserRoleAssociation.role)
 )
+```
+
+Lifecycle example (create, traverse, remove):
+
+```python
+# Create user-role assignment with metadata.
+user = UserModel(name="sam")
+admin_role = RoleModel(name="admin")
+link = UserRoleAssociation(user=user, role=admin_role, assigned_by="system")
+user.role_links.append(link)
+
+# Traverse roles through association object.
+for role_link in user.role_links:
+    print(role_link.role.name, role_link.assigned_by)
+
+# Remove association link; delete-orphan removes link row on flush.
+user.role_links.remove(link)
+```
+
+Deletion responsibility flow:
+
+```mermaid
+sequenceDiagram
+    participant App as App Code
+    participant ORM as SQLAlchemy UoW
+    participant DB as Database FK Rules
+
+    App->>ORM: session.delete(user)
+    ORM->>ORM: Apply relationship cascade rules
+    ORM->>DB: DELETE association rows (loaded path)
+    ORM->>DB: DELETE user row
+    DB->>DB: Apply ON DELETE to remaining dependent rows
+    ORM-->>App: Session state updated after flush/commit
 ```
 
 Use this pattern consistently instead of writable `secondary=` mappings in this template.
