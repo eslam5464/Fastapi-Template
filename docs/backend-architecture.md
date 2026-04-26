@@ -13,21 +13,25 @@ A comprehensive, reusable guide for building maintainable FastAPI applications u
    - [Dependency Layer](#32-dependency-layer-deps)
    - [Service Layer](#33-service-layer)
    - [Repository Layer](#34-repository-layer)
+     - [Transaction and Concurrency Guide](#transaction-and-concurrency-guide)
    - [Schema Layer](#35-schema-layer)
    - [Model Layer](#36-model-layer)
-        - [Relationship Configuration Matrix](#relationship-configuration-matrix)
-        - [Nullability and Typing Alignment](#nullability-and-typing-alignment)
-        - [Bidirectional Consistency Rules](#bidirectional-consistency-rules)
-        - [Loader Strategy Deep Dive](#loader-strategy-deep-dive)
-        - [N+1 Detection and Prevention](#n1-detection-and-prevention)
-        - [Cascade and ON DELETE Alignment](#cascade-and-on-delete-alignment)
-        - [Many-to-Many Deletion Semantics](#many-to-many-deletion-semantics)
-        - [Relationship Topology Diagram](#relationship-topology-diagram)
-        - [Relationship Sources and Adaptation Notes](#relationship-sources-and-adaptation-notes)
+     - [Relationship Configuration Matrix](#relationship-configuration-matrix)
+     - [Nullability and Typing Alignment](#nullability-and-typing-alignment)
+     - [Bidirectional Consistency Rules](#bidirectional-consistency-rules)
+     - [Loader Strategy Deep Dive](#loader-strategy-deep-dive)
+     - [N+1 Detection and Prevention](#n1-detection-and-prevention)
+     - [Async ORM IO Guardrails](#async-orm-io-guardrails)
+     - [Cascade and ON DELETE Alignment](#cascade-and-on-delete-alignment)
+     - [Many-to-Many Deletion Semantics](#many-to-many-deletion-semantics)
+     - [Relationship Topology Diagram](#relationship-topology-diagram)
+     - [Relationship Sources and Adaptation Notes](#relationship-sources-and-adaptation-notes)
    - [Core Layer](#37-core-layer)
+     - [Alembic Migration Safety Guide](#alembic-migration-safety-guide)
    - [Middleware Layer](#38-middleware-layer)
 4. [Data Flow](#-data-flow)
 5. [Observability Baseline](#-observability-baseline)
+   - [Performance Budget Guide](#performance-budget-guide)
 6. [API Governance](#-api-governance)
 7. [Authorization Model](#-authorization-model-owner-checks-first)
 8. [Dependency Direction Rules](#-dependency-direction-rules)
@@ -1114,6 +1118,100 @@ class ResourceRepository(BaseRepository[ResourceModel, CreateResourceSchema, Upd
 - **Domain-specific extensions**: Custom methods in concrete repositories
 - **Escape hatch**: `custom_query()` for parameterized raw SQL when needed
 
+#### Transaction and Concurrency Guide
+
+This guide defines how to keep writes correct under contention while preserving throughput.
+
+##### Ownership of Transaction Boundaries
+
+- Request-scope transaction ownership remains in deps.
+- Repository mutation methods keep `auto_commit=True` by default for single-operation safety.
+- Multi-step write workflows MUST use `auto_commit=False` in repos and explicit `commit()`/`rollback()` in deps.
+- Service methods MUST remain session-agnostic and receive repositories only.
+
+##### Isolation Level Policy
+
+| Scenario | Preferred Isolation | Why | Trade-off |
+|---|---|---|---|
+| Typical CRUD endpoints | `READ COMMITTED` | Good default correctness with concurrency | Non-repeatable reads possible |
+| Financial/critical balance transitions | `REPEATABLE READ` or targeted row locks | Stronger correctness guarantees | Reduced concurrency |
+| Full serial business invariants | `SERIALIZABLE` only for narrow paths | Prevents write skew anomalies | Highest contention and retry cost |
+
+Use stricter isolation only where domain invariants require it; keep default paths cheaper.
+
+##### Locking Decision Matrix
+
+| Pattern | Use When | SQLAlchemy Technique | Risk if Skipped |
+|---|---|---|---|
+| Optimistic locking | Conflicts are uncommon | `version` column checked on update | Lost updates |
+| Pessimistic row lock | Conflicts are frequent and costly | `with_for_update()` | Race windows on hot rows |
+| Idempotent writes | Retries expected from clients/workers | `Idempotency-Key` + unique persistence record | Duplicate side effects |
+
+Optimistic update pattern:
+
+```python
+from sqlalchemy import update
+
+
+stmt = (
+    update(OrderModel)
+    .where(OrderModel.id == order_id, OrderModel.version == expected_version)
+    .values(status="confirmed", version=OrderModel.version + 1)
+    .returning(OrderModel.id, OrderModel.version)
+)
+result = await session.execute(stmt)
+row = result.first()
+if row is None:
+    raise ConcurrencyConflictError("Order version mismatch")
+```
+
+Pessimistic lock pattern:
+
+```python
+from sqlalchemy import select
+
+
+stmt = (
+    select(AccountModel)
+    .where(AccountModel.id == account_id)
+    .with_for_update()
+)
+account = (await session.scalars(stmt)).one()
+```
+
+##### Deadlock and Timeout Retry Policy
+
+- Retries MUST be bounded.
+- Use exponential backoff with jitter.
+- Retry only known transient DB conflict classes (deadlock, serialization failure, lock timeout).
+- Log retry attempt count and terminal failure cause.
+
+Reference retry envelope:
+
+```python
+for attempt in range(1, 4):
+    try:
+        return await run_transactional_write()
+    except TransientConcurrencyError:
+        if attempt == 3:
+            raise
+        await backoff_with_jitter(attempt)
+```
+
+##### Concurrency Test Matrix (Minimum)
+
+1. Two concurrent updates to the same row: one succeeds, one conflicts.
+2. Idempotent retry for same key: second request returns same logical result.
+3. Deadlock simulation: bounded retry then deterministic failure surface.
+4. Multi-step deps transaction: partial writes are rolled back on exception.
+
+##### Review Checklist
+
+- Is the write path optimistic or pessimistic by design (not accidental)?
+- Is idempotency documented for retried writes?
+- Are transaction boundaries controlled in deps only?
+- Are conflict paths mapped to deterministic HTTP responses?
+
 ---
 
 ### 3.5 Schema Layer
@@ -1850,6 +1948,65 @@ for order in orders:
         total += line.price
 ```
 
+#### Async ORM IO Guardrails
+
+Async ORM paths are highly sensitive to implicit IO. Treat relationship loading as explicit design.
+
+##### Mandatory Rules
+
+1. High-traffic list endpoints MUST explicitly preload required relationship graphs.
+2. Service methods SHOULD NOT trigger lazy relationship access in loops.
+3. Repositories SHOULD provide query helpers with explicit loading options for common read shapes.
+4. Async code paths SHOULD fail fast during development if unexpected lazy loads occur.
+
+##### Safe Access Patterns
+
+```python
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
+
+
+stmt = select(ProjectModel).options(
+    selectinload(ProjectModel.task_links).selectinload(ProjectTaskAssociation.task)
+)
+projects = (await session.scalars(stmt)).all()
+```
+
+```python
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload
+
+
+stmt = select(UserModel).options(joinedload(UserModel.profile))
+users = (await session.scalars(stmt)).all()
+```
+
+##### Anti-patterns to Reject
+
+```python
+# ❌ WRONG: Relationship access in nested loops with default lazy loading.
+for project in projects:
+    for link in project.task_links:
+        emit(link.task.name)
+```
+
+```python
+# ✅ CORRECT: Preload graph before iteration.
+stmt = select(ProjectModel).options(
+    selectinload(ProjectModel.task_links).selectinload(ProjectTaskAssociation.task)
+)
+projects = (await session.scalars(stmt)).all()
+for project in projects:
+    for link in project.task_links:
+        emit(link.task.name)
+```
+
+##### Verification Signals
+
+- Query logs show bounded query count for representative list endpoints.
+- Tests assert relationship-heavy endpoints do not regress query counts.
+- Profiling confirms no hidden query spikes tied to object traversal.
+
 #### Cascade and ON DELETE Alignment
 
 Configure ORM cascade and DB-level FK behavior as one contract.
@@ -2138,6 +2295,59 @@ When adding a new shared infrastructure service, add both:
 1. A startup health check
 2. A shutdown close/dispose step
 
+#### Alembic Migration Safety Guide
+
+Schema evolution must be forward-safe, backward-compatible during rollout, and observable.
+
+##### Expand and Contract Strategy (Default)
+
+Use a two-phase approach:
+
+1. Expand: add new nullable columns, new tables, or dual-write-safe constraints.
+2. Deploy app that writes both old and new shapes when needed.
+3. Backfill data in controlled batches with idempotent scripts.
+4. Switch reads to new shape.
+5. Contract: drop old columns/constraints only after verification.
+
+##### Migration Risk Matrix
+
+| Change Type | Risk | Safe Pattern | Rollback Posture |
+|---|---|---|---|
+| Add nullable column | Low | Expand directly | Simple down revision |
+| Add non-null column with existing rows | Medium | Add nullable + backfill + enforce non-null later | Two-step rollback |
+| Rename/drop column used by running code | High | Dual-write period + delayed drop | Requires staged rollback |
+| Large table rewrite/index build | High | Concurrent/online strategy where supported | Predefined abort conditions |
+
+##### Deployment Sequence (Required)
+
+1. Run preflight checks (row counts, lock sensitivity, dependent code paths).
+2. Apply expand migration.
+3. Deploy compatible app version.
+4. Run backfill with checkpoints and resume capability.
+5. Verify parity metrics and error rates.
+6. Apply contract migration in a later release window.
+
+##### Backfill Guardrails
+
+- Use chunked batches with deterministic ordering.
+- Record progress checkpoints for restart safety.
+- Keep each batch short to reduce lock windows.
+- Emit migration telemetry: processed rows, failures, retries, duration.
+
+##### Rollback Rules
+
+- Every migration set MUST define explicit rollback decision points.
+- Contract migrations should never be in the same deploy step as initial expand if rollback risk is non-trivial.
+- If parity checks fail, stop rollout and revert app behavior before schema contraction.
+
+##### Migration Review Checklist
+
+- Is the change backward compatible with currently deployed app versions?
+- Is there a tested backfill plan and checkpoint strategy?
+- Are lock/timeout risks assessed for large tables?
+- Are rollback conditions and owner on-call documented?
+- Are contract-phase drops deferred until post-verification?
+
 ---
 
 ### 3.8 Middleware Layer
@@ -2293,6 +2503,57 @@ Expose and track at least the following metrics:
 - Distributed tracing MAY be enabled when incident analysis needs cross-service timing.
 - If enabled, propagate trace headers (`traceparent`) through outgoing HTTP calls.
 - Keep tracing optional until operational complexity justifies mandatory instrumentation.
+
+### Performance Budget Guide
+
+This section turns architecture expectations into measurable budgets.
+
+#### Service-Level Budget Baseline
+
+| Budget | Target | Alert Threshold | Ownership |
+|---|---|---|---|
+| Endpoint latency (p95) | <= 250 ms for standard reads | >= 400 ms sustained | API + Repo owners |
+| Endpoint latency (p95) critical writes | <= 400 ms | >= 600 ms sustained | API + Service owners |
+| DB queries per list endpoint | Explicit budget per endpoint (for example 3-8) | > budget by 20% | Repo owner |
+| Error rate (5xx) | < 1% | >= 2% sustained | API owner |
+
+Tune thresholds by domain, but every public endpoint should have an explicit budget.
+
+#### Endpoint Budget Template
+
+For each endpoint, define:
+
+1. Target p95 latency.
+2. Max DB query count for nominal payload size.
+3. Allowed payload size range for budget validity.
+4. Degradation plan when budgets are exceeded.
+
+Example budget card:
+
+```text
+Endpoint: GET /v1/orders
+Target p95: 220 ms
+Query budget: <= 5 queries at page_size=20
+Guardrails: selectinload(order_lines), indexed sort on created_at
+Fallback: reduce optional expansions when page_size > 50
+```
+
+#### Profiling Workflow
+
+1. Capture endpoint trace and query logs for representative load.
+2. Compare observed query count and p95 against endpoint budget.
+3. Identify top offenders: N+1, missing index, over-joined query, oversized payload.
+4. Apply targeted fix and re-measure before merge.
+
+#### CI and Review Gates
+
+- High-traffic endpoint PRs SHOULD include query-count assertions.
+- Performance-sensitive changes SHOULD include before/after numbers in PR notes.
+- Regressions beyond agreed budget MUST block merge unless explicitly waived.
+
+#### Escalation Rule
+
+If endpoint p95 exceeds threshold for two consecutive measurement windows, open a performance incident and assign owner within the same sprint.
 
 ---
 
