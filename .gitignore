@@ -79,7 +79,6 @@ build/
 
 # Additional common patterns
 __pypackages__/
-.python-version
 celerybeat-schedule
 celerybeat.pid
 *.sage.py
