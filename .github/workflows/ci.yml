@@ -105,12 +105,38 @@ jobs:
       - name: Configure environment
         run: |
           cp .env.example .env
+          # BaseRedisClient.redis_client always returns None when
+          # current_environment == LOCAL (a deliberate safety guard for local dev
+          # without Redis running) - which breaks the rate-limiter/token-blacklist
+          # tests that rely on a real (mocked) client. "dev" keeps CORS/docs/CSRF
+          # behavior sane while allowing Redis to actually be used, matching what
+          # local dev already runs with.
+          sed -i 's/^CURRENT_ENVIRONMENT=.*/CURRENT_ENVIRONMENT=dev/' .env
           # Match the postgres service container's credentials above.
           sed -i 's/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=postgres/' .env
           # .env.example's Redis defaults assume auth; our service container runs
           # without a password, so clear both to avoid an unwanted AUTH attempt.
           sed -i 's/^REDIS_PASS=.*/REDIS_PASS=/' .env
           sed -i 's/^REDIS_USER=.*/REDIS_USER=/' .env
+
+      # `app/services/payments/apple_pay.py` constructs a module-level ApplePay()
+      # singleton at import time, which eagerly PEM-parses the private key. Real
+      # API calls are always mocked in tests, but the key still has to be a
+      # syntactically valid PEM or importing the module (and therefore collecting
+      # any apple_pay test file) crashes before a single test runs. Similarly,
+      # decode_transaction_info()/webhook verification eagerly read the root
+      # certificate file's bytes as a SignedDataVerifier constructor argument
+      # before that (mocked-in-tests) class is invoked, so the path needs to
+      # exist and be readable even though its content is never really parsed
+      # under test. .env.example's values are intentionally empty/placeholder
+      # (real credentials, not runnable as-is), so throwaway files are generated
+      # here and wired in via the existing *_PATH file-based credential loading.
+      - name: Generate dummy Apple Pay test credentials
+        run: |
+          uv run python -c "from cryptography.hazmat.primitives.asymmetric import ec; from cryptography.hazmat.primitives import serialization; key = ec.generate_private_key(ec.SECP256R1()); open('apple_pay_test_key.p8', 'wb').write(key.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption()))"
+          echo "dummy cert content for CI tests" > apple_pay_test_root_ca.cer
+          sed -i 's#^APPLE_PAY_STORE_PRIVATE_KEY_PATH=.*#APPLE_PAY_STORE_PRIVATE_KEY_PATH=apple_pay_test_key.p8#' .env
+          sed -i 's#^APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH=.*#APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH=apple_pay_test_root_ca.cer#' .env
 
       - name: Create test database
         run: >
