@@ -12,7 +12,7 @@ dependencies = [
     "b2sdk>=2.10.1",
     "email-validator>=2.3.0",
     "fastapi>=0.116.2",
-    "gunicorn>=23.0.0",
+    "gunicorn>=26.0.0",
     "httptools>=0.6.4 ; sys_platform == 'linux'",
     "loguru>=0.7.3",
     "pre-commit>=4.3.0",
