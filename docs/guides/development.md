@@ -25,9 +25,17 @@ Examples:
 ## Quality Commands
 
 ```bash
-uv run ruff check .
-uv run ruff format .
+uv run black --line-length=100 app
+uv run isort --profile=black --line-length=100 app
+uv run mypy app --config-file=pyproject.toml
+uv run bandit -c pyproject.toml -r app
 uv run pytest
+```
+
+Or run everything at once (matches the CI `lint` job exactly):
+
+```bash
+uv run pre-commit run --all-files
 ```
 
 ## Layering Rules

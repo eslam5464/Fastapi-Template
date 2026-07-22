@@ -59,8 +59,11 @@ test = [
     "pytest-cov>=7.0.0",
 ]
 dev = [
-    "bandit>=1.8.6",
+    "bandit[toml]>=1.8.6",
     "black>=25.9.0",
+    "detect-secrets>=1.5.0",
+    "mypy>=1.13.0",
+    "types-aiofiles>=25.1.0",
 ]
 
 [tool.black]
@@ -117,6 +120,61 @@ sections = [
     "LOCALFOLDER"
 ]
 default_section = "THIRDPARTY"
+
+[tool.mypy]
+python_version = "3.13"
+plugins = ["pydantic.mypy"]
+check_untyped_defs = true
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = true
+exclude = ["app/alembic/versions", "tests"]
+
+# Well-typed layers: enforce full annotation coverage. Scope intentionally kept to
+# repos/models/services (per the "Moderate" strictness level chosen) rather than
+# core/api/middleware/schemas, which have a long tail of small untyped helpers
+# (custom exception __init__s, logger internals) not worth mass-annotating yet.
+[[tool.mypy.overrides]]
+module = ["app.repos.*", "app.models.*", "app.services.*"]
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+
+# Carve-out: third-party-SDK-heavy wrappers with weak/no upstream stubs.
+# Revisit once b2sdk / firebase_admin / gcloud-aio-storage ship better types upstream.
+[[tool.mypy.overrides]]
+module = [
+    "app.services.firebase",
+    "app.services.firestore",
+    "app.services.gcs",
+    "app.services.back_blaze_b2",
+    "app.services.payments.apple_pay",
+]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
+# Third-party packages with missing/incomplete type stubs.
+[[tool.mypy.overrides]]
+module = [
+    "b2sdk.*",
+    "firebase_admin.*",
+    "gcloud.*",
+    "google.cloud.firestore.*",
+    "jose.*",
+    "celery.*",
+    "gunicorn.*",
+]
+ignore_missing_imports = true
+
+# Known mypy/pydantic-plugin limitation: mypy's "decorators on top of @property are
+# not supported" check still fires on @computed_field + @property stacks in some
+# mypy releases even with the pydantic plugin loaded. This is a false positive on a
+# standard, documented pydantic v2 pattern, not a real typing bug in this module.
+[[tool.mypy.overrides]]
+module = ["app.core.config"]
+disable_error_code = ["prop-decorator"]
+
+[tool.bandit]
+exclude_dirs = ["tests", ".venv", "alembic/versions"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
