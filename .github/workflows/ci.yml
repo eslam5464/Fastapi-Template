@@ -27,7 +27,7 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Set up Python
-        run: uv python install
+        run: uv python install "$(cat .python-version)"
 
       - name: Install dependencies
         run: uv sync --all-groups --all-extras --frozen
@@ -61,7 +61,7 @@ jobs:
         image: postgres:18-alpine
         env:
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: "1234"
+          POSTGRES_PASSWORD: "postgres"
           POSTGRES_DB: postgres
         ports:
           - 5432:5432
@@ -97,7 +97,7 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Set up Python
-        run: uv python install
+        run: uv python install "$(cat .python-version)"
 
       - name: Install dependencies
         run: uv sync --all-groups --all-extras --frozen
@@ -105,6 +105,8 @@ jobs:
       - name: Configure environment
         run: |
           cp .env.example .env
+          # Match the postgres service container's credentials above.
+          sed -i 's/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=postgres/' .env
           # .env.example's Redis defaults assume auth; our service container runs
           # without a password, so clear both to avoid an unwanted AUTH attempt.
           sed -i 's/^REDIS_PASS=.*/REDIS_PASS=/' .env
@@ -113,7 +115,7 @@ jobs:
       - name: Create test database
         run: >
           uv run python -c "import psycopg; conn = psycopg.connect('host=localhost port=5432
-          user=postgres password=1234 dbname=postgres', autocommit=True);
+          user=postgres password=postgres dbname=postgres', autocommit=True);
           conn.execute('CREATE DATABASE postgres_test'); conn.close()"
 
       - name: Run migrations
