@@ -379,7 +379,7 @@ wheels = [
 
 [[package]]
 name = "brevo-python"
-version = "4.0.7"
+version = "5.0.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -387,9 +387,9 @@ dependencies = [
     { name = "pydantic-core" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ae/40/980301e403738d8d7d3405f38c13d67551620e065541a538a2e6c25c9838/brevo_python-4.0.7.tar.gz", hash = "sha256:bb545fee783a0c2ef08c9fa1fefc6557ecf736fec5edc41f80bdd451926fbf26", size = 423160, upload-time = "2026-03-12T13:00:03.928Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/89/be/ead88c848c0fadc8f3446f4665c6c504e0ecfe8b83d3d84820f1f60aca5c/brevo_python-5.0.1.tar.gz", hash = "sha256:c8f5e3def406395d1c91788ce7df07021564fd89c87d4c9b73b15671df974aec", size = 501736, upload-time = "2026-07-03T12:34:51.854Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6d/a4/a0d5f62f1ae2c7eb842c0c86a6105610d245b76000da804344c2c995c10f/brevo_python-4.0.7-py3-none-any.whl", hash = "sha256:22112a6a69540854588af44507f9bd8aff73a84abaa49fb4e6fc2641099325e4", size = 865813, upload-time = "2026-03-12T13:00:02.614Z" },
+    { url = "https://files.pythonhosted.org/packages/48/78/e9aca70170038e4e383c387f35ff2e257862ce1664dbfe4f7b443bce0042/brevo_python-5.0.1-py3-none-any.whl", hash = "sha256:ab223365f454570f5f5b32c7cbac4291cfdd5d430cb5239878c507e6ae4d26bd", size = 978418, upload-time = "2026-07-03T12:34:50.584Z" },
 ]
 
 [[package]]
@@ -906,7 +906,7 @@ requires-dist = [
     { name = "app-store-server-library", extras = ["async"], marker = "extra == 'apple-services'", specifier = ">=2.0.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "b2sdk", specifier = ">=2.10.1" },
-    { name = "brevo-python", marker = "extra == 'email'", specifier = ">=4.0.7" },
+    { name = "brevo-python", marker = "extra == 'email'", specifier = ">=5.0.1" },
     { name = "celery", extras = ["redis"], marker = "extra == 'task-queue'", specifier = ">=5.3.1" },
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "fastapi", specifier = ">=0.116.2" },

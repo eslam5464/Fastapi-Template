@@ -32,7 +32,7 @@ dependencies = [
 
 [project.optional-dependencies]
 email = [
-    "brevo-python>=4.0.7",
+    "brevo-python>=5.0.1",
     "resend>=2.23.0",
 ]
 cloud-service = [
