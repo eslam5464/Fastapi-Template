@@ -18,7 +18,7 @@ jobs:
     name: Lint, types, security (pre-commit)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -80,7 +80,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # postgresql+psycopg (used for the sync engine / Celery) needs libpq at import
       # time, not just at connection time - matches the Dockerfile's `apk add

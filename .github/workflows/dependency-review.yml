@@ -12,7 +12,7 @@ jobs:
   dependency-review:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Note: verify after the first real PR that GitHub's Dependency Graph is
       # correctly parsing uv.lock. If transitive versions aren't picked up, fall
