@@ -24,6 +24,26 @@ repos:
           - --recursive
           - --ignore-init-module-imports
 
+  - repo: local
+    hooks:
+      - id: pyflakes
+        name: pyflakes (unused imports/variables safety net)
+        # autoflake silently fails to apply fixes on Windows for files with many
+        # simultaneous unused-variable candidates (confirmed bug in this setup),
+        # while pyflakes itself detects them correctly on every platform. This runs
+        # after autoflake so autoflake gets first crack at fixing what it can, and
+        # fails loudly on anything left over instead of reporting a false "Passed".
+        # app/alembic is excluded: env.py's `from app.models import *` is required
+        # Alembic boilerplate (registers models with metadata for autogenerate),
+        # not a real unused-import bug; pyflakes has no CLI way to exclude a single
+        # file's wildcard-import warning, so the whole directory is listed out here
+        # instead of just passing "app" (add new top-level app/ packages to this
+        # list if any are added).
+        entry: uv run pyflakes app/api app/core app/middleware app/models app/repos app/schemas app/services app/main.py app/web.py app/__init__.py
+        language: system
+        pass_filenames: false
+        files: ^app/
+
   - repo: https://github.com/pycqa/isort
     rev: 7.0.0
     hooks:
@@ -71,6 +91,7 @@ ci:
   autofix_commit_msg: "style: auto-fixes from pre-commit.ci"
   autoupdate_schedule: weekly
   # pre-commit.ci runs hooks in its own sandbox with no access to this project's
-  # uv-managed venv, so `language: system` hooks (mypy) can't run there. It's still
-  # enforced locally via pre-commit and as a required check in .github/workflows/ci.yml.
-  skip: [mypy]
+  # uv-managed venv, so `language: system` hooks (mypy, pyflakes) can't run there.
+  # Both are still enforced locally via pre-commit and as a required check in
+  # .github/workflows/ci.yml.
+  skip: [mypy, pyflakes]
