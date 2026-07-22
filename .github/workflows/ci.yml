@@ -154,3 +154,6 @@ jobs:
         uses: py-cov-action/python-coverage-comment-action@v3
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Badge color thresholds: green >=90%, orange >=70%, red below.
+          MINIMUM_GREEN: "90"
+          MINIMUM_ORANGE: "70"
