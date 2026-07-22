@@ -1,5 +1,10 @@
 # FastAPI Template
 
+[![CI](https://github.com/eslam5464/Fastapi-Template/actions/workflows/ci.yml/badge.svg)](https://github.com/eslam5464/Fastapi-Template/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/eslam5464/Fastapi-Template/actions/workflows/codeql.yml/badge.svg)](https://github.com/eslam5464/Fastapi-Template/actions/workflows/codeql.yml)
+[![Coverage](https://raw.githubusercontent.com/eslam5464/Fastapi-Template/python-coverage-comment-action-data/badge.svg)](https://github.com/eslam5464/Fastapi-Template/tree/python-coverage-comment-action-data)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A production-ready FastAPI project template with modern best practices, async support, JWT authentication, and PostgreSQL integration.
 
 ## ✨ Features
