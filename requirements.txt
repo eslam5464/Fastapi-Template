@@ -12,7 +12,7 @@ anyio==4.11.0
 app-store-server-library==2.0.0
 argon2-cffi==25.1.0
 argon2-cffi-bindings==25.1.0
-asn1==2.8.0
+asn1==3.3.0
 asyncpg==0.30.0
 attrs==25.4.0
 b2sdk==2.10.1
