@@ -75,7 +75,7 @@ msgpack==1.1.2
 multidict==6.7.0
 mypy-extensions==1.1.0
 nodeenv==1.9.1
-packaging==25.0
+packaging==26.2
 pathspec==0.12.1
 platformdirs==4.5.0
 pre-commit==4.3.0
