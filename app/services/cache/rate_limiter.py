@@ -200,7 +200,7 @@ class RateLimiter(BaseRedisClient):
             deleted = await self.redis_client.delete(key)
             if deleted:
                 logger.info(f"Rate limit reset for key {key}")
-            return deleted > 0
+            return bool(deleted > 0)
         except Exception:
             logger.exception(f"Failed to reset rate limit for key {key}")
             return False

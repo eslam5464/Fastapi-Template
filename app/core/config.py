@@ -317,4 +317,4 @@ class Settings(BaseSettings):
         )
 
 
-settings = Settings()  # type: ignore
+settings = Settings()

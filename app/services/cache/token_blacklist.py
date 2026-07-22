@@ -73,7 +73,7 @@ class TokenBlacklist(BaseRedisClient):
 
         try:
             key = f"{self.KEY_PREFIX}{jti}"
-            return await self.redis_client.exists(key) > 0
+            return bool(await self.redis_client.exists(key) > 0)
         except Exception:
             logger.exception(f"Failed to check token revocation {jti[:8]}...")
             # Fail open on error

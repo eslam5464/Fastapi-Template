@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from typing import cast
 
 from appstoreserverlibrary.api_client import APIException, AsyncAppStoreServerAPIClient
 from appstoreserverlibrary.models.Environment import Environment
@@ -787,7 +788,7 @@ class ApplePay:
             cached_status = await cache_manager.get(cache_key)
             if cached_status:
                 logger.debug(f"Subscription status cache hit for user {user_id}")
-                return cached_status
+                return cast(StatusResponse, cached_status)
 
         # Cache miss - fetch from Apple
         logger.debug(f"Subscription status cache miss for user {user_id}")

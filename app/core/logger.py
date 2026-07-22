@@ -15,6 +15,9 @@ from loguru import logger
 from app.core.config import Environment, settings
 
 if TYPE_CHECKING:
+    from types import FrameType
+
+    import httpx
     from loguru import Record
 
 # ============================================
@@ -91,7 +94,7 @@ class OpenObserveHandler:
         self.shutdown_event = threading.Event()
 
         # HTTP client (lazy initialization)
-        self._client = None
+        self._client: Optional["httpx.Client"] = None
         self._client_lock = threading.Lock()
 
         # Start background worker
@@ -270,13 +273,14 @@ class InterceptHandler(logging.Handler):
         We extract the log level and message, then pass it to Loguru.
         """
         # Get corresponding Loguru level if it exists
+        level: str | int
         try:
             level = logger.level(record.levelname).name
         except ValueError:
             level = record.levelno
 
         # Find the caller from where the logging call originated
-        frame = logging.currentframe()
+        frame: Optional["FrameType"] = logging.currentframe()
         depth = 2
         while frame and frame.f_code.co_filename == logging.__file__:
             frame = frame.f_back

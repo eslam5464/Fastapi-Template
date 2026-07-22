@@ -1,15 +1,15 @@
 from functools import wraps
-from typing import Callable
+from typing import Any, Callable
 
 from app.core.config import settings
 
 
-def cache_result(expire: int = settings.cache_ttl_default, key_prefix: str = ""):
+def cache_result(expire: int = settings.cache_ttl_default, key_prefix: str = "") -> Callable:
     """Decorator to cache function results"""
 
-    def decorator(func: Callable):
+    def decorator(func: Callable) -> Callable:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        async def wrapper(*args: Any, **kwargs: Any) -> Any:
             from app.services.cache import cache_manager
 
             # Generate cache key

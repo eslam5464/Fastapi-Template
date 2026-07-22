@@ -6,7 +6,10 @@ from pydantic import EmailStr, Field, SecretStr, field_validator
 from app.core.constants import FieldSizes
 from app.schemas import BaseSchema, BaseTimestampSchema
 
-USER_PASSWORD_REGEX = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+# Bandit flags this as a hardcoded password (B105); it's a validation regex, not a credential.
+USER_PASSWORD_REGEX = (
+    r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"  # nosec B105
+)
 USER_PASSWORD_DESCRIPTION = (
     "Password must be at least 8 characters long and include at least one uppercase letter, "
     + "one lowercase letter, one number, and one special character from @$!%*?&."

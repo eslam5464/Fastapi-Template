@@ -1,4 +1,5 @@
-import pickle
+# Justification for the nosec markers below: see the comment on pickle.loads() further down.
+import pickle  # nosec B403
 from typing import Any, Optional
 
 from loguru import logger
@@ -32,7 +33,11 @@ class CacheManager(BaseRedisClient):
         try:
             data = await self.redis_client.get(key)
             if data:
-                return pickle.loads(data)
+                # Accepted risk: only this service ever writes to these keys (via set()
+                # below), and Redis is treated as trusted internal infra, not attacker-
+                # reachable storage. Revisit if that trust boundary ever changes (e.g.
+                # Redis shared with untrusted services) by switching to JSON.
+                return pickle.loads(data)  # nosec B301
             return None
         except Exception:
             logger.exception(f"Cache get failed for key {key}")
@@ -57,7 +62,7 @@ class CacheManager(BaseRedisClient):
         try:
             serialized = pickle.dumps(value)
             expire = expire or settings.cache_ttl_default
-            return await self.redis_client.set(key, serialized, ex=expire)
+            return bool(await self.redis_client.set(key, serialized, ex=expire))
         except Exception:
             logger.exception(f"Cache set failed for key {key}")
             return False
@@ -77,7 +82,7 @@ class CacheManager(BaseRedisClient):
             return False
 
         try:
-            return await self.redis_client.delete(key) > 0
+            return bool(await self.redis_client.delete(key) > 0)
         except Exception:
             logger.exception(f"Cache delete failed for key {key}")
             return False
@@ -99,7 +104,7 @@ class CacheManager(BaseRedisClient):
         try:
             keys = await self.redis_client.keys(pattern)
             if keys:
-                return await self.redis_client.delete(*keys)
+                return int(await self.redis_client.delete(*keys))
             return 0
         except Exception:
             logger.exception(f"Cache delete pattern failed for pattern {pattern}")
@@ -120,7 +125,7 @@ class CacheManager(BaseRedisClient):
             return False
 
         try:
-            return await self.redis_client.exists(key) > 0
+            return bool(await self.redis_client.exists(key) > 0)
         except Exception:
             logger.exception(f"Cache exists check failed for key {key}")
             return False

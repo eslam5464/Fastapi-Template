@@ -365,7 +365,8 @@ class AuthService:
         if user_id is None or expires_at is None:
             raise ValidationError("Could not validate credentials")
 
-        if token_type != "access":
+        # Bandit flags this as a hardcoded password (B105); it's the JWT "type" claim.
+        if token_type != "access":  # nosec B105
             raise ValidationError("Token has invalid claims")
 
         if jti and await token_blacklist.is_revoked(jti):
@@ -417,7 +418,8 @@ class AuthService:
         if user_id is None:
             raise ValidationError("Invalid refresh token")
 
-        if token_type != "refresh":
+        # Bandit flags this as a hardcoded password (B105); it's the JWT "type" claim.
+        if token_type != "refresh":  # nosec B105
             raise ValidationError("Invalid token type. Expected refresh token.")
 
         if jti and await token_blacklist.is_revoked(jti):

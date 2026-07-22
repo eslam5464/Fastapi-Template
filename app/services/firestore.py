@@ -201,7 +201,8 @@ class Firestore:
             doc_ref = self.firestore_client.collection(collection_name).document(document_id)
             doc = await doc_ref.get()
             if doc.exists:
-                return doc.to_dict()
+                data: dict[str, Any] | None = doc.to_dict()
+                return data
             else:
                 return None
         except Exception as ex:

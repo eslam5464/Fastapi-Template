@@ -1,5 +1,6 @@
 import asyncio
 from dataclasses import dataclass, field
+from typing import cast
 
 import firebase_admin
 from firebase_admin import App, auth, credentials, messaging
@@ -439,7 +440,6 @@ class Firebase:
 
                 for result in response.responses:
                     if result.success is False:
-                        result: messaging.SendResponse
                         logger.error(
                             "Failed to send push notification to device token "
                             f"{result.message_id}: {result.exception}"
@@ -502,10 +502,13 @@ class Firebase:
         """
 
         def _create_token() -> bytes:
-            return auth.create_custom_token(
-                uid=uid,
-                developer_claims=additional_claims,
-                app=self.app,
+            return cast(
+                bytes,
+                auth.create_custom_token(
+                    uid=uid,
+                    developer_claims=additional_claims,
+                    app=self.app,
+                ),
             )
 
         try:

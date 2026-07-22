@@ -1,3 +1,4 @@
+from celery import Task
 from faker import Faker
 from loguru import logger
 from pwdlib import PasswordHash
@@ -12,7 +13,7 @@ password_hash = PasswordHash.recommended()
 
 
 @celery_app.task(name="seed_fake_users", bind=True)
-def seed_fake_users_task(self, count: int = 100) -> int:
+def seed_fake_users_task(self: Task, count: int = 100) -> int:
     """
     Celery task to seed fake users into the database.
 

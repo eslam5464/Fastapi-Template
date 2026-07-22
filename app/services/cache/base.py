@@ -48,7 +48,7 @@ class BaseRedisClient(ABC):
 
     _redis_client: Redis | None = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         # Only initialize Redis in non-local environments
         if settings.current_environment != Environment.LOCAL:
             self._initialize_redis()
@@ -76,7 +76,7 @@ class BaseRedisClient(ABC):
         """
         self._redis_client = value
 
-    def _initialize_redis(self):
+    def _initialize_redis(self) -> None:
         """Initialize Redis connection using shared connection pool"""
         try:
             pool = get_redis_pool()
@@ -102,7 +102,7 @@ class BaseRedisClient(ABC):
             logger.error(f"Redis health check failed for {self.__class__.__name__}: {e}")
             return False
 
-    async def close(self):
+    async def close(self) -> None:
         """Close Redis connection gracefully"""
         if self.redis_client:
             try:

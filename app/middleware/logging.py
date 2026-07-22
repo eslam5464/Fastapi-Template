@@ -38,7 +38,7 @@ def sanitize_body(body: dict[str, Any] | Any) -> dict[str, Any] | Any:
     if not isinstance(body, dict):
         return body
 
-    sanitized = {}
+    sanitized: dict[str, Any] = {}
     for key, value in body.items():
         key_lower = key.lower()
         if any(sensitive in key_lower for sensitive in SENSITIVE_FIELDS):
@@ -93,6 +93,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             process_time = time.time() - start_time
 
+            json_body: Any = ""
             try:
                 json_body = await request.json()
                 # Sanitize sensitive data before logging

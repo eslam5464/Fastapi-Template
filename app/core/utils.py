@@ -78,7 +78,7 @@ async def calculate_md5_hash(file_location: str | Path) -> str:
     if not Path(file_location).exists() or not Path(file_location).is_file():
         raise FileNotFoundError(f"File not found in {file_location}")
 
-    hash_md5 = hashlib.md5()
+    hash_md5 = hashlib.md5(usedforsecurity=False)
     file_size = Path(file_location).stat().st_size
     chunks_count = file_size // 4096 + 1
 
