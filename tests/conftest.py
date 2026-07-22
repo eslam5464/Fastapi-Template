@@ -10,6 +10,7 @@ from httpx import ASGITransport, AsyncClient
 from jose import jwt
 from pwdlib import PasswordHash
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.pool import NullPool
 from sqlalchemy.sql import text
 
 from app import repos
@@ -45,38 +46,48 @@ def anyio_backend():
 @pytest_asyncio.fixture(scope="function")  # Change to function scope
 async def test_app() -> AsyncGenerator[FastAPI, None]:
     """Create a FastAPI test application with an async database session."""
-    # Override the database settings for testing
-    test_engine = create_async_engine(settings.db_test_url.human_repr(), echo=False)
+    # Override the database settings for testing.
+    # NullPool + explicit dispose() below: this engine is created fresh per test
+    # function, so it must not leave pooled connections behind - otherwise the
+    # suite accumulates open Postgres connections across hundreds of tests and
+    # intermittently hits max_connections (worse under CI's tighter/variable
+    # resource conditions than a local dev machine).
+    test_engine = create_async_engine(
+        settings.db_test_url.human_repr(), echo=False, poolclass=NullPool
+    )
 
-    # Create test engine and override the get_session dependency
-    test_async_session = async_sessionmaker(test_engine, expire_on_commit=False)
+    try:
+        # Create test engine and override the get_session dependency
+        test_async_session = async_sessionmaker(test_engine, expire_on_commit=False)
 
-    # Create schema and tables
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        # Create schema if it doesn't exist
-        await conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{settings.postgres_db_schema}"'))
-        await conn.run_sync(Base.metadata.create_all)
+        # Create schema and tables
+        async with test_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+            # Create schema if it doesn't exist
+            await conn.execute(text(f'CREATE SCHEMA IF NOT EXISTS "{settings.postgres_db_schema}"'))
+            await conn.run_sync(Base.metadata.create_all)
 
-    async def override_get_session() -> AsyncGenerator[AsyncSession, None]:
-        async with test_async_session() as session:
-            yield session
+        async def override_get_session() -> AsyncGenerator[AsyncSession, None]:
+            async with test_async_session() as session:
+                yield session
 
-    app.dependency_overrides[get_session] = override_get_session
-    v1_app.dependency_overrides[get_session] = override_get_session
-    v2_app.dependency_overrides[get_session] = override_get_session
+        app.dependency_overrides[get_session] = override_get_session
+        v1_app.dependency_overrides[get_session] = override_get_session
+        v2_app.dependency_overrides[get_session] = override_get_session
 
-    yield app
+        yield app
 
-    # Clean up
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
-        await conn.execute(text(f'DROP SCHEMA IF EXISTS "{settings.postgres_db_schema}"'))
+        # Clean up
+        async with test_engine.begin() as conn:
+            await conn.run_sync(Base.metadata.drop_all)
+            await conn.execute(text(f'DROP SCHEMA IF EXISTS "{settings.postgres_db_schema}"'))
 
-    # Clear any application dependencies
-    app.dependency_overrides.clear()
-    v1_app.dependency_overrides.clear()
-    v2_app.dependency_overrides.clear()
+        # Clear any application dependencies
+        app.dependency_overrides.clear()
+        v1_app.dependency_overrides.clear()
+        v2_app.dependency_overrides.clear()
+    finally:
+        await test_engine.dispose()
 
 
 @pytest_asyncio.fixture
@@ -95,12 +106,16 @@ async def faker() -> Faker:
 @pytest_asyncio.fixture
 async def db_session(test_app: FastAPI) -> AsyncGenerator[AsyncSession, None]:
     """Create a new database session for a test."""
-    test_engine = create_async_engine(settings.db_test_url.human_repr())
+    # NullPool + dispose(): see test_app fixture above for why this matters.
+    test_engine = create_async_engine(settings.db_test_url.human_repr(), poolclass=NullPool)
     test_async_session = async_sessionmaker(bind=test_engine, expire_on_commit=False)
 
-    async with test_async_session() as session:
-        yield session
-        await session.rollback()
+    try:
+        async with test_async_session() as session:
+            yield session
+            await session.rollback()
+    finally:
+        await test_engine.dispose()
 
 
 @pytest_asyncio.fixture
