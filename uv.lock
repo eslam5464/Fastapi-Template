@@ -2,12 +2,18 @@ version = 1
 revision = 3
 requires-python = ">=3.13"
 resolution-markers = [
-    "python_full_version < '3.14' and platform_python_implementation != 'PyPy'",
-    "python_full_version >= '3.15' and platform_python_implementation != 'PyPy'",
-    "python_full_version == '3.14.*' and platform_python_implementation != 'PyPy'",
-    "python_full_version < '3.14' and platform_python_implementation == 'PyPy'",
-    "python_full_version >= '3.15' and platform_python_implementation == 'PyPy'",
-    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy'",
+    "python_full_version < '3.14' and platform_python_implementation != 'PyPy' and sys_platform == 'win32'",
+    "python_full_version < '3.14' and platform_python_implementation != 'PyPy' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and platform_python_implementation != 'PyPy' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and platform_python_implementation != 'PyPy' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and platform_python_implementation != 'PyPy' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and platform_python_implementation != 'PyPy' and sys_platform != 'win32'",
+    "python_full_version < '3.14' and platform_python_implementation == 'PyPy' and sys_platform == 'win32'",
+    "python_full_version < '3.14' and platform_python_implementation == 'PyPy' and sys_platform != 'win32'",
+    "python_full_version >= '3.15' and platform_python_implementation == 'PyPy' and sys_platform == 'win32'",
+    "python_full_version >= '3.15' and platform_python_implementation == 'PyPy' and sys_platform != 'win32'",
+    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy' and sys_platform == 'win32'",
+    "python_full_version == '3.14.*' and platform_python_implementation == 'PyPy' and sys_platform != 'win32'",
 ]
 
 [[package]]
@@ -849,6 +855,7 @@ dependencies = [
     { name = "loguru" },
     { name = "pre-commit" },
     { name = "psycopg" },
+    { name = "psycopg", extra = ["binary"], marker = "sys_platform == 'win32'" },
     { name = "pwdlib", extra = ["argon2"] },
     { name = "pydantic" },
     { name = "pydantic-settings" },
@@ -916,7 +923,8 @@ requires-dist = [
     { name = "httptools", marker = "sys_platform == 'linux'", specifier = ">=0.6.4" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "pre-commit", specifier = ">=4.3.0" },
-    { name = "psycopg", specifier = ">=3.3.2" },
+    { name = "psycopg", marker = "sys_platform != 'win32'", specifier = ">=3.3.2" },
+    { name = "psycopg", extras = ["binary"], marker = "sys_platform == 'win32'", specifier = ">=3.3.2" },
     { name = "pwdlib", extras = ["argon2"], specifier = ">=0.3.0" },
     { name = "pydantic", specifier = ">=2.11.9" },
     { name = "pydantic-settings", specifier = ">=2.10.1" },
@@ -1921,6 +1929,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/e0/1a/7d9ef4fdc13ef7f15b934c393edc97a35c281bb7d3c3329fbfcbe915a7c2/psycopg-3.3.2.tar.gz", hash = "sha256:707a67975ee214d200511177a6a80e56e654754c9afca06a7194ea6bbfde9ca7", size = 165630, upload-time = "2025-12-06T17:34:53.899Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/8c/51/2779ccdf9305981a06b21a6b27e8547c948d85c41c76ff434192784a4c93/psycopg-3.3.2-py3-none-any.whl", hash = "sha256:3e94bc5f4690247d734599af56e51bae8e0db8e4311ea413f801fef82b14a99b", size = 212774, upload-time = "2025-12-06T17:31:41.414Z" },
+]
+
+[package.optional-dependencies]
+binary = [
+    { name = "psycopg-binary", marker = "implementation_name != 'pypy' and sys_platform == 'win32'" },
+]
+
+[[package]]
+name = "psycopg-binary"
+version = "3.3.2"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/09/e6/5fc8d8aff8afa114bb4a94a0341b9309311e8bf3ab32d816032f8b984d4e/psycopg_binary-3.3.2-cp313-cp313-win_amd64.whl", hash = "sha256:df65174c7cf6b05ea273ce955927d3270b3a6e27b0b12762b009ce6082b8d3fc", size = 3540922, upload-time = "2025-12-06T17:34:14.88Z" },
+    { url = "https://files.pythonhosted.org/packages/72/f7/212343c1c9cfac35fd943c527af85e9091d633176e2a407a0797856ff7b9/psycopg_binary-3.3.2-cp314-cp314-win_amd64.whl", hash = "sha256:04bb2de4ba69d6f8395b446ede795e8884c040ec71d01dd07ac2b2d18d4153d1", size = 3642122, upload-time = "2025-12-06T17:34:52.506Z" },
 ]
 
 [[package]]
