@@ -14,7 +14,7 @@ argon2-cffi==25.1.0
 argon2-cffi-bindings==25.1.0
 asn1==2.8.0
 asyncpg==0.30.0
-attrs==25.4.0
+attrs==26.1.0
 b2sdk==2.10.1
 backoff==2.2.1
 billiard==4.2.4
