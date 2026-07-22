@@ -21,7 +21,7 @@ billiard==4.2.4
 black==25.9.0
 cachecontrol==0.14.3
 cachetools==6.2.1
-cattrs==25.3.0
+cattrs==26.1.0
 celery==5.3.1
 certifi==2025.10.5
 cffi==2.0.0
