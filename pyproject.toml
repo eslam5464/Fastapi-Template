@@ -6,39 +6,39 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "aiofiles>=25.1.0",
-    "aiohttp>=3.13.2",
-    "alembic>=1.16.5",
-    "asyncpg>=0.30.0",
-    "b2sdk>=2.10.1",
+    "aiohttp>=3.14.1",
+    "alembic>=1.18.5",
+    "asyncpg>=0.31.0",
+    "b2sdk>=2.12.0",
     "email-validator>=2.3.0",
-    "fastapi>=0.116.2",
+    "fastapi>=0.139.2",
     "gunicorn>=23.0.0",
-    "httptools>=0.6.4 ; sys_platform == 'linux'",
+    "httptools>=0.8.0 ; sys_platform == 'linux'",
     "loguru>=0.7.3",
-    "pre-commit>=4.3.0",
+    "pre-commit>=4.6.0",
     "psycopg[binary]>=3.3.2 ; sys_platform == 'win32'",
-    "psycopg>=3.3.2 ; sys_platform != 'win32'",
+    "psycopg>=3.3.4 ; sys_platform != 'win32'",
     "pwdlib[argon2]>=0.3.0",
-    "pydantic>=2.11.9",
-    "pydantic-settings>=2.10.1",
-    "pyjwt>=2.10.1",
+    "pydantic>=2.13.4",
+    "pydantic-settings>=2.14.2",
+    "pyjwt>=2.13.0",
     "python-jose>=3.5.0",
-    "python-multipart>=0.0.20",
+    "python-multipart>=0.0.32",
     "sqlalchemy[asyncio]>=2.0.43",
     "tzdata>=2025.2",
     "uvicorn[standard]>=0.35.0",
     "uvloop>=0.21.0 ; sys_platform == 'linux'",
-    "yarl>=1.20.1",
+    "yarl>=1.24.2",
 ]
 
 [project.optional-dependencies]
 email = [
     "brevo-python>=4.0.7",
-    "resend>=2.23.0",
+    "resend>=2.34.0",
 ]
 cloud-service = [
-    "firebase-admin>=7.1.0",
-    "gcloud-aio-storage>=9.6.1",
+    "firebase-admin>=7.5.0",
+    "gcloud-aio-storage>=9.6.4",
 ]
 cache = [
     "redis>=7.1.0",
@@ -56,8 +56,8 @@ test = [
     "faker>=37.8.0",
     "httpx>=0.28.1",
     "pytest>=8.4.2",
-    "pytest-asyncio>=1.2.0",
-    "pytest-cov>=7.0.0",
+    "pytest-asyncio>=1.4.0",
+    "pytest-cov>=7.1.0",
 ]
 dev = [
     "bandit[toml]>=1.8.6",
