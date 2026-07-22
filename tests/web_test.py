@@ -108,7 +108,7 @@ class TestGunicornApplication:
         from app.web import GunicornApplication
 
         with patch("gunicorn.app.base.BaseApplication.__init__", return_value=None):
-            with patch("gunicorn.util.import_app") as mock_import:
+            with patch("app.web.import_app") as mock_import:
                 mock_app = MagicMock()
                 mock_import.return_value = mock_app
 
@@ -123,7 +123,7 @@ class TestGunicornApplication:
         from app.web import GunicornApplication
 
         with patch("gunicorn.app.base.BaseApplication.__init__", return_value=None):
-            with patch("gunicorn.util.import_app") as mock_import:
+            with patch("app.web.import_app") as mock_import:
                 mock_app = MagicMock()
                 mock_import.return_value = mock_app
 
