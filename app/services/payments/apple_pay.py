@@ -269,7 +269,7 @@ class ApplePay:
             )
 
             return response
-        except ValueError as err:
+        except ValueError:
             # Re-raise validation errors
             raise
         except APIException as err:
@@ -283,7 +283,7 @@ class ApplePay:
                     f"Transaction ID {transaction_id} not found"
                 ) from err
             elif err.http_status_code == 401:
-                logger.exception(f"Apple Pay API authentication failed")
+                logger.exception("Apple Pay API authentication failed")
                 raise AppStoreInvalidCredentialsException("Invalid Apple Pay credentials") from err
             elif err.http_status_code == 404:
                 logger.exception(f"Transaction id {transaction_id} not found")
@@ -859,8 +859,8 @@ class ApplePay:
             logger.info(f"Latest transaction: {latest.transactionId}")
             return latest
 
-        except Exception as err:
-            logger.exception(f"Error extracting latest transaction")
+        except Exception:
+            logger.exception("Error extracting latest transaction")
             return None
 
     async def verify_and_process_subscription(

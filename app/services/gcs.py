@@ -311,7 +311,7 @@ class GCS:
                 bucket=bucket_name,
                 object_name=file_path_in_bucket,
             )
-        except Exception as e:
+        except Exception:
             logger.exception(f"Failed to download metadata for {file_path_in_bucket}")
             return None
 
@@ -322,7 +322,7 @@ class GCS:
             authenticated_url = HttpUrl(
                 f"https://storage.cloud.google.com/{bucket_name}/{file_path_in_bucket}"
             )
-        except ValidationError as e:
+        except ValidationError:
             logger.exception(f"Invalid URL for {file_path_in_bucket}")
             return None
 

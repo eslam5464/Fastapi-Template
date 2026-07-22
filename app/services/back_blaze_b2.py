@@ -509,7 +509,7 @@ class BackBlaze:
             if Path(local_file_path).exists():
                 Path(local_file_path).unlink()
                 logger.info(f"Cleaned up local file after failed upload: {local_file_path}")
-        except OSError as ex:
+        except OSError:
             logger.exception(f"Failed to clean up local file: {local_file_path}")
 
     @staticmethod

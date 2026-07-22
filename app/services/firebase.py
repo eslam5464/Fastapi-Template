@@ -94,10 +94,10 @@ class Firebase:
         except ValueError as err:
             logger.exception("Error getting user by ID, user ID is malformed")
             raise err
-        except UserNotFoundError as err:
+        except UserNotFoundError:
             logger.exception("Error getting user by ID, User not found")
             raise ConnectionAbortedError("User not found")
-        except FirebaseError as err:
+        except FirebaseError:
             logger.exception("Error getting user by ID")
             raise ConnectionError("Unknown error getting user by ID")
 
@@ -151,7 +151,7 @@ class Firebase:
         except ValueError as err:
             logger.exception("Error creating user, one of the provided fields is malformed")
             raise err
-        except FirebaseError as err:
+        except FirebaseError:
             logger.exception("Error creating user")
             raise ConnectionError("Unknown error creating user")
 
@@ -182,10 +182,10 @@ class Firebase:
         except ValueError as err:
             logger.exception("Error getting user by email, email is malformed")
             raise err
-        except UserNotFoundError as err:
+        except UserNotFoundError:
             logger.exception("Error getting user by email, User not found")
             raise ConnectionAbortedError("User not found")
-        except FirebaseError as err:
+        except FirebaseError:
             logger.exception("Error getting user by email")
             raise ConnectionError("Unknown error getting user by email")
 
@@ -216,10 +216,10 @@ class Firebase:
         except ValueError as err:
             logger.exception("Error getting user by phone number, phone number is malformed")
             raise err
-        except UserNotFoundError as err:
+        except UserNotFoundError:
             logger.exception("Error getting user by phone number, User not found")
             raise ConnectionAbortedError("User not found")
-        except FirebaseError as err:
+        except FirebaseError:
             logger.exception("Error getting user by phone number")
             raise ConnectionError("Unknown error getting user by phone number")
 
@@ -246,7 +246,7 @@ class Firebase:
         except ValueError as err:
             logger.exception("Error getting all users, max_results is malformed")
             raise err
-        except FirebaseError as err:
+        except FirebaseError:
             logger.exception("Error getting all users")
             raise ConnectionError("Unknown error getting all users")
 
@@ -280,7 +280,7 @@ class Firebase:
         except ValueError as err:
             logger.exception("Error creating custom ID token, UID is malformed")
             raise err
-        except FirebaseError as err:
+        except FirebaseError:
             logger.exception("Error creating custom ID token")
             raise ConnectionError("Unknown error creating custom ID token")
 
@@ -313,16 +313,16 @@ class Firebase:
         except ValueError as err:
             logger.exception("Error verifying ID token, ID token is malformed")
             raise err
-        except auth.RevokedIdTokenError as err:
+        except auth.RevokedIdTokenError:
             logger.exception("Error verifying ID token, ID token has been revoked")
             raise ConnectionAbortedError("ID token has been revoked")
-        except auth.ExpiredIdTokenError as err:
+        except auth.ExpiredIdTokenError:
             logger.exception("Error verifying ID token, ID token has expired")
             raise ConnectionAbortedError("ID token has expired")
-        except auth.InvalidIdTokenError as err:
+        except auth.InvalidIdTokenError:
             logger.exception("Error verifying ID token, Invalid ID token")
             raise ConnectionAbortedError("Invalid ID token")
-        except FirebaseError as err:
+        except FirebaseError:
             logger.exception("Unknown error verifying ID token")
             raise ConnectionError("Error verifying ID token")
 
@@ -347,14 +347,14 @@ class Firebase:
         try:
             await asyncio.to_thread(_validate_token)
             return True
-        except FirebaseError as err:
+        except FirebaseError:
             logger.exception("Firebase error validating token")
             return False
-        except ValueError as err:
+        except ValueError:
             logger.exception("Token is malformed")
             return False
-        except Exception as e:
-            logger.exception(f"Error validating token")
+        except Exception:
+            logger.exception("Error validating token")
             return False
 
     async def notify_a_device(
@@ -395,8 +395,8 @@ class Firebase:
             response = await asyncio.to_thread(_send_notification)
             logger.info(f"Push notification sent successfully: {response}")
             return True
-        except Exception as e:
-            logger.exception(f"Error sending push notification")
+        except Exception:
+            logger.exception("Error sending push notification")
             return False
 
     async def notify_multiple_devices(
@@ -444,11 +444,11 @@ class Firebase:
                             "Failed to send push notification to device token "
                             f"{result.message_id}: {result.exception}"
                         )
-            except FirebaseError as err:
+            except FirebaseError:
                 logger.exception("Firebase error sending push notification to multiple devices")
-            except ValueError as err:
+            except ValueError:
                 logger.exception("Error sending push notification to multiple devices")
-            except Exception as e:
+            except Exception:
                 logger.exception("Unknown error sending push notification to multiple devices")
 
         return success_count
@@ -481,7 +481,7 @@ class Firebase:
         except ValueError as err:
             logger.exception("Error setting custom claims, UID is malformed")
             raise err
-        except FirebaseError as err:
+        except FirebaseError:
             logger.exception("Error setting custom claims")
             raise ConnectionError("Unknown error setting custom claims")
 
@@ -516,6 +516,6 @@ class Firebase:
         except ValueError as err:
             logger.exception("Error creating custom ID token, UID is malformed")
             raise err
-        except FirebaseError as err:
+        except FirebaseError:
             logger.exception("Error creating custom ID token")
             raise ConnectionError("Unknown error creating custom ID token")
