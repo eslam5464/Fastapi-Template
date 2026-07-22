@@ -178,6 +178,13 @@ disable_error_code = ["prop-decorator"]
 [tool.bandit]
 exclude_dirs = ["tests", ".venv", "alembic/versions"]
 
+[tool.coverage.run]
+# Without this, coverage.py records absolute file paths in .coverage. The
+# python-coverage-comment-action CI step re-reads that file from inside its own
+# Docker container, where the workspace is mounted at a different absolute path
+# than the runner checkout - relative paths resolve correctly in both.
+relative_files = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["*_test.py"]
