@@ -1,0 +1,28 @@
+version: 2
+
+# Reviewer assignment for these PRs comes from .github/CODEOWNERS (`reviewers:` was
+# retired by GitHub in August 2025 in favor of CODEOWNERS-based review requests).
+updates:
+  # Note: if GitHub's "uv" ecosystem isn't recognized on this account/plan yet,
+  # fall back to `package-ecosystem: "pip"` - Dependabot's pip support has picked
+  # up uv.lock parsing as well.
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 3
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    cooldown:
+      default-days: 3

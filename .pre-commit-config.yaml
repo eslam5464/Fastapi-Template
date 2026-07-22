@@ -37,3 +37,40 @@ repos:
       - id: black
         args: [--line-length=100]
         exclude: (__init__.py$|migrations/)
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        # Runs via the project's own uv-managed venv instead of a pre-commit-managed
+        # isolated environment: this project has 25+ runtime dependencies, and
+        # mirroring them all in `additional_dependencies` would drift from
+        # pyproject.toml over time. Requires `uv sync` to have been run locally.
+        entry: uv run mypy app --config-file=pyproject.toml
+        language: system
+        pass_filenames: false
+        files: ^app/
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: "1.8.6"
+    hooks:
+      - id: bandit
+        args: [-c, pyproject.toml]
+        additional_dependencies: ["bandit[toml]"]
+        files: ^app/
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+        exclude: ^(uv\.lock|htmlcov/|\.venv/)
+
+ci:
+  autofix_prs: true
+  autofix_commit_msg: "style: auto-fixes from pre-commit.ci"
+  autoupdate_schedule: weekly
+  # pre-commit.ci runs hooks in its own sandbox with no access to this project's
+  # uv-managed venv, so `language: system` hooks (mypy) can't run there. It's still
+  # enforced locally via pre-commit and as a required check in .github/workflows/ci.yml.
+  skip: [mypy]

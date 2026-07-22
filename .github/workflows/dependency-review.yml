@@ -1,0 +1,25 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [master]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Note: verify after the first real PR that GitHub's Dependency Graph is
+      # correctly parsing uv.lock. If transitive versions aren't picked up, fall
+      # back to generating requirements.txt via `uv export --no-hashes` (already
+      # referenced elsewhere in this repo) and point this action at that instead.
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: always
