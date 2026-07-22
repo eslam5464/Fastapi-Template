@@ -19,7 +19,7 @@ jobs:
       # back to generating requirements.txt via `uv export --no-hashes` (already
       # referenced elsewhere in this repo) and point this action at that instead.
       - name: Dependency Review
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high
           comment-summary-in-pr: always
