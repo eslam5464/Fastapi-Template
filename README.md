@@ -101,6 +101,24 @@ The API will be available at `http://localhost:8799` with interactive documentat
 - `http://localhost:8799/v1/docs`
 - `http://localhost:8799/v2/docs`
 
+## 🧬 Using This as a Template
+
+This repository doubles as a [Copier](https://copier.readthedocs.io/) template — generate a brand-new FastAPI project from it, with your own name, author info, and settings, without cloning and hand-editing:
+
+```bash
+# Install copier once, as a standalone tool
+uv tool install copier   # or: pipx install copier
+
+# Generate a new project from this template
+copier copy gh:eslam5464/Fastapi-Template <new-project-dir> --trust
+```
+
+You'll be prompted for a project name, description, author name/email, GitHub username, Python version, and whether to include Apple Pay support. Everything identity-specific — the `pyproject.toml` name, Docker container names, the Postgres schema, `README.md`, `LICENSE`, `CODEOWNERS` — is filled in automatically; see [docs/features.md](docs/features.md) for what ships by default versus what's opt-in.
+
+`--trust` is required because generation runs a small post-processing script (`scripts/generate/post_gen.py`) that removes unused Apple Pay files when you opt out, regenerates `uv.lock`, and runs `git init` for you.
+
+This repo itself stays fully runnable the whole time — the template mechanics live alongside the real code as `.jinja`-suffixed files (`pyproject.toml.jinja`, `docker-compose.yml.jinja`, etc.) plus `copier.yml`, none of which change how you build, test, or run this repo directly.
+
 ## 📖 Documentation
 
 Detailed documentation is available in the [docs/](docs/) folder:

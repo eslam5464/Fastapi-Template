@@ -24,7 +24,23 @@ def strip_marked_block(path: Path, start_marker: str, end_marker: str) -> None:
     if start is None or end is None:
         return
     del lines[start : end + 1]
-    path.write_text("".join(lines), encoding="utf-8")
+
+    # Deleting the block can leave 3+ consecutive blank lines behind (blank
+    # lines from both sides of the removed block collapsing together), which
+    # trips ruff's isort/formatting checks. Collapse runs down to at most 2,
+    # matching standard top-level class/def spacing.
+    collapsed: list[str] = []
+    blank_run = 0
+    for line in lines:
+        if line.strip() == "":
+            blank_run += 1
+            if blank_run > 2:
+                continue
+        else:
+            blank_run = 0
+        collapsed.append(line)
+
+    path.write_text("".join(collapsed), encoding="utf-8")
 
 
 def remove_apple_pay() -> None:
