@@ -20,6 +20,7 @@
 | app/core/\_\_init\_\_.py                       |        0 |        0 |    100% |           |
 | app/core/config.py                             |      112 |       14 |     88% |172, 180-183, 238-242, 293-296, 308-311 |
 | app/core/constants.py                          |       29 |        3 |     90% | 50, 73-74 |
+| app/core/credentials.py                        |       23 |        1 |     96% |        64 |
 | app/core/db.py                                 |       17 |        0 |    100% |           |
 | app/core/exceptions/apple\_pay.py              |       37 |        4 |     89% |23, 88, 114, 140 |
 | app/core/exceptions/back\_blaze\_exceptions.py |       20 |        0 |    100% |           |
@@ -44,11 +45,10 @@
 | app/repos/\_\_init\_\_.py                      |        3 |        0 |    100% |           |
 | app/repos/base.py                              |      110 |       13 |     88% |51-52, 267-271, 275-277, 335-336, 412 |
 | app/repos/user.py                              |       16 |        2 |     88% |    27, 42 |
-| app/schemas/\_\_init\_\_.py                    |        9 |        0 |    100% |           |
-| app/schemas/apple\_pay.py                      |        9 |        0 |    100% |           |
+| app/schemas/\_\_init\_\_.py                    |        8 |        0 |    100% |           |
 | app/schemas/back\_blaze\_bucket.py             |        5 |        0 |    100% |           |
 | app/schemas/base.py                            |        7 |        0 |    100% |           |
-| app/schemas/firebase.py                        |       33 |        1 |     97% |        36 |
+| app/schemas/firebase.py                        |       18 |        0 |    100% |           |
 | app/schemas/google\_bucket.py                  |       16 |        0 |    100% |           |
 | app/schemas/health\_check.py                   |        2 |        0 |    100% |           |
 | app/schemas/token.py                           |       19 |        2 |     89% |    16, 30 |
@@ -69,10 +69,10 @@
 | app/services/exceptions/auth.py                |        4 |        0 |    100% |           |
 | app/services/exceptions/base.py                |        1 |        0 |    100% |           |
 | app/services/exceptions/email.py               |        6 |        0 |    100% |           |
-| app/services/firebase.py                       |      205 |       42 |     80% |37, 87, 136-156, 175, 209, 242, 272, 304, 341, 382-389, 425-432, 472-486, 504-521 |
+| app/services/firebase.py                       |      206 |       42 |     80% |38, 88, 137-157, 176, 210, 243, 273, 305, 342, 383-390, 426-433, 473-487, 505-522 |
 | app/services/firestore.py                      |       94 |        0 |    100% |           |
 | app/services/gcs.py                            |      125 |        4 |     97% |130, 174, 284, 363 |
-| app/services/payments/apple\_pay.py            |      284 |       47 |     83% |89, 105, 195, 202-207, 302-303, 403-406, 412-414, 472-486, 614-615, 651-676, 711-712, 862-864 |
+| app/services/payments/apple\_pay.py            |      285 |       47 |     84% |90, 106, 196, 203-208, 303-304, 403-406, 412-414, 472-486, 614-615, 651-676, 711-712, 862-864 |
 | app/services/types/\_\_init\_\_.py             |        3 |        0 |    100% |           |
 | app/services/types/auth.py                     |        5 |        0 |    100% |           |
 | app/services/types/email.py                    |       77 |        4 |     95% |78, 92, 95-96 |
