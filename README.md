@@ -20,7 +20,7 @@
 | app/core/\_\_init\_\_.py                       |        0 |        0 |    100% |           |
 | app/core/config.py                             |      112 |       14 |     88% |172, 180-183, 238-242, 293-296, 308-311 |
 | app/core/constants.py                          |       29 |        3 |     90% | 50, 73-74 |
-| app/core/credentials.py                        |       23 |        1 |     96% |        64 |
+| app/core/credentials.py                        |       23 |        1 |     96% |        68 |
 | app/core/db.py                                 |       17 |        0 |    100% |           |
 | app/core/exceptions/apple\_pay.py              |       37 |        4 |     89% |23, 88, 114, 140 |
 | app/core/exceptions/back\_blaze\_exceptions.py |       20 |        0 |    100% |           |
