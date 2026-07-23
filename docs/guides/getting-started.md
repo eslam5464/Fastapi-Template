@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Python 3.13+
+- Python 3.14+
 - PostgreSQL 12+
 - Redis
 - uv

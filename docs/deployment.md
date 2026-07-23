@@ -22,7 +22,7 @@ The FastAPI Template supports multiple deployment strategies:
 
 ### Required Software
 
-- **Python 3.13+**
+- **Python 3.14+**
 - **PostgreSQL 12+**
 - **Nginx** (for reverse proxy)
 - **Supervisor** or **systemd** (for process management)
@@ -214,7 +214,7 @@ Create a production-ready `Dockerfile`:
 
 ```dockerfile
 # Multi-stage build for smaller image size
-FROM python:3.13-slim as builder
+FROM python:3.14-slim as builder
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
@@ -233,7 +233,7 @@ RUN pip install uv && uv export --no-hashes --format requirements-txt > requirem
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Production stage
-FROM python:3.13-slim as production
+FROM python:3.14-slim as production
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
@@ -252,7 +252,7 @@ RUN groupadd -r appuser && useradd -r -g appuser appuser
 WORKDIR /app
 
 # Copy Python dependencies from builder stage
-COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /usr/local/lib/python3.14/site-packages /usr/local/lib/python3.14/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
 
 # Copy application code
@@ -388,7 +388,7 @@ docker-compose -f docker-compose.prod.yml up -d --scale app=3
 sudo apt update && sudo apt upgrade -y
 
 # Install dependencies
-sudo apt install -y python3.13 python3.13-venv python3-pip postgresql postgresql-contrib nginx supervisor
+sudo apt install -y python3.14 python3.14-venv python3-pip postgresql postgresql-contrib nginx supervisor
 
 # Install uv
 curl -LsSf https://astral.sh/uv/install.sh | sh
@@ -419,7 +419,7 @@ sudo -u fastapi git clone <repository-url> /opt/fastapi-app
 cd /opt/fastapi-app
 
 # Setup Python environment
-sudo -u fastapi python3.13 -m venv .venv
+sudo -u fastapi python3.14 -m venv .venv
 sudo -u fastapi .venv/bin/pip install uv
 sudo -u fastapi .venv/bin/uv sync
 

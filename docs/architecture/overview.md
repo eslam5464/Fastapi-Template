@@ -21,7 +21,7 @@ FastAPI Template provides a reusable backend foundation for authenticated APIs w
 
 | Area | Choice |
 |---|---|
-| Language | Python 3.13 |
+| Language | Python 3.14 |
 | Web Framework | FastAPI |
 | ASGI Server | Uvicorn (and Gunicorn in production) |
 | ORM | SQLAlchemy 2 async |

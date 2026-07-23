@@ -669,9 +669,9 @@ class NotFoundError(BaseAPIException):
 
 ```dockerfile
 # Multi-stage build
-FROM python:3.13-slim as builder
+FROM python:3.14-slim as builder
 # Install dependencies
-FROM python:3.13-slim as runtime
+FROM python:3.14-slim as runtime
 # Copy application
 ```
 

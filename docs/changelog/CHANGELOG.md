@@ -6,6 +6,17 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-07-24
+
+### Changed
+
+- Bumped the project's minimum required Python version from 3.13 to 3.14 (`pyproject.toml`, `Dockerfile`, `docker-compose.yml`, `.python-version`, mypy config, and docs).
+- Upgraded `asyncpg` to `0.31.0`, the first release with prebuilt Windows wheels for Python 3.14 (0.30.0 only builds from source there and fails without the MSVC toolchain).
+
+### Fixed
+
+- `scripts/generate/post_gen.py` now proactively installs the requested Python interpreter before regenerating `uv.lock`, and suppresses benign git line-ending warnings during the post-generation commit, instead of letting raw `uv`/`git` output leak to the console during `copier copy`.
+
 ## [1.1.0] - 2026-07-23
 
 ### Added

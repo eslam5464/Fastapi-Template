@@ -33,7 +33,7 @@ body:
     id: environment
     attributes:
       label: Environment
-      placeholder: "e.g. local / dev / stg / prd, Python 3.13, Postgres 18"
+      placeholder: "e.g. local / dev / stg / prd, Python 3.14, Postgres 18"
     validations:
       required: false
 

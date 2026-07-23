@@ -23,7 +23,7 @@ Plus optional integrations for caching, background jobs, cloud storage, Firebase
 
 ### Prerequisites
 
-- [Python 3.13+](https://www.python.org/downloads/)
+- [Python 3.14+](https://www.python.org/downloads/)
 - [PostgreSQL](https://www.postgresql.org/download/)
 - [uv](https://docs.astral.sh/uv/)
 

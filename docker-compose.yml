@@ -1,6 +1,6 @@
 services:
   backend:
-    image: python:3.13-alpine
+    image: python:3.14-alpine
     restart: unless-stopped
     container_name: fastapi_template_backend
     build:

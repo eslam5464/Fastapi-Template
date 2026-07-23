@@ -1,5 +1,5 @@
 # Multi-stage build for optimal size and speed
-FROM python:3.13-alpine AS builder
+FROM python:3.14-alpine AS builder
 
 # Install build dependencies
 RUN apk add --no-cache \
@@ -24,7 +24,7 @@ COPY pyproject.toml uv.lock* ./
 RUN uv sync --frozen --no-dev
 
 # Production stage
-FROM python:3.13-alpine AS production
+FROM python:3.14-alpine AS production
 
 # Install runtime dependencies only
 RUN apk add --no-cache \

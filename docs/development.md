@@ -6,7 +6,7 @@ This guide covers everything you need to know for developing with the FastAPI Te
 
 Before you begin, ensure you have the following installed:
 
-- **Python 3.13+**: The project requires Python 3.13 or higher
+- **Python 3.14+**: The project requires Python 3.14 or higher
 - **PostgreSQL**: Database server (version 12+)
 - **Git**: Version control system
 - **uv** (recommended): Fast Python package manager, or pip as alternative
