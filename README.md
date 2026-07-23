@@ -9,7 +9,7 @@
 | app/api/routes.py                              |        6 |        0 |    100% |           |
 | app/api/v1/\_\_init\_\_.py                     |        0 |        0 |    100% |           |
 | app/api/v1/deps/\_\_init\_\_.py                |        0 |        0 |    100% |           |
-| app/api/v1/deps/auth.py                        |       42 |        4 |     90% |96-97, 156-157 |
+| app/api/v1/deps/auth.py                        |       42 |        0 |    100% |           |
 | app/api/v1/deps/rate\_limit.py                 |       69 |        0 |    100% |           |
 | app/api/v1/endpoints/\_\_init\_\_.py           |        0 |        0 |    100% |           |
 | app/api/v1/endpoints/auth.py                   |       35 |        1 |     97% |       128 |
@@ -44,7 +44,7 @@
 | app/models/user.py                             |       11 |        0 |    100% |           |
 | app/repos/\_\_init\_\_.py                      |        3 |        0 |    100% |           |
 | app/repos/base.py                              |      110 |       13 |     88% |51-52, 267-271, 275-277, 335-336, 412 |
-| app/repos/user.py                              |       16 |        2 |     88% |    27, 42 |
+| app/repos/user.py                              |       16 |        0 |    100% |           |
 | app/schemas/\_\_init\_\_.py                    |        8 |        0 |    100% |           |
 | app/schemas/back\_blaze\_bucket.py             |        5 |        0 |    100% |           |
 | app/schemas/base.py                            |        7 |        0 |    100% |           |
@@ -53,7 +53,7 @@
 | app/schemas/health\_check.py                   |        2 |        0 |    100% |           |
 | app/schemas/token.py                           |       19 |        2 |     89% |    16, 30 |
 | app/schemas/user.py                            |       33 |        0 |    100% |           |
-| app/services/auth\_service.py                  |      140 |       26 |     81% |67-71, 92, 186, 195-198, 274-287, 316-325, 381-382, 430-431 |
+| app/services/auth\_service.py                  |      140 |       13 |     91% |67-71, 92, 186, 195-198, 381-382, 430-431 |
 | app/services/back\_blaze\_b2.py                |      229 |        4 |     98% |282, 325, 512-513 |
 | app/services/cache/\_\_init\_\_.py             |        6 |        0 |    100% |           |
 | app/services/cache/base.py                     |       45 |        0 |    100% |           |
@@ -77,7 +77,7 @@
 | app/services/types/auth.py                     |        5 |        0 |    100% |           |
 | app/services/types/email.py                    |       77 |        4 |     95% |78, 92, 95-96 |
 | app/web.py                                     |       13 |        0 |    100% |           |
-| **TOTAL**                                      | **2844** |  **247** | **91%** |           |
+| **TOTAL**                                      | **2844** |  **228** | **92%** |           |
 
 
 ## Setup coverage badge
