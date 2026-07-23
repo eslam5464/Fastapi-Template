@@ -25,9 +25,10 @@ Examples:
 ## Quality Commands
 
 ```bash
-uv run black --line-length=100 app
-uv run isort --profile=black --line-length=100 app
+uv run ruff check --fix app
+uv run ruff format app
 uv run mypy app --config-file=pyproject.toml
+uv run tach check
 uv run bandit -c pyproject.toml -r app
 uv run pytest
 ```

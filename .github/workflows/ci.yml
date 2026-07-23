@@ -32,10 +32,11 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-groups --all-extras --frozen
 
-      # Runs the exact same hooks defined in .pre-commit-config.yaml (black, isort,
-      # autoflake, mypy, bandit, detect-secrets) as a required status check - so a
-      # contributor who never installed pre-commit locally still gets blocked, and
-      # this stays a single source of truth alongside pre-commit.ci.
+      # Runs the exact same hooks defined in .pre-commit-config.yaml (ruff, tach,
+      # mypy, bandit, detect-secrets, check-jsonschema) as a required status check -
+      # so a contributor who never installed pre-commit locally still gets blocked,
+      # and this stays a single source of truth alongside pre-commit.ci. The
+      # commitizen hook is commit-msg-staged only and doesn't run in --all-files.
       - name: Cache pre-commit environments
         uses: actions/cache@v4
         with:

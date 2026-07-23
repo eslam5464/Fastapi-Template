@@ -13,50 +13,17 @@ repos:
       - id: name-tests-test
         exclude: ^tests/(conftest|schemas|utils)\.py$
 
-  - repo: https://github.com/PyCQA/autoflake
-    rev: v2.3.1
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.22
     hooks:
-      - id: autoflake
-        args:
-          - --in-place
-          - --remove-all-unused-imports
-          - --remove-unused-variables
-          - --recursive
-          - --ignore-init-module-imports
-
-  - repo: local
-    hooks:
-      - id: pyflakes
-        name: pyflakes (unused imports/variables safety net)
-        # autoflake silently fails to apply fixes on Windows for files with many
-        # simultaneous unused-variable candidates (confirmed bug in this setup),
-        # while pyflakes itself detects them correctly on every platform. This runs
-        # after autoflake so autoflake gets first crack at fixing what it can, and
-        # fails loudly on anything left over instead of reporting a false "Passed".
-        # app/alembic is excluded: env.py's `from app.models import *` is required
-        # Alembic boilerplate (registers models with metadata for autogenerate),
-        # not a real unused-import bug; pyflakes has no CLI way to exclude a single
-        # file's wildcard-import warning, so the whole directory is listed out here
-        # instead of just passing "app" (add new top-level app/ packages to this
-        # list if any are added).
-        entry: uv run pyflakes app/api app/core app/middleware app/models app/repos app/schemas app/services app/main.py app/web.py app/__init__.py
-        language: system
-        pass_filenames: false
-        files: ^app/
-
-  - repo: https://github.com/pycqa/isort
-    rev: 7.0.0
-    hooks:
-      - id: isort
-        args: [--profile=black, --line-length=100]
-        exclude: (__init__.py$|migrations/)
-
-  - repo: https://github.com/psf/black
-    rev: 25.9.0
-    hooks:
-      - id: black
-        args: [--line-length=100]
-        exclude: (__init__.py$|migrations/)
+      # Replaces autoflake (unused imports/variables) + pyflakes + isort.
+      - id: ruff
+        args: [--fix]
+        exclude: ^app/alembic/versions/
+      # Replaces black. Ruff's formatter is black-compatible; expect a one-time
+      # reformat diff the first time this runs.
+      - id: ruff-format
+        exclude: ^app/alembic/versions/
 
   - repo: local
     hooks:
@@ -71,8 +38,18 @@ repos:
         pass_filenames: false
         files: ^app/
 
+      - id: tach
+        name: tach (module boundary check)
+        # Enforces the layering declared in tach.toml (core -> models/schemas ->
+        # repos -> services -> middleware/api). Needs the project's own venv to
+        # resolve `app.*` imports, same reasoning as the mypy hook above.
+        entry: uv run tach check
+        language: system
+        pass_filenames: false
+        files: ^app/
+
   - repo: https://github.com/PyCQA/bandit
-    rev: "1.8.6"
+    rev: "1.9.4"
     hooks:
       - id: bandit
         args: [-c, pyproject.toml]
@@ -86,12 +63,28 @@ repos:
         args: [--baseline, .secrets.baseline]
         exclude: ^(uv\.lock|htmlcov/|\.venv/)
 
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.37.4
+    hooks:
+      - id: check-github-workflows
+      - id: check-dependabot
+
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.16.5
+    hooks:
+      # Lints the commit message being authored against Conventional Commits.
+      # Only runs at the commit-msg stage, not against arbitrary files - see
+      # docs/guides/contributing.md for the one-time `pre-commit install
+      # --hook-type commit-msg` setup this requires.
+      - id: commitizen
+        stages: [commit-msg]
+
 ci:
   autofix_prs: true
   autofix_commit_msg: "style: auto-fixes from pre-commit.ci"
   autoupdate_schedule: weekly
   # pre-commit.ci runs hooks in its own sandbox with no access to this project's
-  # uv-managed venv, so `language: system` hooks (mypy, pyflakes) can't run there.
+  # uv-managed venv, so `language: system` hooks (mypy, tach) can't run there.
   # Both are still enforced locally via pre-commit and as a required check in
   # .github/workflows/ci.yml.
-  skip: [mypy, pyflakes]
+  skip: [mypy, tach]

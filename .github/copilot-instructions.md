@@ -22,14 +22,15 @@ Developer commands
 - Setup: uv sync --all-groups --all-extras
 - Run: python main.py
 - Tests: uv run pytest
-- Format: uv run black --line-length=100 app && uv run isort --profile=black --line-length=100 app
+- Format: uv run ruff check --fix app && uv run ruff format app
 - Type check: uv run mypy app --config-file=pyproject.toml
+- Module boundaries: uv run tach check
 - Security lint: uv run bandit -c pyproject.toml -r app
 - Secret scan: uv run detect-secrets scan --baseline .secrets.baseline
 - All of the above at once: uv run pre-commit run --all-files
 
 CI gates (.github/workflows/)
-- ci.yml `lint` job: runs the same pre-commit hooks as above (black, isort, autoflake, mypy, bandit, detect-secrets) — required to pass before merge.
+- ci.yml `lint` job: runs the same pre-commit hooks as above (ruff, tach, mypy, bandit, detect-secrets, check-jsonschema) — required to pass before merge.
 - ci.yml `test` job: pytest against real Postgres + Redis service containers, with a coverage PR comment.
 - codeql.yml and dependency-review.yml: static security analysis and dependency vulnerability checks on every PR.
 - .github/CODEOWNERS auto-requests review from @Eslam5464 on every PR, including Dependabot's.

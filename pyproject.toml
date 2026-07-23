@@ -61,67 +61,36 @@ test = [
 ]
 dev = [
     "bandit[toml]>=1.8.6",
-    "black>=25.9.0",
     "detect-secrets>=1.5.0",
     "mypy>=1.13.0",
-    "pyflakes>=3.2.0",
+    "ruff>=0.14.0",
+    "tach>=0.29.0",
     "types-aiofiles>=25.1.0",
 ]
 
-[tool.black]
+[tool.ruff]
 line-length = 100
-exclude = '''
-/(
-    \.git
-    | \.hg
-    | \.mypy_cache
-    | \.tox
-    | \.venv
-    | _build
-    | buck-out
-    | build
-    | dist
-    | __pycache__
-    | .*/__init__.py
-)/
-'''
+target-version = "py313"
+extend-exclude = ["app/alembic/versions"]
 
-[tool.isort]
-profile = "black"
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-line_length = 100
-use_parentheses = true
-ensure_newline_before_comments = true
-remove_redundant_aliases = true
-combine_as_imports = true
-combine_star = true
-skip_glob = [
-    "*/__init__.py",
-    "**/__pycache__/*",
-    ".venv/*",
-    "venv/*",
-    "env/*"
-]
-skip = [
-    ".gitignore",
-    ".dockerignore",
-    ".env",
-    ".venv",
-    "venv",
-    "env",
-    "__init__.py",
-]
-extend_skip = [".md", ".json"]
-sections = [
-    "FUTURE",
-    "STDLIB",
-    "THIRDPARTY",
-    "FIRSTPARTY",
-    "LOCALFOLDER"
-]
-default_section = "THIRDPARTY"
+[tool.ruff.lint]
+# E/W (pycodestyle) + F (pyflakes, replaces autoflake's unused import/variable
+# job) + I (isort). Kept to what the previous tools already enforced rather than
+# opting into new categories (UP, B, etc.) that would surface new findings.
+select = ["E", "F", "I", "W"]
+# E501 (line too long): ruff-format doesn't wrap comments/docstrings/strings to
+# fit line-length (only code), same as black before it - lint-enforcing E501 on
+# top of that just flags content the formatter was never going to fix anyway.
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# __init__.py files re-export names for the package's public API; F401 (unused
+# import) and I001 (import order) previously didn't apply here either, since
+# autoflake ran with --ignore-init-module-imports and isort skipped __init__.py
+# outright - manual ordering there (e.g. base classes before dependents) matters.
+"__init__.py" = ["F401", "I001"]
+# pytest.importorskip(...) must run before the imports it's guarding.
+"tests/services/email/resend_test.py" = ["E402"]
 
 [tool.mypy]
 python_version = "3.13"
@@ -177,6 +146,9 @@ disable_error_code = ["prop-decorator"]
 
 [tool.bandit]
 exclude_dirs = ["tests", ".venv", "alembic/versions"]
+
+[tool.commitizen]
+name = "cz_conventional_commits"
 
 [tool.coverage.run]
 # Without this, coverage.py records absolute file paths in .coverage. The

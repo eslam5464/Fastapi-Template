@@ -20,9 +20,10 @@
 - [ ] Scope is focused and documented
 - [ ] Tests added or updated
 - [ ] uv run pytest passes
-- [ ] uv run pre-commit run --all-files passes (black, isort, autoflake, mypy, bandit, detect-secrets)
+- [ ] uv run pre-commit run --all-files passes (ruff, tach, mypy, bandit, detect-secrets, check-jsonschema)
 - [ ] Docs updated (including docs/llms.txt when relevant)
 - [ ] Breaking API changes called out clearly
+- [ ] Commit messages follow Conventional Commits (enforced by the commitizen hook — see below)
 
 ## CI
 
@@ -33,3 +34,14 @@ Every PR runs, and must pass, all of the following before it's mergeable:
 - `codeql.yml` and `dependency-review.yml` — static security analysis and dependency vulnerability scanning.
 
 `.github/CODEOWNERS` auto-requests review on every PR.
+
+## Commit Messages
+
+Commit messages are linted against [Conventional Commits](https://www.conventionalcommits.org/)
+by the `commitizen` pre-commit hook (e.g. `fix: ...`, `feat: ...`, `docs: ...`, `chore: ...`).
+This hook runs at the `commit-msg` git stage, which the default `pre-commit install` does not
+wire up — run this once after cloning:
+
+```bash
+uv run pre-commit install --hook-type commit-msg
+```
