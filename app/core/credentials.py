@@ -3,6 +3,7 @@ from pathlib import Path
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
+# --- APPLE_PAY_START ---
 class ApplePayStoreCredentials(BaseModel):
     """
     Apple Pay Store Connect API credentials.
@@ -34,6 +35,9 @@ class ApplePayStoreCredentials(BaseModel):
         ...,
         description="App bundle identifier from Apple Pay Store Connect",
     )
+
+
+# --- APPLE_PAY_END ---
 
 
 class FirebaseServiceAccount(BaseModel):

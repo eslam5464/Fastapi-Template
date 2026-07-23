@@ -1,0 +1,51 @@
+project_name:
+  type: str
+  help: "Human-readable project name"
+  default: "FastAPI Template"
+
+project_slug:
+  type: str
+  help: "Slug used for package/container/schema naming (lowercase, hyphen-separated)"
+  default: "{{ project_name.lower() | replace(' ', '-') | replace('_', '-') }}"
+
+project_description:
+  type: str
+  help: "Short description used in pyproject.toml and README"
+  default: "A production-ready FastAPI backend with async PostgreSQL, JWT auth, and clean architecture."
+
+author_name:
+  type: str
+  help: "Your name, used in LICENSE copyright"
+  default: "Eslam"
+
+author_email:
+  type: str
+  help: "Your email, used in pyproject.toml"
+  default: "eslam5464@users.noreply.github.com"
+
+github_username:
+  type: str
+  help: "GitHub username or org, used in README badges and CODEOWNERS"
+  default: "eslam5464"
+
+python_version:
+  type: str
+  help: "Python version to target"
+  default: "3.13"
+
+include_apple_pay:
+  type: bool
+  help: "Include the Apple Pay in-app purchase verification module?"
+  default: true
+
+_templates_suffix: ".jinja"
+
+_jinja_extensions:
+  - "jinja2_time.TimeExtension"
+
+_exclude:
+  - "copier.yml"
+  - ".github/workflows/template-ci.yml"
+
+_tasks:
+  - ["{{ _copier_python }}", "scripts/generate/post_gen.py", "{{ include_apple_pay }}"]

@@ -3,6 +3,7 @@ from faker import Faker
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app import repos
+from app.core.config import settings
 from app.models import User
 from app.schemas import UserCreate, UserUpdate
 
@@ -519,7 +520,7 @@ class TestBaseRepositoryCustomQuery:
         created_user = await repo.create_one(user_data)
 
         # Execute custom query with schema prefix
-        schema = "fastapi_template"  # From config
+        schema = settings.postgres_db_schema
         query = f'SELECT * FROM {schema}.{User.__tablename__} WHERE "id" = {created_user.id}'
         result = await repo.custom_query(query)
 
@@ -546,7 +547,7 @@ class TestBaseRepositoryCustomQuery:
         await repo.create_bulk(users_data)
 
         # Count users with schema prefix
-        schema = "fastapi_template"  # From config
+        schema = settings.postgres_db_schema
         query = f"SELECT COUNT(*) FROM {schema}.{User.__tablename__}"
         result = await repo.custom_query(query)
 

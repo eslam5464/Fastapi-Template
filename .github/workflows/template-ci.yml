@@ -1,0 +1,102 @@
+name: Template CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  bake-and-smoke-test:
+    name: Bake template (apple_pay=${{ matrix.include_apple_pay }}) and run generated project's tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include_apple_pay: ["true", "false"]
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: "postgres"
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install libpq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libpq-dev
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install "$(cat .python-version)"
+
+      - name: Install template tooling
+        run: uv sync --group template
+
+      - name: Bake template
+        run: |
+          uv run copier copy . /tmp/baked --data include_apple_pay=${{ matrix.include_apple_pay }} --defaults --trust --quiet
+
+      - name: Assert no leftover Jinja syntax
+        run: |
+          ! grep -R --include='*' -l -E '\{\{ ?(project_name|project_slug|project_description|author_name|author_email|github_username|python_version)|\{% ?if include_apple_pay' /tmp/baked --exclude-dir=.git
+
+      - name: Install generated project's dependencies
+        working-directory: /tmp/baked
+        run: uv sync --all-groups --all-extras --frozen
+
+      - name: Configure environment
+        working-directory: /tmp/baked
+        run: |
+          cp .env.example .env
+          sed -i 's/^CURRENT_ENVIRONMENT=.*/CURRENT_ENVIRONMENT=dev/' .env
+          sed -i 's/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=postgres/' .env
+          sed -i 's/^REDIS_PASS=.*/REDIS_PASS=/' .env
+          sed -i 's/^REDIS_USER=.*/REDIS_USER=/' .env
+
+      - name: Generate dummy Apple Pay test credentials
+        if: matrix.include_apple_pay == 'true'
+        working-directory: /tmp/baked
+        run: |
+          uv run python -c "from cryptography.hazmat.primitives.asymmetric import ec; from cryptography.hazmat.primitives import serialization; key = ec.generate_private_key(ec.SECP256R1()); open('apple_pay_test_key.p8', 'wb').write(key.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption()))"
+          echo "dummy cert content for CI tests" > apple_pay_test_root_ca.cer
+          sed -i 's#^APPLE_PAY_STORE_PRIVATE_KEY_PATH=.*#APPLE_PAY_STORE_PRIVATE_KEY_PATH=apple_pay_test_key.p8#' .env
+          sed -i 's#^APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH=.*#APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH=apple_pay_test_root_ca.cer#' .env
+
+      - name: Create test database
+        working-directory: /tmp/baked
+        run: >
+          uv run python -c "import psycopg; conn = psycopg.connect('host=localhost port=5432
+          user=postgres password=postgres dbname=postgres', autocommit=True);
+          conn.execute('CREATE DATABASE postgres_test'); conn.close()"
+
+      - name: Run migrations
+        working-directory: /tmp/baked
+        run: uv run alembic upgrade head
+
+      - name: Run generated project's test suite
+        working-directory: /tmp/baked
+        run: uv run pytest

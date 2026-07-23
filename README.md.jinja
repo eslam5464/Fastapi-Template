@@ -1,11 +1,11 @@
-# FastAPI Template
+# {{ project_name }}
 
-[![CI](https://github.com/eslam5464/Fastapi-Template/actions/workflows/ci.yml/badge.svg)](https://github.com/eslam5464/Fastapi-Template/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/eslam5464/Fastapi-Template/actions/workflows/codeql.yml/badge.svg)](https://github.com/eslam5464/Fastapi-Template/actions/workflows/codeql.yml)
-[![Coverage](https://raw.githubusercontent.com/eslam5464/Fastapi-Template/python-coverage-comment-action-data/badge.svg)](https://github.com/eslam5464/Fastapi-Template/tree/python-coverage-comment-action-data)
+[![CI](https://github.com/{{ github_username }}/{{ project_slug }}/actions/workflows/ci.yml/badge.svg)](https://github.com/{{ github_username }}/{{ project_slug }}/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/{{ github_username }}/{{ project_slug }}/actions/workflows/codeql.yml/badge.svg)](https://github.com/{{ github_username }}/{{ project_slug }}/actions/workflows/codeql.yml)
+[![Coverage](https://raw.githubusercontent.com/{{ github_username }}/{{ project_slug }}/python-coverage-comment-action-data/badge.svg)](https://github.com/{{ github_username }}/{{ project_slug }}/tree/python-coverage-comment-action-data)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A production-ready FastAPI project template with modern best practices, async support, JWT authentication, and PostgreSQL integration.
+{{ project_description }}
 
 ## ✨ Features
 
@@ -17,13 +17,13 @@ A production-ready FastAPI project template with modern best practices, async su
 - **🐳 Docker Compose** - Backend, Postgres, and Redis ready to run
 - **🧪 CI & Testing** - Pytest with coverage gating, plus lint/type/security checks in GitHub Actions
 
-Plus optional integrations for caching, background jobs, cloud storage, Firebase, Apple Pay, and email delivery. For the full list of integrations and services, see **[docs/features.md](docs/features.md)**.
+Plus optional integrations for caching, background jobs, cloud storage, Firebase{% if include_apple_pay %}, Apple Pay{% endif %}, and email delivery. For the full list of integrations and services, see **[docs/features.md](docs/features.md)**.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- [Python 3.13+](https://www.python.org/downloads/)
+- [Python {{ python_version }}+](https://www.python.org/downloads/)
 - [PostgreSQL](https://www.postgresql.org/download/)
 - [uv](https://docs.astral.sh/uv/)
 
@@ -32,8 +32,8 @@ Plus optional integrations for caching, background jobs, cloud storage, Firebase
 1. **Clone the repository**
 
    ```bash
-   git clone <your-repo-url>
-   cd FastApi-Template
+   git clone https://github.com/{{ github_username }}/{{ project_slug }}.git
+   cd {{ project_slug }}
    ```
 
 2. **Install dependencies**
@@ -84,7 +84,7 @@ Plus optional integrations for caching, background jobs, cloud storage, Firebase
 
    ```bash
       # Create database
-      createdb fastapi_template
+      createdb {{ project_slug.replace('-', '_') }}
 
       # Run migrations
       alembic upgrade head
@@ -287,7 +287,7 @@ POSTGRES_PORT=5432
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=your-postgres-password
 POSTGRES_DB=postgres
-POSTGRES_DB_SCHEMA=fastapi_template
+POSTGRES_DB_SCHEMA={{ project_slug.replace('-', '_') }}
 
 # Security
 SECRET_KEY=your-secret-key
@@ -320,14 +320,16 @@ brevo_api_key=your_brevo_api_key_here
 
 ## 📦 Dependencies
 
-Core dependencies (FastAPI, SQLAlchemy, Alembic, Pydantic, Uvicorn) are always installed. Optional integrations (Redis, Celery, Firebase, GCS, BackBlaze, Apple Pay, email providers) are opt-in extras — install only what you need:
+Core dependencies (FastAPI, SQLAlchemy, Alembic, Pydantic, Uvicorn) are always installed. Optional integrations (Redis, Celery, Firebase, GCS, BackBlaze{% if include_apple_pay %}, Apple Pay{% endif %}, email providers) are opt-in extras — install only what you need:
 
 ```bash
 uv sync --extra email
 uv sync --extra cloud-service
 uv sync --extra cache
 uv sync --extra task-queue
+{% if include_apple_pay -%}
 uv sync --extra apple-services
+{% endif -%}
 ```
 
 See **[docs/features.md](docs/features.md)** for what each extra provides and how to configure it.

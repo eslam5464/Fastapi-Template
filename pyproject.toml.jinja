@@ -1,9 +1,9 @@
 [project]
-name = "FastApi-Template"
-version = "1.0.16"
-description = "A FastAPI project template"
+name = "{{ project_slug }}"
+version = "0.1.0"
+description = "{{ project_description }}"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">={{ python_version }}"
 dependencies = [
     "aiofiles>=25.1.0",
     "aiohttp>=3.13.2",
@@ -47,9 +47,11 @@ task-queue = [
     "celery[redis]>=5.3.1",
     "redis>=7.1.0",
 ]
+{% if include_apple_pay -%}
 apple-services = [
     "app-store-server-library[async]>=2.0.0",
 ]
+{% endif %}
 
 [dependency-groups]
 test = [
@@ -69,10 +71,6 @@ dev = [
     "ruff>=0.14.0",
     "tach>=0.29.0",
     "types-aiofiles>=25.1.0",
-]
-template = [
-    "copier>=9.15.0",
-    "jinja2-time>=0.2.0",
 ]
 
 [tool.ruff]
@@ -100,7 +98,7 @@ ignore = ["E501"]
 "tests/services/email/resend_test.py" = ["E402"]
 
 [tool.mypy]
-python_version = "3.13"
+python_version = "{{ python_version }}"
 plugins = ["pydantic.mypy"]
 check_untyped_defs = true
 warn_unused_ignores = true
@@ -156,7 +154,7 @@ exclude_dirs = ["tests", ".venv", "alembic/versions"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "1.0.16"
+version = "0.1.0"
 version_files = ["pyproject.toml:version"]
 tag_format = "$version"
 update_changelog_on_bump = true
