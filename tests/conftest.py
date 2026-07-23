@@ -1,9 +1,7 @@
-import asyncio
 from datetime import UTC, datetime, timedelta
 from typing import AsyncGenerator
 
 import pytest
-import pytest_asyncio
 from faker import Faker
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
@@ -30,20 +28,12 @@ def pre_hashed_password() -> str:
     return _PASSWORD_HASH.hash(DEFAULT_PASSWORD)
 
 
-@pytest.fixture(scope="session")
-def event_loop():
-    """Create an instance of the default event loop for each test case."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
-
-
 @pytest.fixture
 def anyio_backend():
     return "asyncio"
 
 
-@pytest_asyncio.fixture(scope="function")  # Change to function scope
+@pytest.fixture
 async def test_app() -> AsyncGenerator[FastAPI, None]:
     """Create a FastAPI test application with an async database session."""
     # Override the database settings for testing.
@@ -90,20 +80,20 @@ async def test_app() -> AsyncGenerator[FastAPI, None]:
         await test_engine.dispose()
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def client(test_app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
     """Create an async HTTP client for testing."""
     async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
         yield ac
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def faker() -> Faker:
     """Create a Faker instance for generating test data."""
     return Faker()
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def db_session(test_app: FastAPI) -> AsyncGenerator[AsyncSession, None]:
     """Create a new database session for a test."""
     # NullPool + dispose(): see test_app fixture above for why this matters.
@@ -118,7 +108,7 @@ async def db_session(test_app: FastAPI) -> AsyncGenerator[AsyncSession, None]:
         await test_engine.dispose()
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def user(db_session: AsyncSession, faker: Faker, pre_hashed_password: str) -> User:
     """Create a test user."""
     user_data = UserCreate(
@@ -132,7 +122,7 @@ async def user(db_session: AsyncSession, faker: Faker, pre_hashed_password: str)
     return user_db
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def other_user(
     db_session: AsyncSession,
     faker: Faker,
@@ -150,12 +140,12 @@ async def other_user(
     return user_db
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def default_password() -> str:
     return DEFAULT_PASSWORD
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def token(user: User) -> Token:
     """Create a test token."""
     access_token = jwt.encode(

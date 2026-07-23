@@ -4,7 +4,6 @@ from typing import AsyncGenerator
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
-import pytest_asyncio
 from b2sdk._internal.bucket import Bucket
 from b2sdk._internal.file_version import FileVersion
 from b2sdk.v2 import B2Api
@@ -319,7 +318,7 @@ def sample_bucket_folder(faker_instance: Faker) -> BucketFolder:
     )
 
 
-@pytest_asyncio.fixture
+@pytest.fixture
 async def async_temp_file(tmp_path: Path, faker_instance: Faker) -> AsyncGenerator[Path, None]:
     """Create a temporary file that gets cleaned up."""
     test_file = tmp_path / f"test_{faker_instance.uuid4()}.txt"

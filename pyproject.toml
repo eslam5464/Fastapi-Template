@@ -53,10 +53,13 @@ apple-services = [
 
 [dependency-groups]
 test = [
+    # anyio's pytest plugin (its own, not pytest-asyncio) is what runs every
+    # @pytest.mark.anyio test in this suite - previously a transitive dep of
+    # httpx/fastapi, made explicit since tests rely on it directly.
+    "anyio>=4.11.0",
     "faker>=37.8.0",
     "httpx>=0.28.1",
     "pytest>=8.4.2",
-    "pytest-asyncio>=1.2.0",
     "pytest-cov>=7.0.0",
 ]
 dev = [
@@ -176,5 +179,3 @@ markers = [
     "slow: marks tests as slow running tests",
     "websocket: marks tests that use websocket connections"
 ]
-asyncio_mode = "auto"
-asyncio_default_fixture_loop_scope = "function"
