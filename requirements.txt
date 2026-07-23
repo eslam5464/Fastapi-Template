@@ -85,7 +85,7 @@ proto-plus==1.26.1
 protobuf==6.33.0
 psycopg==3.3.2
 pwdlib==0.3.0
-pyasn1==0.6.1
+pyasn1==0.6.4
 pyasn1-modules==0.4.2
 pycparser==2.23 ; implementation_name != 'PyPy'
 pydantic==2.12.3
