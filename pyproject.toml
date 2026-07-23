@@ -1,6 +1,6 @@
 [project]
 name = "FastApi-Template"
-version = "0.1.0"
+version = "1.0.16"
 description = "A FastAPI project template"
 readme = "README.md"
 requires-python = ">=3.13"
@@ -152,6 +152,10 @@ exclude_dirs = ["tests", ".venv", "alembic/versions"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
+version = "1.0.16"
+version_files = ["pyproject.toml:version"]
+tag_format = "$version"
+update_changelog_on_bump = true
 
 [tool.coverage.run]
 # Without this, coverage.py records absolute file paths in .coverage. The

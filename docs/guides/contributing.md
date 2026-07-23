@@ -45,3 +45,5 @@ wire up — run this once after cloning:
 ```bash
 uv run pre-commit install --hook-type commit-msg
 ```
+
+See [Versioning](versioning.md) for how this commit history drives release version bumps.

@@ -122,6 +122,7 @@ Detailed documentation is available in the [docs/](docs/) folder:
 - **[Getting Started](docs/guides/getting-started.md)** - Setup and first run
 - **[Development Guide](docs/guides/development.md)** - Local workflow and quality commands
 - **[Contributing](docs/guides/contributing.md)** - Contribution and PR standards
+- **[Versioning](docs/guides/versioning.md)** - SemVer rules and how to bump the release version
 - **[Deployment Guide](docs/guides/deployment.md)** - Production deployment checklist
 - **[Strategy Vision](docs/strategy/vision.md)** - Product and technical direction
 - **[Roadmap](docs/strategy/roadmap.md)** - Milestones and priorities
