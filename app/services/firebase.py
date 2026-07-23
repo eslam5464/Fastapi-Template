@@ -10,7 +10,8 @@ from firebase_admin.exceptions import FirebaseError
 from loguru import logger
 
 from app.core.config import settings
-from app.schemas.firebase import DecodedFirebaseTokenResponse, FirebaseServiceAccount
+from app.core.credentials import FirebaseServiceAccount
+from app.schemas.firebase import DecodedFirebaseTokenResponse
 
 
 @dataclass

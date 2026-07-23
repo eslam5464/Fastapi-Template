@@ -24,7 +24,9 @@ from appstoreserverlibrary.models.TransactionInfoResponse import (
 from appstoreserverlibrary.signed_data_verifier import SignedDataVerifier
 from loguru import logger
 
-from app.core.config import Environment as AppEnvironment, settings
+from app.core.config import Environment as AppEnvironment
+from app.core.config import settings
+from app.core.credentials import ApplePayStoreCredentials
 from app.core.exceptions.apple_pay import (
     AppStoreClientNotInitializedException,
     AppStoreConnectionAbortedException,
@@ -36,7 +38,6 @@ from app.core.exceptions.apple_pay import (
     AppStoreRateLimitExceededException,
     AppStoreValidationException,
 )
-from app.schemas import ApplePayStoreCredentials
 from app.services.cache.manager import cache_manager
 
 
@@ -330,8 +331,7 @@ class ApplePay:
         actual_product_id = transaction_info.productId
         if actual_product_id != expected_product_id:
             logger.error(
-                f"Product ID mismatch. Expected: {expected_product_id}, "
-                f"Got: {actual_product_id}"
+                f"Product ID mismatch. Expected: {expected_product_id}, Got: {actual_product_id}"
             )
             raise AppStoreValidationException(
                 f"Product ID mismatch. Expected '{expected_product_id}', "

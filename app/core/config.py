@@ -9,7 +9,7 @@ from pydantic import Field, SecretStr, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
-from app.schemas import ApplePayStoreCredentials, FirebaseServiceAccount
+from app.core.credentials import ApplePayStoreCredentials, FirebaseServiceAccount
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 PROJECT_TOML_PATH = PROJECT_DIR / "pyproject.toml"
