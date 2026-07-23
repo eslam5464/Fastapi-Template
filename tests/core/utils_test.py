@@ -364,7 +364,7 @@ class TestEstimateUploadTime:
 
         with patch("aiohttp.ClientSession.post", return_value=mock_response) as mock_post:
             with patch("time.time", side_effect=[0.0, 1.0]):  # 1 second upload
-                result = await estimate_upload_time(
+                await estimate_upload_time(
                     url="example.com", path="/upload", port=443, file_size_mb=1
                 )
 
@@ -381,7 +381,7 @@ class TestEstimateUploadTime:
 
         with patch("aiohttp.ClientSession.post", return_value=mock_response) as mock_post:
             with patch("time.time", side_effect=[0.0, 1.0]):
-                result = await estimate_upload_time(
+                await estimate_upload_time(
                     url="example.com", path="/upload", port=80, file_size_mb=1
                 )
 
@@ -398,7 +398,7 @@ class TestEstimateUploadTime:
 
         with patch("aiohttp.ClientSession.post", return_value=mock_response) as mock_post:
             with patch("time.time", side_effect=[0.0, 1.0]):
-                result = await estimate_upload_time(
+                await estimate_upload_time(
                     url="example.com", path="/upload", port=8080, file_size_mb=1
                 )
 
@@ -415,7 +415,7 @@ class TestEstimateUploadTime:
 
         with patch("aiohttp.ClientSession.post", return_value=mock_response) as mock_post:
             with patch("time.time", side_effect=[0.0, 1.0]):
-                result = await estimate_upload_time(
+                await estimate_upload_time(
                     url="example.com", path="/upload", port=8443, file_size_mb=1
                 )
 
@@ -432,7 +432,7 @@ class TestEstimateUploadTime:
 
         with patch("aiohttp.ClientSession.post", return_value=mock_response) as mock_post:
             with patch("time.time", side_effect=[0.0, 1.0]):
-                result = await estimate_upload_time(
+                await estimate_upload_time(
                     url="https://example.com", path="/upload", port=443, file_size_mb=1
                 )
 
@@ -449,7 +449,7 @@ class TestEstimateUploadTime:
 
         with patch("aiohttp.ClientSession.post", return_value=mock_response) as mock_post:
             with patch("time.time", side_effect=[0.0, 1.0]):
-                result = await estimate_upload_time(
+                await estimate_upload_time(
                     url="http://example.com", path="/upload", port=80, file_size_mb=1
                 )
 
@@ -468,7 +468,10 @@ class TestEstimateUploadTime:
             # Simulate 0.5 second upload (2 MB/s speed)
             with patch("time.time", side_effect=[0.0, 0.5]):
                 result = await estimate_upload_time(
-                    url="example.com", path="/upload", port=443, file_size_mb=10  # 10 MB file
+                    url="example.com",
+                    path="/upload",
+                    port=443,
+                    file_size_mb=10,  # 10 MB file
                 )
 
                 # Upload speed: 1 MB / 0.5s = 2 MB/s

@@ -125,7 +125,7 @@ class TestShutdown:
     async def test_shutdown_dependencies_handles_exceptions(self):
         """Test that shutdown handles exceptions gracefully."""
         with patch("app.main.cache_manager.close", new_callable=AsyncMock) as mock_cache_close:
-            with patch("app.main.rate_limiter.close", new_callable=AsyncMock) as mock_rate_close:
+            with patch("app.main.rate_limiter.close", new_callable=AsyncMock):
                 # Simulate cache close failing
                 mock_cache_close.side_effect = Exception("Cache close failed")
 

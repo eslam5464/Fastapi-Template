@@ -12,12 +12,12 @@ from appstoreserverlibrary.api_client import APIException
 from appstoreserverlibrary.models.ExtendReasonCode import ExtendReasonCode
 from faker import Faker
 
+from app.core.credentials import ApplePayStoreCredentials
 from app.core.exceptions.apple_pay import (
     AppStoreConnectionAbortedException,
     AppStoreNotFoundException,
     AppStoreValidationException,
 )
-from app.schemas import ApplePayStoreCredentials
 from app.services.payments.apple_pay import ApplePay
 
 

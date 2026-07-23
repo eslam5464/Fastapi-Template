@@ -12,7 +12,7 @@ from firebase_admin.auth import (
 from firebase_admin.exceptions import FirebaseError
 from firebase_admin.messaging import BatchResponse, SendResponse
 
-from app.schemas import FirebaseServiceAccount
+from app.core.credentials import FirebaseServiceAccount
 from app.schemas.firebase import DecodedFirebaseTokenResponse
 from app.services.firebase import Firebase
 
@@ -666,9 +666,9 @@ class TestFirebaseTokenOperations:
             )
             result = await firebase.verify_id_token("valid_token")
 
-            assert (
-                type(result) == DecodedFirebaseTokenResponse
-            ), f"Expected DecodedFirebaseTokenResponse, got {type(result)} with value {result}"
+            assert isinstance(result, DecodedFirebaseTokenResponse), (
+                f"Expected DecodedFirebaseTokenResponse, got {type(result)} with value {result}"
+            )
             assert result.uid is not None, f"{result} does not contain 'uid'"
             assert result.email is not None, f"{result} does not contain 'email'"
 

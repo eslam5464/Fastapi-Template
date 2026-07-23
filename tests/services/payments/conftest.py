@@ -6,7 +6,7 @@ from appstoreserverlibrary.models.Environment import Environment
 from appstoreserverlibrary.models.ExtendReasonCode import ExtendReasonCode
 from faker import Faker
 
-from app.schemas import ApplePayStoreCredentials
+from app.core.credentials import ApplePayStoreCredentials
 
 
 @pytest.fixture
@@ -24,9 +24,7 @@ def apple_pay_credentials(faker_instance: Faker) -> ApplePayStoreCredentials:
     private_key = f"""-----BEGIN REPLACE_ME-----
 {faker_instance.sha256()}
 {faker_instance.sha256()}
------END REPLACE_ME-----""".replace(
-        "REPLACE_ME", "PRIVATE KEY"
-    )
+-----END REPLACE_ME-----""".replace("REPLACE_ME", "PRIVATE KEY")
 
     return ApplePayStoreCredentials(
         private_key=private_key,

@@ -21,12 +21,12 @@ from appstoreserverlibrary.api_client import APIException
 from appstoreserverlibrary.models.Environment import Environment
 
 from app.core.config import Environment as AppEnvironment
+from app.core.credentials import ApplePayStoreCredentials
 from app.core.exceptions.apple_pay import (
     AppStoreException,
     AppStoreInvalidCredentialsException,
     AppStorePrivateKeyMissingException,
 )
-from app.schemas import ApplePayStoreCredentials
 from app.services.payments.apple_pay import ApplePay
 
 # ==================== PART 1: Initialization and Client Management ====================

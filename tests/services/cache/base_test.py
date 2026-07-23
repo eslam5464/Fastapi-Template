@@ -39,7 +39,7 @@ class TestBaseRedisClient:
         """Test initialization in non-local environment."""
         with patch("app.services.cache.base.settings.current_environment", Environment.DEV):
             with patch("app.services.cache.base.get_redis_pool", return_value=mock_redis_pool):
-                with patch("app.services.cache.base.Redis") as mock_redis:
+                with patch("app.services.cache.base.Redis"):
                     client = BaseRedisClient()
 
                     assert client.redis_client is not None

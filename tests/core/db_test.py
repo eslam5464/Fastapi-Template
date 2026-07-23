@@ -100,7 +100,7 @@ class TestSessionFactory:
         """Test that expire_on_commit is set to False."""
         # The factory should have expire_on_commit=False
         # This prevents expiration of objects after commit
-        assert SessionLocal.kw.get("expire_on_commit") == False
+        assert not SessionLocal.kw.get("expire_on_commit")
 
 
 @pytest.mark.anyio
@@ -131,7 +131,7 @@ class TestGetSession:
         # Mock commit
         with patch.object(session, "commit", new_callable=AsyncMock) as mock_commit:
             with patch.object(session, "rollback", new_callable=AsyncMock) as mock_rollback:
-                with patch.object(session, "close", new_callable=AsyncMock) as mock_close:
+                with patch.object(session, "close", new_callable=AsyncMock):
                     # Complete the generator normally
                     try:
                         await anext(session_generator)

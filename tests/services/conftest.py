@@ -13,16 +13,17 @@ from firebase_admin import App
 from firebase_admin.auth import ListUsersPage, UserRecord
 from firebase_admin.credentials import Certificate
 from firebase_admin.messaging import BatchResponse, SendResponse
-from gcloud.aio.storage import Bucket as GCSBucket, Storage
+from gcloud.aio.storage import Bucket as GCSBucket
+from gcloud.aio.storage import Storage
 from google.cloud.firestore import AsyncClient
 from redis.asyncio import ConnectionPool, Redis
 
 from app.core.config import Environment
+from app.core.credentials import FirebaseServiceAccount
 from app.schemas import (
     ApplicationData,
     BucketFile,
     BucketFolder,
-    FirebaseServiceAccount,
     ServiceAccount,
 )
 
