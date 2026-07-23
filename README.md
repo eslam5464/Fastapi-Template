@@ -106,12 +106,13 @@ The API will be available at `http://localhost:8799` with interactive documentat
 This repository doubles as a [Copier](https://copier.readthedocs.io/) template — generate a brand-new FastAPI project from it, with your own name, author info, and settings, without cloning and hand-editing:
 
 ```bash
-# Install copier once, as a standalone tool
-uv tool install copier   # or: pipx install copier
-
-# Generate a new project from this template
-copier copy gh:eslam5464/Fastapi-Template <new-project-dir> --trust
+# Run copier directly with uvx - no install/PATH setup needed
+uvx --with jinja2-time copier copy gh:eslam5464/Fastapi-Template <new-project-dir> --trust
 ```
+
+**Note:** `--with jinja2-time` is required because this template uses a Jinja extension (for the LICENSE copyright year) that isn't one of `copier`'s own dependencies — without it you'll see `Copier could not load some Jinja extensions: No module named 'jinja2_time'`. `uvx`/`uv tool run` installs it alongside `copier` for this one run only.
+
+**Alternative:** if you'd rather have `copier` installed permanently (e.g. for `copier update` later), use `uv tool install copier --with jinja2-time` instead. On Windows, that installs into a user tools directory that's often **not yet on PATH** in your *current* terminal session — if you see `'copier' is not recognized as an internal or external command` right after installing, either open a **new** terminal window, or run `uv tool update-shell` and then restart the terminal. The `uvx` command above sidesteps the PATH issue entirely since it doesn't need `copier` installed anywhere persistent.
 
 You'll be prompted for a project name, description, author name/email, GitHub username, Python version, and whether to include Apple Pay support. Everything identity-specific — the `pyproject.toml` name, Docker container names, the Postgres schema, `README.md`, `LICENSE`, `CODEOWNERS` — is filled in automatically; see [docs/features.md](docs/features.md) for what ships by default versus what's opt-in.
 
