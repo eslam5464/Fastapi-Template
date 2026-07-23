@@ -48,4 +48,4 @@ _exclude:
   - ".github/workflows/template-ci.yml"
 
 _tasks:
-  - ["{{ _copier_python }}", "scripts/generate/post_gen.py", "{{ include_apple_pay }}"]
+  - ["{{ _copier_python }}", "scripts/generate/post_gen.py", "{{ include_apple_pay }}", "{{ python_version }}"]

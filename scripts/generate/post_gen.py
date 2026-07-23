@@ -85,13 +85,27 @@ def remove_apple_pay() -> None:
         strip_marked_block(ci_path, *APPLE_PAY_CI_MARKERS)
 
 
-def regenerate_lockfile() -> None:
+def run_quiet(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+    return subprocess.run(cmd, check=True, capture_output=True, text=True, **kwargs)
+
+
+def regenerate_lockfile(python_version: str | None) -> None:
+    if python_version:
+        try:
+            run_quiet(["uv", "python", "install", python_version], timeout=120)
+        except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+            pass
+
     try:
-        subprocess.run(["uv", "lock"], check=True)
-    except (OSError, subprocess.CalledProcessError) as exc:
-        print(
-            f"Warning: could not regenerate uv.lock automatically ({exc}). Run 'uv sync' yourself."
-        )
+        run_quiet(["uv", "lock"])
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+        if python_version:
+            print(
+                f"Warning: could not regenerate uv.lock automatically (Python {python_version} "
+                f"may not be installed). Run 'uv python install {python_version}' then 'uv sync' yourself."
+            )
+        else:
+            print("Warning: could not regenerate uv.lock automatically. Run 'uv sync' yourself.")
 
 
 def remove_generate_tooling() -> None:
@@ -102,12 +116,9 @@ def remove_generate_tooling() -> None:
 
 def git_init_and_commit() -> None:
     try:
-        subprocess.run(["git", "init"], check=True)
-        subprocess.run(["git", "add", "-A"], check=True)
-        subprocess.run(
-            ["git", "commit", "-m", "chore: initial commit from copier template"],
-            check=True,
-        )
+        run_quiet(["git", "init"])
+        run_quiet(["git", "add", "-A"])
+        run_quiet(["git", "commit", "-m", "chore: initial commit from copier template"])
     except (OSError, subprocess.CalledProcessError) as exc:
         print(
             f"Warning: could not initialize git repository automatically ({exc}). Run 'git init' yourself."
@@ -116,10 +127,11 @@ def git_init_and_commit() -> None:
 
 def main() -> None:
     include_apple_pay = len(sys.argv) > 1 and sys.argv[1].strip().lower() == "true"
+    python_version = sys.argv[2] if len(sys.argv) > 2 else None
     if not include_apple_pay:
         remove_apple_pay()
 
-    regenerate_lockfile()
+    regenerate_lockfile(python_version)
     remove_generate_tooling()
     git_init_and_commit()
 
