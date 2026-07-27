@@ -30,8 +30,13 @@ github_username:
 
 python_version:
   type: str
-  help: "Python version to target"
-  default: "3.13"
+  help: "Python version to target (minimum 3.14 - this template's application code uses Python 3.14+ only syntax, e.g. PEP 758 except clauses)"
+  default: "3.14"
+  validator: >-
+    {% set parts = python_version.split('.') %}
+    {% if parts | length < 2 or parts[0] | int != 3 or parts[1] | int < 14 %}
+    Python version must be 3.14 or higher (this template's application code requires it).
+    {% endif %}
 
 include_apple_pay:
   type: bool
