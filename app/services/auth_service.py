@@ -192,7 +192,7 @@ class AuthService:
 
         try:
             return int(user_id)
-        except (ValueError, TypeError):
+        except ValueError, TypeError:
             pass
 
         return user_id
@@ -378,7 +378,7 @@ class AuthService:
                 issued_at=issued_at,
                 expires_at=expires_at,
             )
-        except (TypeError, ValueError, JWTClaimsError):
+        except TypeError, ValueError, JWTClaimsError:
             raise ValidationError("Token has invalid claims")
 
         # Check if all user tokens were revoked (e.g., password change)
@@ -427,7 +427,7 @@ class AuthService:
 
         try:
             user_id = self._parse_user_id(user_id)
-        except (TypeError, ValueError):
+        except TypeError, ValueError:
             raise ValidationError("Invalid refresh token")
 
         user = await self.user_repo.get_by_id(user_id)

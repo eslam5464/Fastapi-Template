@@ -31,7 +31,7 @@ def parse_user_id(user_id: str | int | uuid.UUID) -> str | int | uuid.UUID:
 
     try:
         return int(user_id)
-    except (ValueError, TypeError):
+    except ValueError, TypeError:
         pass
 
     return user_id

@@ -46,7 +46,7 @@ def _assert_no_leftover_jinja(root: Path) -> None:
             continue
         try:
             content = path.read_text(encoding="utf-8")
-        except (UnicodeDecodeError, ValueError):
+        except UnicodeDecodeError, ValueError:
             continue
         for token in _LEFTOVER_TOKENS:
             assert token not in content, f"leftover Jinja syntax ({token!r}) in {path}"

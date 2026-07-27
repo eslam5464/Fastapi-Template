@@ -222,19 +222,6 @@ wheels = [
 ]
 
 [[package]]
-name = "arrow"
-version = "1.4.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "python-dateutil" },
-    { name = "tzdata" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/b9/33/032cdc44182491aa708d06a68b62434140d8c50820a087fac7af37703357/arrow-1.4.0.tar.gz", hash = "sha256:ed0cc050e98001b8779e84d461b0098c4ac597e88704a655582b21d116e526d7", size = 152931, upload-time = "2025-10-18T17:46:46.761Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ed/c9/d7977eaacb9df673210491da99e6a247e93df98c715fc43fd136ce1d3d33/arrow-1.4.0-py3-none-any.whl", hash = "sha256:749f0769958ebdc79c173ff0b0670d59051a535fa26e8eba02953dc19eb43205", size = 68797, upload-time = "2025-10-18T17:46:45.663Z" },
-]
-
-[[package]]
 name = "asn1"
 version = "2.8.0"
 source = { registry = "https://pypi.org/simple" }
@@ -911,7 +898,6 @@ dev = [
 ]
 template = [
     { name = "copier" },
-    { name = "jinja2-time" },
 ]
 test = [
     { name = "anyio" },
@@ -968,10 +954,7 @@ dev = [
     { name = "tach", specifier = ">=0.29.0" },
     { name = "types-aiofiles", specifier = ">=25.1.0" },
 ]
-template = [
-    { name = "copier", specifier = ">=9.15.0" },
-    { name = "jinja2-time", specifier = ">=0.2.0" },
-]
+template = [{ name = "copier", specifier = ">=9.15.0" }]
 test = [
     { name = "anyio", specifier = ">=4.11.0" },
     { name = "faker", specifier = ">=37.8.0" },
@@ -1425,19 +1408,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/1a/27/fa186af4b246eb869ffca8ffa42d92b05abaec08c99329e74d88b2c46ec7/jinja2-ansible-filters-1.3.2.tar.gz", hash = "sha256:07c10cf44d7073f4f01102ca12d9a2dc31b41d47e4c61ed92ef6a6d2669b356b", size = 16945, upload-time = "2022-06-30T14:08:50.775Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/72/b9/313e8f2f2e9517ae050a692ae7b3e4b3f17cc5e6dfea0db51fe14e586580/jinja2_ansible_filters-1.3.2-py3-none-any.whl", hash = "sha256:e1082f5564917649c76fed239117820610516ec10f87735d0338688800a55b34", size = 18975, upload-time = "2022-06-30T14:08:49.571Z" },
-]
-
-[[package]]
-name = "jinja2-time"
-version = "0.2.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "arrow" },
-    { name = "jinja2" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/de/7c/ee2f2014a2a0616ad3328e58e7dac879251babdb4cb796d770b5d32c469f/jinja2-time-0.2.0.tar.gz", hash = "sha256:d14eaa4d315e7688daa4969f616f226614350c48730bfa1692d2caebd8c90d40", size = 5701, upload-time = "2016-06-08T23:36:52.454Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/6a/a1/d44fa38306ffa34a7e1af09632b158e13ec89670ce491f8a15af3ebcb4e4/jinja2_time-0.2.0-py2.py3-none-any.whl", hash = "sha256:d3eab6605e3ec8b7a0863df09cc1d23714908fa61aa6986a845c20ba488b4efa", size = 6360, upload-time = "2016-06-08T23:36:48.197Z" },
 ]
 
 [[package]]

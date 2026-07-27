@@ -62,7 +62,9 @@ def strip_marked_block(path: Path, start_marker: str, end_marker: str) -> None:
     start = next((i for i, line in enumerate(lines) if start_marker in line), None)
     end = next((i for i, line in enumerate(lines) if end_marker in line), None)
     if start is None or end is None:
-        raise SystemExit(f"post_gen.py: markers {start_marker!r}/{end_marker!r} not found in {path}")
+        raise SystemExit(
+            f"post_gen.py: markers {start_marker!r}/{end_marker!r} not found in {path}"
+        )
     del lines[start : end + 1]
 
     # Deleting the block can leave 3+ consecutive blank lines behind (blank
@@ -250,12 +252,12 @@ def run_quiet(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
 def regenerate_lockfile(python_version: str) -> None:
     try:
         run_quiet(["uv", "python", "install", python_version], timeout=120)
-    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+    except OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired:
         pass
 
     try:
         run_quiet(["uv", "lock"])
-    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
+    except OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired:
         print(
             f"Warning: could not regenerate uv.lock automatically (Python {python_version} "
             f"may not be installed). Run 'uv python install {python_version}' then 'uv sync' yourself."
