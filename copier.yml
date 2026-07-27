@@ -20,7 +20,7 @@ author_name:
 
 author_email:
   type: str
-  help: "Your email, used in pyproject.toml"
+  help: "Your email, used in pyproject.toml's [project.authors]"
   default: "eslam5464@users.noreply.github.com"
 
 github_username:
@@ -38,14 +38,17 @@ include_apple_pay:
   help: "Include the Apple Pay in-app purchase verification module?"
   default: true
 
-_templates_suffix: ".jinja"
-
-_jinja_extensions:
-  - "jinja2_time.TimeExtension"
-
 _exclude:
   - "copier.yml"
   - ".github/workflows/template-ci.yml"
 
 _tasks:
-  - ["{{ _copier_python }}", "scripts/generate/post_gen.py", "{{ include_apple_pay }}", "{{ python_version }}"]
+  - ["{{ _copier_python }}", "scripts/generate/post_gen.py",
+     "--project-name", "{{ project_name }}",
+     "--project-slug", "{{ project_slug }}",
+     "--project-description", "{{ project_description }}",
+     "--author-name", "{{ author_name }}",
+     "--author-email", "{{ author_email }}",
+     "--github-username", "{{ github_username }}",
+     "--python-version", "{{ python_version }}",
+     "--include-apple-pay", "{{ include_apple_pay }}"]
