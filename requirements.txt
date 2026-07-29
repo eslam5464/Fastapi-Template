@@ -113,7 +113,7 @@ urllib3==2.5.0
 uvicorn==0.38.0
 uvloop==0.22.1 ; (platform_python_implementation != 'PyPy' and sys_platform != 'cygwin' and sys_platform != 'win32') or (platform_python_implementation == 'PyPy' and sys_platform == 'linux')
 vine==5.1.0
-virtualenv==20.35.4
+virtualenv==21.7.0
 watchfiles==1.1.1
 wcwidth==0.2.14
 websockets==15.0.1
