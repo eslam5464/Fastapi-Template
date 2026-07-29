@@ -27,7 +27,7 @@ dependencies = [
     "python-multipart>=0.0.20",
     "sqlalchemy[asyncio]>=2.0.43",
     "tzdata>=2025.2",
-    "uvicorn[standard]>=0.35.0",
+    "uvicorn[standard]>=0.51.0",
     "uvloop>=0.21.0 ; sys_platform == 'linux'",
     "yarl>=1.20.1",
 ]
