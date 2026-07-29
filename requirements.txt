@@ -33,7 +33,7 @@ click-didyoumean==0.3.1
 click-plugins==1.1.1.2
 click-repl==0.3.0
 colorama==0.4.6 ; sys_platform == 'win32' or platform_system == 'Windows'
-cryptography==46.0.3
+cryptography==49.0.0
 distlib==0.4.0
 dnspython==2.8.0
 ecdsa==0.19.1
