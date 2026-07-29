@@ -92,7 +92,7 @@ pydantic==2.12.3
 pydantic-core==2.41.4
 pydantic-settings==2.11.0
 pyjwt==2.10.1
-pyopenssl==25.3.0
+pyopenssl==26.3.0
 python-dateutil==2.9.0.post0
 python-dotenv==1.2.1
 python-jose==3.5.0
