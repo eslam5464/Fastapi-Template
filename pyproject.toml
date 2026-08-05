@@ -42,11 +42,11 @@ cloud-service = [
     "gcloud-aio-storage>=9.6.1",
 ]
 cache = [
-    "redis>=7.1.0",
+    "redis>=8.1.0",
 ]
 task-queue = [
     "celery[redis]>=5.3.1",
-    "redis>=7.1.0",
+    "redis>=8.1.0",
 ]
 # --- APPLE_PAY_PYPROJECT_EXTRA_START ---
 apple-services = [
