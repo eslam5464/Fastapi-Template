@@ -60,7 +60,7 @@ test = [
     # @pytest.mark.anyio test in this suite - previously a transitive dep of
     # httpx/fastapi, made explicit since tests rely on it directly.
     "anyio>=4.11.0",
-    "faker>=37.8.0",
+    "faker>=40.36.0",
     "httpx>=0.28.1",
     "pytest>=8.4.2",
     "pytest-cov>=7.0.0",
