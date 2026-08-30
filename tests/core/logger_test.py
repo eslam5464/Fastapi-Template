@@ -91,9 +91,7 @@ class TestOpenObserveHandler:
             )
 
             with patch.dict(sys.modules, {"httpx": None}):
-                with patch(
-                    "builtins.__import__", side_effect=ImportError("No module named 'httpx'")
-                ):
+                with patch("builtins.__import__", side_effect=ImportError("No module named 'httpx'")):
                     # Reset client to None to force re-initialization
                     handler._client = None
 

@@ -35,9 +35,7 @@ def get_redis_pool() -> ConnectionPool:
             socket_connect_timeout=settings.redis_socket_connect_timeout,
             socket_timeout=settings.redis_socket_timeout,
         )
-        logger.info(
-            f"Redis connection pool created with max_connections={settings.redis_max_pool_connections}"
-        )
+        logger.info(f"Redis connection pool created with max_connections={settings.redis_max_pool_connections}")
     return _redis_pool
 
 
@@ -84,9 +82,7 @@ class BaseRedisClient(ABC):
         try:
             pool = get_redis_pool()
             self._redis_client = Redis(connection_pool=pool)
-            logger.debug(
-                f"Redis client initialized for {self.__class__.__name__} using shared pool"
-            )
+            logger.debug(f"Redis client initialized for {self.__class__.__name__} using shared pool")
         except Exception as e:
             logger.error(f"Failed to initialize Redis for {self.__class__.__name__}: {e}")
             raise e

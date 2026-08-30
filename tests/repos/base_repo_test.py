@@ -39,9 +39,7 @@ class TestBaseRepositoryValidation:
 class TestBaseRepositoryCreate:
     """Test creation operations in BaseRepository."""
 
-    async def test_create_one_exclude_none_true(
-        self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str
-    ):
+    async def test_create_one_exclude_none_true(self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str):
         """Test creating single record with exclude_none=True (default)."""
         repo = repos.UserRepo(db_session)
         user_data = UserCreate(
@@ -85,9 +83,7 @@ class TestBaseRepositoryCreate:
 
         assert result == []
 
-    async def test_create_bulk_success(
-        self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str
-    ):
+    async def test_create_bulk_success(self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str):
         """Test bulk creation of multiple users."""
         repo = repos.UserRepo(db_session)
         users_data = [
@@ -155,9 +151,7 @@ class TestBaseRepositoryRead:
 
         assert result is None
 
-    async def test_get_multi_by_ids_pagination(
-        self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str
-    ):
+    async def test_get_multi_by_ids_pagination(self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str):
         """Test get_multi_by_ids with pagination."""
         repo = repos.UserRepo(db_session)
 
@@ -236,9 +230,7 @@ class TestBaseRepositoryUpdate:
 
         assert result is None
 
-    async def test_update_by_id_custom_column(
-        self, db_session: AsyncSession, user: User, faker: Faker
-    ):
+    async def test_update_by_id_custom_column(self, db_session: AsyncSession, user: User, faker: Faker):
         """Test update_by_id with custom column name."""
         repo = repos.UserRepo(db_session)
         new_first_name = faker.first_name()
@@ -251,9 +243,7 @@ class TestBaseRepositoryUpdate:
         assert result.first_name == new_first_name
         assert result.email == user.email
 
-    async def test_update_by_id_exclude_none(
-        self, db_session: AsyncSession, user: User, faker: Faker
-    ):
+    async def test_update_by_id_exclude_none(self, db_session: AsyncSession, user: User, faker: Faker):
         """Test update_by_id with exclude_none=True (default behavior)."""
         repo = repos.UserRepo(db_session)
         new_first_name = faker.first_name()
@@ -275,9 +265,7 @@ class TestBaseRepositoryUpdate:
 
         assert result == []
 
-    async def test_update_bulk_partial(
-        self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str
-    ):
+    async def test_update_bulk_partial(self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str):
         """Test update_bulk with partial updates (some IDs don't exist)."""
         repo = repos.UserRepo(db_session)
 
@@ -309,9 +297,7 @@ class TestBaseRepositoryUpdate:
         assert result[0].first_name == "Updated1"
         assert result[1].first_name == "Updated2"
 
-    async def test_update_bulk_success(
-        self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str
-    ):
+    async def test_update_bulk_success(self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str):
         """Test successful bulk update of multiple records."""
         repo = repos.UserRepo(db_session)
 
@@ -329,9 +315,7 @@ class TestBaseRepositoryUpdate:
         created_users = await repo.create_bulk(users_data)
 
         # Update all users
-        updates = [
-            (user.id, UserUpdate(first_name=f"Updated{i}")) for i, user in enumerate(created_users)
-        ]
+        updates = [(user.id, UserUpdate(first_name=f"Updated{i}")) for i, user in enumerate(created_users)]
 
         result = await repo.update_bulk(updates)
 
@@ -339,9 +323,7 @@ class TestBaseRepositoryUpdate:
         for i, updated_user in enumerate(result):
             assert updated_user.first_name == f"Updated{i}"
 
-    async def test_update_bulk_custom_column(
-        self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str
-    ):
+    async def test_update_bulk_custom_column(self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str):
         """Test update_bulk with custom column name."""
         repo = repos.UserRepo(db_session)
 
@@ -359,10 +341,7 @@ class TestBaseRepositoryUpdate:
         created_users = await repo.create_bulk(users_data)
 
         # Update using username as identifier
-        updates = [
-            (user.username, UserUpdate(first_name=f"NewName{i}"))
-            for i, user in enumerate(created_users)
-        ]
+        updates = [(user.username, UserUpdate(first_name=f"NewName{i}")) for i, user in enumerate(created_users)]
 
         result = await repo.update_bulk(updates, id_column_name="username")
 
@@ -418,9 +397,7 @@ class TestBaseRepositoryDelete:
 
         assert result == 0
 
-    async def test_delete_by_ids_partial(
-        self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str
-    ):
+    async def test_delete_by_ids_partial(self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str):
         """Test delete_by_ids with partial deletions (some IDs don't exist)."""
         repo = repos.UserRepo(db_session)
 
@@ -446,9 +423,7 @@ class TestBaseRepositoryDelete:
         # Should delete only 2 existing users
         assert result == 2
 
-    async def test_delete_by_ids_success(
-        self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str
-    ):
+    async def test_delete_by_ids_success(self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str):
         """Test successful bulk deletion."""
         repo = repos.UserRepo(db_session)
 
@@ -474,9 +449,7 @@ class TestBaseRepositoryDelete:
         remaining_users = await repo.get_multi_by_ids(obj_ids=user_ids)
         assert len(remaining_users) == 0
 
-    async def test_delete_by_ids_custom_column(
-        self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str
-    ):
+    async def test_delete_by_ids_custom_column(self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str):
         """Test delete_by_ids with custom column name."""
         repo = repos.UserRepo(db_session)
 
@@ -503,9 +476,7 @@ class TestBaseRepositoryDelete:
 class TestBaseRepositoryCustomQuery:
     """Test custom query execution in BaseRepository."""
 
-    async def test_custom_query_select(
-        self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str
-    ):
+    async def test_custom_query_select(self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str):
         """Test custom_query with SELECT statement."""
         repo = repos.UserRepo(db_session)
 
@@ -527,9 +498,7 @@ class TestBaseRepositoryCustomQuery:
         fetched_row = result.fetchone()
         assert fetched_row is not None
 
-    async def test_custom_query_count(
-        self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str
-    ):
+    async def test_custom_query_count(self, db_session: AsyncSession, faker: Faker, pre_hashed_password: str):
         """Test custom_query with COUNT statement."""
         repo = repos.UserRepo(db_session)
 

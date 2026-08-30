@@ -152,10 +152,7 @@ class TestApplePayInitialization:
         with pytest.raises(AppStoreInvalidCredentialsException) as exc_info:
             ApplePay()
 
-        assert (
-            "invalid" in str(exc_info.value).lower()
-            and "credentials" in str(exc_info.value).lower()
-        )
+        assert "invalid" in str(exc_info.value).lower() and "credentials" in str(exc_info.value).lower()
 
     @patch("app.services.payments.apple_pay.AsyncAppStoreServerAPIClient")
     @patch("app.services.payments.apple_pay.SignedDataVerifier")

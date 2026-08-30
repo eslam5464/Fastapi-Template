@@ -34,9 +34,7 @@ router = APIRouter()
             },
         },
     },
-    dependencies=(
-        [Depends(create_rate_limit_user_and_ip(limit=60, window=60, prefix="users:me:get"))]
-    ),
+    dependencies=([Depends(create_rate_limit_user_and_ip(limit=60, window=60, prefix="users:me:get"))]),
     summary="Read current user",
     description="Get the details of the currently authenticated user.",
 )

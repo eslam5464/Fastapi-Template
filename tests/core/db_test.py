@@ -92,9 +92,7 @@ class TestSessionFactory:
         assert isinstance(SessionLocal, async_sessionmaker)
 
         # Verify it's bound to the engine
-        assert (
-            SessionLocal.kw.get("bind") == engine or SessionLocal.kw.get("class_") == AsyncSession
-        )
+        assert SessionLocal.kw.get("bind") == engine or SessionLocal.kw.get("class_") == AsyncSession
 
     def test_session_factory_expire_on_commit(self):
         """Test that expire_on_commit is set to False."""

@@ -73,10 +73,7 @@ def test_bake_without_apple_pay(tmp_path: Path):
     assert not (dst / "app" / "services" / "payments" / "apple_pay.py").exists()
     assert "ApplePayStoreCredentials" not in (dst / "app" / "core" / "credentials.py").read_text()
     assert "apple-services" not in (dst / "pyproject.toml").read_text()
-    assert (
-        "Generate dummy Apple Pay test credentials"
-        not in (dst / ".github" / "workflows" / "ci.yml").read_text()
-    )
+    assert "Generate dummy Apple Pay test credentials" not in (dst / ".github" / "workflows" / "ci.yml").read_text()
     _assert_no_leftover_jinja(dst)
 
 

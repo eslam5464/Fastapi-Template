@@ -174,9 +174,7 @@ class TestApplePaySubscriptionStatus:
         result = await apple_pay.get_subscription_status(sample_transaction_id)
 
         assert result == mock_status_response
-        mock_client_instance.get_all_subscription_statuses.assert_called_once_with(
-            sample_transaction_id
-        )
+        mock_client_instance.get_all_subscription_statuses.assert_called_once_with(sample_transaction_id)
 
     @patch("app.services.payments.apple_pay.AsyncAppStoreServerAPIClient")
     @patch("app.services.payments.apple_pay.SignedDataVerifier")
@@ -263,9 +261,7 @@ class TestApplePayRefundOperations:
 
         assert result == mock_refund_history_response
         # The method is called with revision=None parameter
-        mock_client_instance.get_refund_history.assert_called_once_with(
-            sample_transaction_id, revision=None
-        )
+        mock_client_instance.get_refund_history.assert_called_once_with(sample_transaction_id, revision=None)
 
     @patch("app.services.payments.apple_pay.AsyncAppStoreServerAPIClient")
     @patch("app.services.payments.apple_pay.SignedDataVerifier")

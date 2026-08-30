@@ -69,9 +69,7 @@ class TokenBlacklist(BaseRedisClient):
 
         # Fail open (not revoked) if Redis is unavailable or the check errors — see
         # BaseRedisClient._safe_call. In high-security environments, fail closed instead.
-        return await self._safe_call(
-            _is_revoked, default=False, context=f"Token revocation check for {jti[:8]}..."
-        )
+        return await self._safe_call(_is_revoked, default=False, context=f"Token revocation check for {jti[:8]}...")
 
     async def revoke_all_user_tokens(self, user_id: str, ttl_seconds: int) -> bool:
         """
@@ -97,9 +95,7 @@ class TokenBlacklist(BaseRedisClient):
             logger.info(f"All tokens revoked for user: {user_id}")
             return True
 
-        return await self._safe_call(
-            _revoke_all, default=False, context=f"Revoke-all-tokens for user {user_id}"
-        )
+        return await self._safe_call(_revoke_all, default=False, context=f"Revoke-all-tokens for user {user_id}")
 
     async def get_user_revocation_time(self, user_id: str) -> int | None:
         """

@@ -126,9 +126,7 @@ class OpenObserveHandler:
 
     def _start_worker(self):
         """Start background thread for processing logs"""
-        self.worker_thread = threading.Thread(
-            target=self._worker_loop, daemon=True, name="OpenObserveWorker"
-        )
+        self.worker_thread = threading.Thread(target=self._worker_loop, daemon=True, name="OpenObserveWorker")
         self.worker_thread.start()
 
     def _worker_loop(self):

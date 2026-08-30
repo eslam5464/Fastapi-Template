@@ -95,14 +95,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         # HSTS - Only in production environments with HTTPS
         if settings.current_environment in {Environment.STG, Environment.PRD}:
             # max-age=31536000 (1 year), includeSubDomains for all subdomains
-            response.headers["Strict-Transport-Security"] = (
-                "max-age=31536000; includeSubDomains; preload"
-            )
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
 
         # Use a docs-friendly CSP only for Swagger/ReDoc routes.
-        response.headers["Content-Security-Policy"] = (
-            DOCS_CSP if self._is_docs_ui_path(request_path) else DEFAULT_CSP
-        )
+        response.headers["Content-Security-Policy"] = DOCS_CSP if self._is_docs_ui_path(request_path) else DEFAULT_CSP
 
         # Prevent caching of sensitive responses (can be overridden per-endpoint)
         if "Cache-Control" not in response.headers:

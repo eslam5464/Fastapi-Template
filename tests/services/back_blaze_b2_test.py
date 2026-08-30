@@ -80,9 +80,7 @@ class TestBackBlazeBucketOperations:
     """Test BackBlaze bucket operations."""
 
     @pytest.mark.anyio
-    async def test_select_bucket_success(
-        self, b2_app_data: ApplicationData, mock_b2_api: Mock, mock_b2_bucket: Mock
-    ):
+    async def test_select_bucket_success(self, b2_app_data: ApplicationData, mock_b2_api: Mock, mock_b2_bucket: Mock):
         """Test successful bucket selection."""
         with patch("app.services.back_blaze_b2.B2Api", return_value=mock_b2_api):
             bb = BackBlaze(b2_app_data)
@@ -136,9 +134,7 @@ class TestBackBlazeBucketOperations:
                 assert "does not exist" in str(exc_info.value)
 
     @pytest.mark.anyio
-    async def test_select_bucket_other_exception(
-        self, b2_app_data: ApplicationData, mock_b2_api: Mock
-    ):
+    async def test_select_bucket_other_exception(self, b2_app_data: ApplicationData, mock_b2_api: Mock):
         """Test select_bucket with other exception."""
         with patch("app.services.back_blaze_b2.B2Api", return_value=mock_b2_api):
             bb = BackBlaze(b2_app_data)
@@ -153,9 +149,7 @@ class TestBackBlazeBucketOperations:
                 assert "Failed to select bucket" in str(exc_info.value)
 
     @pytest.mark.anyio
-    async def test_list_buckets_success(
-        self, b2_app_data: ApplicationData, mock_b2_api: Mock, mock_b2_bucket: Mock
-    ):
+    async def test_list_buckets_success(self, b2_app_data: ApplicationData, mock_b2_api: Mock, mock_b2_bucket: Mock):
         """Test successful bucket listing."""
         with patch("app.services.back_blaze_b2.B2Api", return_value=mock_b2_api):
             bb = BackBlaze(b2_app_data)
@@ -269,9 +263,7 @@ class TestBackBlazeBucketOperations:
         assert "No bucket is selected" in str(exc_info.value)
 
     @pytest.mark.anyio
-    async def test_delete_selected_bucket_no_name(
-        self, b2_app_data: ApplicationData, mock_b2_bucket: Mock
-    ):
+    async def test_delete_selected_bucket_no_name(self, b2_app_data: ApplicationData, mock_b2_bucket: Mock):
         """Test delete_selected_bucket when bucket has no name."""
         bb = BackBlaze(b2_app_data)
         bb._authorized = True
@@ -349,9 +341,7 @@ class TestBackBlazeBucketOperations:
         assert "No bucket is selected" in str(exc_info.value)
 
     @pytest.mark.anyio
-    async def test_update_selected_bucket_no_name(
-        self, b2_app_data: ApplicationData, mock_b2_bucket: Mock
-    ):
+    async def test_update_selected_bucket_no_name(self, b2_app_data: ApplicationData, mock_b2_bucket: Mock):
         """Test update_selected_bucket when bucket has no name."""
         bb = BackBlaze(b2_app_data)
         bb._authorized = True
@@ -409,9 +399,7 @@ class TestBackBlazeFileOperations:
                 assert result == mock_b2_file_version
 
     @pytest.mark.anyio
-    async def test_upload_file_no_bucket_selected(
-        self, b2_app_data: ApplicationData, temp_test_file: Path
-    ):
+    async def test_upload_file_no_bucket_selected(self, b2_app_data: ApplicationData, temp_test_file: Path):
         """Test upload_file without bucket selection."""
         bb = BackBlaze(b2_app_data)
         bb._authorized = True
@@ -422,9 +410,7 @@ class TestBackBlazeFileOperations:
         assert "No bucket is selected" in str(exc_info.value)
 
     @pytest.mark.anyio
-    async def test_upload_file_empty_local_path(
-        self, b2_app_data: ApplicationData, mock_b2_bucket: Mock
-    ):
+    async def test_upload_file_empty_local_path(self, b2_app_data: ApplicationData, mock_b2_bucket: Mock):
         """Test upload_file with empty local file path."""
         bb = BackBlaze(b2_app_data)
         bb._authorized = True
@@ -436,9 +422,7 @@ class TestBackBlazeFileOperations:
         assert "File path cannot be empty" in str(exc_info.value)
 
     @pytest.mark.anyio
-    async def test_upload_file_nonexistent_file(
-        self, b2_app_data: ApplicationData, mock_b2_bucket: Mock
-    ):
+    async def test_upload_file_nonexistent_file(self, b2_app_data: ApplicationData, mock_b2_bucket: Mock):
         """Test upload_file with nonexistent file."""
         bb = BackBlaze(b2_app_data)
         bb._authorized = True
@@ -541,9 +525,7 @@ class TestBackBlazeFileOperations:
             await bb.get_download_url_by_name("test_file.txt")
 
     @pytest.mark.anyio
-    async def test_get_download_url_by_name_empty(
-        self, b2_app_data: ApplicationData, mock_b2_bucket: Mock
-    ):
+    async def test_get_download_url_by_name_empty(self, b2_app_data: ApplicationData, mock_b2_bucket: Mock):
         """Test get_download_url_by_name with empty file name."""
         bb = BackBlaze(b2_app_data)
         bb._authorized = True
@@ -710,9 +692,7 @@ class TestBackBlazeFileOperations:
             assert result.download_url == "https://download.url"
 
     @pytest.mark.anyio
-    async def test_get_temporary_download_link_no_bucket(
-        self, b2_app_data: ApplicationData, faker_instance: Faker
-    ):
+    async def test_get_temporary_download_link_no_bucket(self, b2_app_data: ApplicationData, faker_instance: Faker):
         """Test get_temporary_download_link without bucket selection."""
         bb = BackBlaze(b2_app_data)
         bb._authorized = True

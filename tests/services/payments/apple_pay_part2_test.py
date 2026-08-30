@@ -191,10 +191,7 @@ class TestApplePayTransactionVerification:
         with pytest.raises(AppStoreConnectionAbortedException) as exc_info:
             await apple_pay.verify_transaction(sample_transaction_id)
 
-        assert (
-            "server error" in str(exc_info.value).lower()
-            or "aborted" in str(exc_info.value).lower()
-        )
+        assert "server error" in str(exc_info.value).lower() or "aborted" in str(exc_info.value).lower()
 
     @patch("app.services.payments.apple_pay.AsyncAppStoreServerAPIClient")
     @patch("app.services.payments.apple_pay.SignedDataVerifier")
@@ -296,9 +293,7 @@ class TestApplePayTransactionVerification:
         apple_pay = ApplePay(credentials=apple_pay_credentials)
 
         with pytest.raises(AppStoreValidationException) as exc_info:
-            apple_pay.check_product_id_in_transaction(
-                mock_jws_transaction_decoded, expected_product_id
-            )
+            apple_pay.check_product_id_in_transaction(mock_jws_transaction_decoded, expected_product_id)
 
         assert "product" in str(exc_info.value).lower()
         assert "mismatch" in str(exc_info.value).lower()

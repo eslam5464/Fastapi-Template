@@ -146,9 +146,7 @@ class TestLifespan:
             with patch("app.main.configure_uvicorn_logging") as mock_configure:
                 with patch("app.main._check_dependencies", new_callable=AsyncMock) as mock_check:
                     with patch("app.main.shutdown_logger") as mock_shutdown_logger:
-                        with patch(
-                            "app.main._shutdown_dependencies", new_callable=AsyncMock
-                        ) as mock_shutdown:
+                        with patch("app.main._shutdown_dependencies", new_callable=AsyncMock) as mock_shutdown:
                             async with lifespan(test_app):
                                 # Verify startup sequence
                                 mock_setup_logger.assert_called_once()
@@ -180,9 +178,7 @@ class TestLifespan:
             with patch("app.main.configure_uvicorn_logging"):
                 with patch("app.main._check_dependencies", new_callable=AsyncMock):
                     with patch("app.main.shutdown_logger") as mock_shutdown_logger:
-                        with patch(
-                            "app.main._shutdown_dependencies", new_callable=AsyncMock
-                        ) as mock_shutdown:
+                        with patch("app.main._shutdown_dependencies", new_callable=AsyncMock) as mock_shutdown:
                             async with lifespan(test_app):
                                 pass
 
@@ -212,9 +208,7 @@ class TestLifespan:
 
         with patch("app.main.setup_logger", side_effect=track_setup_logger):
             with patch("app.main.configure_uvicorn_logging", side_effect=track_configure):
-                with patch(
-                    "app.main._check_dependencies", new_callable=AsyncMock, side_effect=track_check
-                ):
+                with patch("app.main._check_dependencies", new_callable=AsyncMock, side_effect=track_check):
                     with patch("app.main.shutdown_logger", side_effect=track_shutdown_logger):
                         with patch(
                             "app.main._shutdown_dependencies",

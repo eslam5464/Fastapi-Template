@@ -60,9 +60,7 @@ class TestResendEmailService:
             html="<p>ok</p>",
         )
 
-        with patch(
-            "app.services.email.resend.asyncio.to_thread", new_callable=AsyncMock
-        ) as mock_thread:
+        with patch("app.services.email.resend.asyncio.to_thread", new_callable=AsyncMock) as mock_thread:
             mock_thread.return_value = {"id": "email_123"}
             result = await service.send(payload)
 
@@ -80,9 +78,7 @@ class TestResendEmailService:
             html="<p>ok</p>",
         )
 
-        with patch(
-            "app.services.email.resend.asyncio.to_thread", new_callable=AsyncMock
-        ) as mock_thread:
+        with patch("app.services.email.resend.asyncio.to_thread", new_callable=AsyncMock) as mock_thread:
             mock_thread.return_value = "not-a-dict"
             with pytest.raises(EmailProviderError):
                 await service.send(payload)
@@ -98,9 +94,7 @@ class TestResendEmailService:
             html="<p>ok</p>",
         )
 
-        with patch(
-            "app.services.email.resend.asyncio.to_thread", new_callable=AsyncMock
-        ) as mock_thread:
+        with patch("app.services.email.resend.asyncio.to_thread", new_callable=AsyncMock) as mock_thread:
             mock_thread.return_value = {"status": "ok"}
             with pytest.raises(EmailProviderError):
                 await service.send(payload)
@@ -116,9 +110,7 @@ class TestResendEmailService:
             html="<p>ok</p>",
         )
 
-        with patch(
-            "app.services.email.resend.asyncio.to_thread", new_callable=AsyncMock
-        ) as mock_thread:
+        with patch("app.services.email.resend.asyncio.to_thread", new_callable=AsyncMock) as mock_thread:
             mock_thread.side_effect = RuntimeError("provider down")
             with pytest.raises(EmailSendFailedError) as exc_info:
                 await service.send(payload)

@@ -54,9 +54,7 @@ class BrevoEmailService(BaseEmailService):
         try:
             return datetime.fromisoformat(value)
         except ValueError as exc:
-            raise EmailProviderError(
-                "scheduled_at must be an ISO-8601 datetime string for Brevo"
-            ) from exc
+            raise EmailProviderError("scheduled_at must be an ISO-8601 datetime string for Brevo") from exc
 
     @staticmethod
     def _extract_message_id(response: object) -> str | None:
@@ -97,9 +95,7 @@ class BrevoEmailService(BaseEmailService):
 
         bcc_items = None
         if payload.bcc is not None:
-            bcc_items = [
-                SendTransacEmailRequestBccItem(email=recipient) for recipient in payload.bcc
-            ]
+            bcc_items = [SendTransacEmailRequestBccItem(email=recipient) for recipient in payload.bcc]
 
         reply_to = None
         if payload.reply_to:
@@ -123,9 +119,7 @@ class BrevoEmailService(BaseEmailService):
             try:
                 template_id = int(raw_template_id)
             except ValueError as exc:
-                raise EmailTemplateError(
-                    "Brevo template.id must be numeric (stringified integer)"
-                ) from exc
+                raise EmailTemplateError("Brevo template.id must be numeric (stringified integer)") from exc
 
             params = payload.template.variables
 

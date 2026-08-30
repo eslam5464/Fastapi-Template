@@ -42,9 +42,7 @@ class TestFirebaseInitialization:
         mock_init_app.assert_called_once()
 
     @patch("app.services.firebase.firebase_admin.get_app")
-    def test_init_existing_app(
-        self, mock_get_app: Mock, firebase_service_account: FirebaseServiceAccount
-    ):
+    def test_init_existing_app(self, mock_get_app: Mock, firebase_service_account: FirebaseServiceAccount):
         """Test Firebase initialization when app already exists."""
         mock_get_app.return_value = Mock(spec=App)
 
@@ -579,9 +577,7 @@ class TestFirebaseTokenOperations:
 
         with patch("asyncio.to_thread", new_callable=AsyncMock) as mock_to_thread:
             mock_to_thread.return_value = b"custom_token"
-            result = await firebase.create_custom_id_token(
-                faker_instance.uuid4(), additional_claims={"role": "admin"}
-            )
+            result = await firebase.create_custom_id_token(faker_instance.uuid4(), additional_claims={"role": "admin"})
 
             assert result == b"custom_token"
 
@@ -915,9 +911,7 @@ class TestFirebaseMessaging:
 
         with patch("asyncio.to_thread", new_callable=AsyncMock) as mock_to_thread:
             mock_to_thread.return_value = "message_id_123"
-            result = await firebase.notify_a_device(
-                faker_instance.uuid4(), "Test Title", "Test Content"
-            )
+            result = await firebase.notify_a_device(faker_instance.uuid4(), "Test Title", "Test Content")
 
             assert result is True
 
@@ -941,9 +935,7 @@ class TestFirebaseMessaging:
 
         with patch("asyncio.to_thread", new_callable=AsyncMock) as mock_to_thread:
             mock_to_thread.side_effect = Exception("Send failed")
-            result = await firebase.notify_a_device(
-                faker_instance.uuid4(), "Test Title", "Test Content"
-            )
+            result = await firebase.notify_a_device(faker_instance.uuid4(), "Test Title", "Test Content")
 
             assert result is False
 

@@ -67,9 +67,7 @@ class TestBaseRedisClient:
     def test_initialize_redis_failure(self):
         """Test Redis initialization failure."""
         with patch("app.services.cache.base.settings.current_environment", Environment.DEV):
-            with patch(
-                "app.services.cache.base.get_redis_pool", side_effect=Exception("Connection failed")
-            ):
+            with patch("app.services.cache.base.get_redis_pool", side_effect=Exception("Connection failed")):
                 with pytest.raises(Exception) as exc_info:
                     BaseRedisClient()
 

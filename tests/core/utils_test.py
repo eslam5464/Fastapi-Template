@@ -303,9 +303,7 @@ class TestEstimateUploadTime:
 
         with patch("aiohttp.ClientSession.post", return_value=mock_response) as mock_post:
             with patch("time.time", side_effect=[0.0, 1.0]):  # 1 second upload
-                await estimate_upload_time(
-                    url="example.com", path="/upload", port=443, file_size_mb=1
-                )
+                await estimate_upload_time(url="example.com", path="/upload", port=443, file_size_mb=1)
 
                 # Should construct https://example.com/upload
                 mock_post.assert_called_once()
@@ -320,9 +318,7 @@ class TestEstimateUploadTime:
 
         with patch("aiohttp.ClientSession.post", return_value=mock_response) as mock_post:
             with patch("time.time", side_effect=[0.0, 1.0]):
-                await estimate_upload_time(
-                    url="example.com", path="/upload", port=80, file_size_mb=1
-                )
+                await estimate_upload_time(url="example.com", path="/upload", port=80, file_size_mb=1)
 
                 # Should construct http://example.com/upload
                 mock_post.assert_called_once()
@@ -337,9 +333,7 @@ class TestEstimateUploadTime:
 
         with patch("aiohttp.ClientSession.post", return_value=mock_response) as mock_post:
             with patch("time.time", side_effect=[0.0, 1.0]):
-                await estimate_upload_time(
-                    url="example.com", path="/upload", port=8080, file_size_mb=1
-                )
+                await estimate_upload_time(url="example.com", path="/upload", port=8080, file_size_mb=1)
 
                 # Should construct http://example.com:8080/upload
                 mock_post.assert_called_once()
@@ -354,9 +348,7 @@ class TestEstimateUploadTime:
 
         with patch("aiohttp.ClientSession.post", return_value=mock_response) as mock_post:
             with patch("time.time", side_effect=[0.0, 1.0]):
-                await estimate_upload_time(
-                    url="example.com", path="/upload", port=8443, file_size_mb=1
-                )
+                await estimate_upload_time(url="example.com", path="/upload", port=8443, file_size_mb=1)
 
                 # Should construct http://example.com:8443/upload (8443 is not 443, so it uses http)
                 mock_post.assert_called_once()
@@ -371,9 +363,7 @@ class TestEstimateUploadTime:
 
         with patch("aiohttp.ClientSession.post", return_value=mock_response) as mock_post:
             with patch("time.time", side_effect=[0.0, 1.0]):
-                await estimate_upload_time(
-                    url="https://example.com", path="/upload", port=443, file_size_mb=1
-                )
+                await estimate_upload_time(url="https://example.com", path="/upload", port=443, file_size_mb=1)
 
                 # Should use URL as-is with path
                 mock_post.assert_called_once()
@@ -388,9 +378,7 @@ class TestEstimateUploadTime:
 
         with patch("aiohttp.ClientSession.post", return_value=mock_response) as mock_post:
             with patch("time.time", side_effect=[0.0, 1.0]):
-                await estimate_upload_time(
-                    url="http://example.com", path="/upload", port=80, file_size_mb=1
-                )
+                await estimate_upload_time(url="http://example.com", path="/upload", port=80, file_size_mb=1)
 
                 # Should use URL as-is with path
                 mock_post.assert_called_once()

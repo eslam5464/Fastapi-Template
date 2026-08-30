@@ -46,9 +46,7 @@ class TestBrevoEmailService:
     async def test_send_success_returns_message_id(self) -> None:
         """Successful provider send should return normalized result."""
         service = BrevoEmailService(default_sender="noreply@example.com", api_key="brevo_test")
-        service._client.transactional_emails.send_transac_email = AsyncMock(
-            return_value={"message_id": "msg_123"}
-        )
+        service._client.transactional_emails.send_transac_email = AsyncMock(return_value={"message_id": "msg_123"})
 
         payload = EmailSendPayload(
             sender="noreply@example.com",
@@ -81,9 +79,7 @@ class TestBrevoEmailService:
     async def test_send_wraps_provider_exception(self) -> None:
         """Provider exceptions should be wrapped as EmailSendFailedError."""
         service = BrevoEmailService(default_sender="noreply@example.com", api_key="brevo_test")
-        service._client.transactional_emails.send_transac_email = AsyncMock(
-            side_effect=RuntimeError("provider down")
-        )
+        service._client.transactional_emails.send_transac_email = AsyncMock(side_effect=RuntimeError("provider down"))
 
         payload = EmailSendPayload(
             sender="noreply@example.com",
@@ -101,9 +97,7 @@ class TestBrevoEmailService:
     async def test_send_raises_when_message_id_missing(self) -> None:
         """Missing message id in provider response should raise EmailProviderError."""
         service = BrevoEmailService(default_sender="noreply@example.com", api_key="brevo_test")
-        service._client.transactional_emails.send_transac_email = AsyncMock(
-            return_value={"ok": True}
-        )
+        service._client.transactional_emails.send_transac_email = AsyncMock(return_value={"ok": True})
 
         payload = EmailSendPayload(
             sender="noreply@example.com",

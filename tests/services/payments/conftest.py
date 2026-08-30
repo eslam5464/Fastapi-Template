@@ -28,9 +28,7 @@ def apple_pay_credentials(faker_instance: Faker) -> ApplePayStoreCredentials:
 
     return ApplePayStoreCredentials(
         private_key=private_key,
-        key_id=faker_instance.lexify(
-            text="??????????", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-        ),
+        key_id=faker_instance.lexify(text="??????????", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"),
         issuer_id=faker_instance.uuid4(),
         bundle_id=f"com.{faker_instance.company().lower().replace(' ', '')}.{faker_instance.word()}",
     )
@@ -74,9 +72,7 @@ def mock_transaction_info_response(faker_instance: Faker) -> Mock:
     """Create mock TransactionInfoResponse."""
     mock_response = Mock()
     # Simulated signed JWT transaction info
-    mock_response.signedTransactionInfo = (
-        f"eyJhbGc.{faker_instance.sha256()}.{faker_instance.sha256()}"
-    )
+    mock_response.signedTransactionInfo = f"eyJhbGc.{faker_instance.sha256()}.{faker_instance.sha256()}"
     return mock_response
 
 
@@ -84,12 +80,8 @@ def mock_transaction_info_response(faker_instance: Faker) -> Mock:
 def mock_jws_transaction_decoded(faker_instance: Faker) -> Mock:
     """Create mock JWSTransactionDecodedPayload."""
     mock_transaction = Mock()
-    mock_transaction.transactionId = str(
-        faker_instance.random_int(min=1000000000000000, max=9999999999999999)
-    )
-    mock_transaction.originalTransactionId = str(
-        faker_instance.random_int(min=1000000000000000, max=9999999999999999)
-    )
+    mock_transaction.transactionId = str(faker_instance.random_int(min=1000000000000000, max=9999999999999999))
+    mock_transaction.originalTransactionId = str(faker_instance.random_int(min=1000000000000000, max=9999999999999999))
     mock_transaction.productId = f"com.{faker_instance.word()}.subscription.monthly"
     mock_transaction.bundleId = f"com.{faker_instance.company().lower().replace(' ', '')}.app"
     mock_transaction.purchaseDate = int(datetime.now(UTC).timestamp() * 1000)
@@ -113,9 +105,7 @@ def mock_history_response(faker_instance: Faker) -> Mock:
     mock_response.environment = Environment.PRODUCTION
 
     # Create list of signed transactions
-    signed_transactions = [
-        f"eyJhbGc.{faker_instance.sha256()}.{faker_instance.sha256()}" for _ in range(3)
-    ]
+    signed_transactions = [f"eyJhbGc.{faker_instance.sha256()}.{faker_instance.sha256()}" for _ in range(3)]
     mock_response.signedTransactions = signed_transactions
 
     return mock_response
@@ -139,12 +129,8 @@ def mock_status_response(faker_instance: Faker) -> Mock:
     mock_last_transaction.originalTransactionId = str(
         faker_instance.random_int(min=1000000000000000, max=9999999999999999)
     )
-    mock_last_transaction.signedTransactionInfo = (
-        f"eyJhbGc.{faker_instance.sha256()}.{faker_instance.sha256()}"
-    )
-    mock_last_transaction.signedRenewalInfo = (
-        f"eyJhbGc.{faker_instance.sha256()}.{faker_instance.sha256()}"
-    )
+    mock_last_transaction.signedTransactionInfo = f"eyJhbGc.{faker_instance.sha256()}.{faker_instance.sha256()}"
+    mock_last_transaction.signedRenewalInfo = f"eyJhbGc.{faker_instance.sha256()}.{faker_instance.sha256()}"
 
     mock_subscription_group.lastTransactions = [mock_last_transaction]
     mock_response.data = [mock_subscription_group]
@@ -160,9 +146,7 @@ def mock_refund_history_response(faker_instance: Faker) -> Mock:
     mock_response.revision = faker_instance.uuid4()
 
     # Create list of signed transactions for refunds
-    signed_transactions = [
-        f"eyJhbGc.{faker_instance.sha256()}.{faker_instance.sha256()}" for _ in range(2)
-    ]
+    signed_transactions = [f"eyJhbGc.{faker_instance.sha256()}.{faker_instance.sha256()}" for _ in range(2)]
     mock_response.signedTransactions = signed_transactions
 
     return mock_response
@@ -172,9 +156,7 @@ def mock_refund_history_response(faker_instance: Faker) -> Mock:
 def mock_extend_renewal_response(faker_instance: Faker) -> Mock:
     """Create mock ExtendRenewalDateResponse."""
     mock_response = Mock()
-    mock_response.originalTransactionId = str(
-        faker_instance.random_int(min=1000000000000000, max=9999999999999999)
-    )
+    mock_response.originalTransactionId = str(faker_instance.random_int(min=1000000000000000, max=9999999999999999))
     mock_response.webOrderLineItemId = faker_instance.uuid4()
     mock_response.success = True
     mock_response.effectiveDate = int((datetime.now(UTC) + timedelta(days=7)).timestamp() * 1000)

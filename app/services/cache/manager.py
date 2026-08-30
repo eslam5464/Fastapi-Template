@@ -90,9 +90,7 @@ class CacheManager(BaseRedisClient):
                 return int(await client.delete(*keys))
             return 0
 
-        return await self._safe_call(
-            _delete_pattern, default=0, context=f"Cache delete pattern {pattern}"
-        )
+        return await self._safe_call(_delete_pattern, default=0, context=f"Cache delete pattern {pattern}")
 
     async def exists(self, key: str) -> bool:
         """
@@ -108,9 +106,7 @@ class CacheManager(BaseRedisClient):
         async def _exists(client: Redis) -> bool:
             return bool(await client.exists(key) > 0)
 
-        return await self._safe_call(
-            _exists, default=False, context=f"Cache exists check for key {key}"
-        )
+        return await self._safe_call(_exists, default=False, context=f"Cache exists check for key {key}")
 
 
 # Global cache manager instance

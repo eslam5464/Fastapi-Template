@@ -39,9 +39,7 @@ class TestApplePaySubscriptionExtension:
     ):
         """Test successful subscription renewal date extension."""
         mock_client_instance = AsyncMock()
-        mock_client_instance.extend_subscription_renewal_date.return_value = (
-            mock_extend_renewal_response
-        )
+        mock_client_instance.extend_subscription_renewal_date.return_value = mock_extend_renewal_response
         mock_client_class.return_value = mock_client_instance
 
         apple_pay = ApplePay(credentials=apple_pay_credentials)
@@ -97,9 +95,7 @@ class TestApplePaySubscriptionExtension:
     ):
         """Test extend renewal date raises ValidationException for invalid parameters."""
         mock_client_instance = AsyncMock()
-        mock_client_instance.extend_subscription_renewal_date.side_effect = ValueError(
-            "Invalid extend days"
-        )
+        mock_client_instance.extend_subscription_renewal_date.side_effect = ValueError("Invalid extend days")
         mock_client_class.return_value = mock_client_instance
 
         apple_pay = ApplePay(credentials=apple_pay_credentials)
@@ -130,9 +126,7 @@ class TestApplePayDecoding:
         """Test successful transaction info decoding."""
         mock_client_class.return_value = AsyncMock()
         mock_verifier_instance = Mock()
-        mock_verifier_instance.verify_and_decode_signed_transaction.return_value = (
-            mock_jws_transaction_decoded
-        )
+        mock_verifier_instance.verify_and_decode_signed_transaction.return_value = mock_jws_transaction_decoded
         mock_verifier_class.return_value = mock_verifier_instance
 
         apple_pay = ApplePay(credentials=apple_pay_credentials)
@@ -153,9 +147,7 @@ class TestApplePayDecoding:
         """Test decode transaction info raises ValidationException for invalid signature."""
         mock_client_class.return_value = AsyncMock()
         mock_verifier_instance = Mock()
-        mock_verifier_instance.verify_and_decode_signed_transaction.side_effect = ValueError(
-            "Invalid signature"
-        )
+        mock_verifier_instance.verify_and_decode_signed_transaction.side_effect = ValueError("Invalid signature")
         mock_verifier_class.return_value = mock_verifier_instance
 
         apple_pay = ApplePay(credentials=apple_pay_credentials)
@@ -178,9 +170,7 @@ class TestApplePayDecoding:
         """Test successful webhook signature verification."""
         mock_client_class.return_value = AsyncMock()
         mock_verifier_instance = Mock()
-        mock_verifier_instance.verify_and_decode_notification.return_value = (
-            mock_webhook_notification
-        )
+        mock_verifier_instance.verify_and_decode_notification.return_value = mock_webhook_notification
         mock_verifier_class.return_value = mock_verifier_instance
 
         signed_payload = f"eyJhbGc.{faker_instance.sha256()}.{faker_instance.sha256()}"
@@ -203,9 +193,7 @@ class TestApplePayDecoding:
         """Test verify webhook signature raises ValidationException for invalid signature."""
         mock_client_class.return_value = AsyncMock()
         mock_verifier_instance = Mock()
-        mock_verifier_instance.verify_and_decode_notification.side_effect = ValueError(
-            "Invalid webhook signature"
-        )
+        mock_verifier_instance.verify_and_decode_notification.side_effect = ValueError("Invalid webhook signature")
         mock_verifier_class.return_value = mock_verifier_instance
 
         signed_payload = "invalid.signature.data"
@@ -362,9 +350,7 @@ class TestApplePayHelperMethods:
         """Test get_latest_transaction returns latest transaction from history."""
         mock_client_class.return_value = AsyncMock()
         mock_verifier_instance = Mock()
-        mock_verifier_instance.verify_and_decode_signed_transaction.return_value = (
-            mock_jws_transaction_decoded
-        )
+        mock_verifier_instance.verify_and_decode_signed_transaction.return_value = mock_jws_transaction_decoded
         mock_verifier_class.return_value = mock_verifier_instance
 
         apple_pay = ApplePay(credentials=apple_pay_credentials)
@@ -409,9 +395,7 @@ class TestApplePayHelperMethods:
         mock_client_class.return_value = mock_client_instance
 
         mock_verifier_instance = Mock()
-        mock_verifier_instance.verify_and_decode_signed_transaction.return_value = (
-            mock_jws_transaction_decoded
-        )
+        mock_verifier_instance.verify_and_decode_signed_transaction.return_value = mock_jws_transaction_decoded
         mock_verifier_class.return_value = mock_verifier_instance
         mock_jws_transaction_decoded.productId = sample_product_id
 
@@ -441,9 +425,7 @@ class TestApplePayHelperMethods:
         mock_client_class.return_value = mock_client_instance
 
         mock_verifier_instance = Mock()
-        mock_verifier_instance.verify_and_decode_signed_transaction.return_value = (
-            mock_jws_transaction_decoded
-        )
+        mock_verifier_instance.verify_and_decode_signed_transaction.return_value = mock_jws_transaction_decoded
         mock_verifier_class.return_value = mock_verifier_instance
 
         apple_pay = ApplePay(credentials=apple_pay_credentials)
@@ -472,9 +454,7 @@ class TestApplePayHelperMethods:
         mock_client_class.return_value = mock_client_instance
 
         mock_verifier_instance = Mock()
-        mock_verifier_instance.verify_and_decode_signed_transaction.return_value = (
-            mock_jws_transaction_decoded
-        )
+        mock_verifier_instance.verify_and_decode_signed_transaction.return_value = mock_jws_transaction_decoded
         mock_verifier_class.return_value = mock_verifier_instance
         mock_jws_transaction_decoded.productId = "com.app.product1"
 

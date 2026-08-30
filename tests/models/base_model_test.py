@@ -152,9 +152,7 @@ class TestToDict:
         if "updated_at" in result and result["updated_at"] is not None:
             assert isinstance(result["updated_at"], datetime)
 
-    async def test_to_dict_combined_exclude_keys_and_none(
-        self, db_session, faker, pre_hashed_password
-    ):
+    async def test_to_dict_combined_exclude_keys_and_none(self, db_session, faker, pre_hashed_password):
         """Test to_dict with both exclude_keys and exclude_none."""
         from app import repos
         from app.schemas import UserCreate

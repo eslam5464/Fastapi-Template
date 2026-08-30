@@ -46,9 +46,7 @@ class AuthService:
 
         # Pre-computed dummy hash for timing attack prevention
         # Reference: https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html
-        self._dummy_hash = dummy_hash or self._password_hash.hash(
-            "dummy_password_for_timing_attack_prevention"
-        )
+        self._dummy_hash = dummy_hash or self._password_hash.hash("dummy_password_for_timing_attack_prevention")
 
     @staticmethod
     def generate_random_password(length: int = 12) -> str:
@@ -101,9 +99,7 @@ class AuthService:
             "type": "access",
             "jti": jti,
         }
-        encoded_jwt = jwt.encode(
-            dict(to_encode), settings.secret_key, algorithm=settings.jwt_algorithm
-        )
+        encoded_jwt = jwt.encode(dict(to_encode), settings.secret_key, algorithm=settings.jwt_algorithm)
         return TokenWithJtiDict(token=encoded_jwt, jti=jti)
 
     @staticmethod
@@ -129,9 +125,7 @@ class AuthService:
             "type": "refresh",
             "jti": jti,
         }
-        encoded_jwt = jwt.encode(
-            dict(to_encode), settings.secret_key, algorithm=settings.jwt_algorithm
-        )
+        encoded_jwt = jwt.encode(dict(to_encode), settings.secret_key, algorithm=settings.jwt_algorithm)
 
         return TokenWithJtiDict(token=encoded_jwt, jti=jti)
 
@@ -273,9 +267,7 @@ class AuthService:
         existing = await self.user_repo.get_by_email(email=signup_data.email)
         if existing:
             # Generic message to prevent user enumeration
-            raise DuplicateResourceError(
-                "Unable to complete registration. Please check your input and try again."
-            )
+            raise DuplicateResourceError("Unable to complete registration. Please check your input and try again.")
 
         user = await self.user_repo.create_one(
             schema=signup_data,

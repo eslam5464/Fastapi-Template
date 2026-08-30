@@ -13,9 +13,7 @@ def cache_result(expire: int = settings.cache_ttl_default, key_prefix: str = "")
             from app.services.cache import cache_manager
 
             # Generate cache key
-            cache_key = (
-                f"{key_prefix}:{func.__name__}:{hash(str(args) + str(sorted(kwargs.items())))}"
-            )
+            cache_key = f"{key_prefix}:{func.__name__}:{hash(str(args) + str(sorted(kwargs.items())))}"
 
             # Try to get from cache
             cached_result = await cache_manager.get(cache_key)

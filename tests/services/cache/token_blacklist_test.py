@@ -22,9 +22,7 @@ class TestTokenBlacklistRevokeToken:
             result = await blacklist.revoke_token("test-jti-123", 3600)
 
             assert result is True
-            mock_redis_client.setex.assert_called_once_with(
-                "token:blacklist:test-jti-123", 3600, "revoked"
-            )
+            mock_redis_client.setex.assert_called_once_with("token:blacklist:test-jti-123", 3600, "revoked")
 
     @pytest.mark.anyio
     async def test_revoke_token_local_environment(self):

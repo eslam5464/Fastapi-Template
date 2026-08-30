@@ -216,9 +216,7 @@ class GCS:
 
         logger.info(f"Downloaded {file_path_in_bucket} to {destination_path}")
 
-    async def download_file_bytes(
-        self, bucket_name: str, file_path_in_bucket: str
-    ) -> BytesIO | None:
+    async def download_file_bytes(self, bucket_name: str, file_path_in_bucket: str) -> BytesIO | None:
         """
         Download file as BytesIO object
 
@@ -316,12 +314,8 @@ class GCS:
             return None
 
         try:
-            public_url = HttpUrl(
-                f"https://storage.googleapis.com/{bucket_name}/{file_path_in_bucket}"
-            )
-            authenticated_url = HttpUrl(
-                f"https://storage.cloud.google.com/{bucket_name}/{file_path_in_bucket}"
-            )
+            public_url = HttpUrl(f"https://storage.googleapis.com/{bucket_name}/{file_path_in_bucket}")
+            authenticated_url = HttpUrl(f"https://storage.cloud.google.com/{bucket_name}/{file_path_in_bucket}")
         except ValidationError:
             logger.exception(f"Invalid URL for {file_path_in_bucket}")
             return None

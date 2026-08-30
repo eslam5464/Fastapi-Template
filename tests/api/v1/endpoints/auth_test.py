@@ -163,10 +163,7 @@ class TestSignup:
 
         assert response.status_code == 400
         data = response.json()
-        assert (
-            data["detail"]
-            == "Unable to complete registration. Please check your input and try again."
-        )
+        assert data["detail"] == "Unable to complete registration. Please check your input and try again."
 
     @pytest.mark.anyio
     async def test_signup_invalid_username_format(

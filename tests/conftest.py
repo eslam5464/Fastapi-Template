@@ -93,9 +93,7 @@ async def test_app() -> AsyncGenerator[FastAPI, None]:
     # suite accumulates open Postgres connections across hundreds of tests and
     # intermittently hits max_connections (worse under CI's tighter/variable
     # resource conditions than a local dev machine).
-    test_engine = create_async_engine(
-        settings.db_test_url.human_repr(), echo=False, poolclass=NullPool
-    )
+    test_engine = create_async_engine(settings.db_test_url.human_repr(), echo=False, poolclass=NullPool)
 
     try:
         # Create test engine and override the get_session dependency

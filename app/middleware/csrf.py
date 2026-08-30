@@ -72,9 +72,7 @@ class CSRFMiddleware(BaseHTTPMiddleware):
         )
         return any(path.startswith(prefix) for prefix in exempt_prefixes)
 
-    async def dispatch(
-        self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
-    ) -> Response:
+    async def dispatch(self, request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
         # Skip CSRF in local environment for easier development
         if settings.current_environment == Environment.LOCAL:
             response = await call_next(request)

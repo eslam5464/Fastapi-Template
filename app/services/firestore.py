@@ -150,9 +150,7 @@ class Firestore:
             await doc_ref.update(data)
             logger.debug(f"Document updated in collection {collection_name} with ID {document_id}")
         except NotFound as ex:
-            logger.exception(
-                f"Document with ID {document_id} not found in collection {collection_name}"
-            )
+            logger.exception(f"Document with ID {document_id} not found in collection {collection_name}")
             raise FirebaseDocumentNotFoundError(
                 f"Document with ID {document_id} not found in collection {collection_name}"
             ) from ex
@@ -174,13 +172,9 @@ class Firestore:
         try:
             doc_ref = self.firestore_client.collection(collection_name).document(document_id)
             await doc_ref.delete()
-            logger.debug(
-                f"Document removed from collection {collection_name} with ID {document_id}"
-            )
+            logger.debug(f"Document removed from collection {collection_name} with ID {document_id}")
         except Exception as ex:
-            logger.exception(
-                f"Error removing document from collection {collection_name} with ID {document_id}"
-            )
+            logger.exception(f"Error removing document from collection {collection_name} with ID {document_id}")
             raise ex
 
     async def get_document(self, collection_name: str, document_id: str) -> dict[str, Any] | None:

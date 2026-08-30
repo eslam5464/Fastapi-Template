@@ -41,21 +41,15 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             ValueError: If the column doesn't exist on the model.
         """
         if not hasattr(self.model, column_name):
-            raise ValueError(
-                f"Column '{column_name}' does not exist on model {self.model.__name__}"
-            )
+            raise ValueError(f"Column '{column_name}' does not exist on model {self.model.__name__}")
 
         # Additional check for SQLAlchemy column attributes
         try:
             getattr(self.model, column_name)
         except AttributeError:
-            raise ValueError(
-                f"Column '{column_name}' is not a valid SQLAlchemy column on model {self.model.__name__}"
-            )
+            raise ValueError(f"Column '{column_name}' is not a valid SQLAlchemy column on model {self.model.__name__}")
 
-    async def create_one(
-        self, schema: CreateSchema, exclude_none: bool = True, auto_commit: bool = True
-    ) -> Model:
+    async def create_one(self, schema: CreateSchema, exclude_none: bool = True, auto_commit: bool = True) -> Model:
         """
         Create a new object in the database.
 
@@ -71,11 +65,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
         Raises:
             Exception: If the object creation fails.
         """
-        stmt = (
-            insert(self.model)
-            .values(**schema.model_dump(exclude_none=exclude_none))
-            .returning(self.model)
-        )
+        stmt = insert(self.model).values(**schema.model_dump(exclude_none=exclude_none)).returning(self.model)
         result = await self.session.execute(stmt)
         if auto_commit:
             await self.session.commit()
@@ -157,12 +147,7 @@ class BaseRepository(Generic[Model, CreateSchema, UpdateSchema]):
             retrieved_objects (Sequence[Model]): A Sequence of retrieved objects.
         """
         self._validate_column_exists(id_column_name)
-        stmt = (
-            select(self.model)
-            .where(getattr(self.model, id_column_name).in_(obj_ids))
-            .offset(skip)
-            .limit(limit)
-        )
+        stmt = select(self.model).where(getattr(self.model, id_column_name).in_(obj_ids)).offset(skip).limit(limit)
         result = await self.session.execute(stmt)
 
         return result.scalars().all()

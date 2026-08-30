@@ -46,9 +46,7 @@ def sanitize_body(body: dict[str, Any] | Any) -> dict[str, Any] | Any:
         elif isinstance(value, dict):
             sanitized[key] = sanitize_body(value)
         elif isinstance(value, list):
-            sanitized[key] = [
-                sanitize_body(item) if isinstance(item, dict) else item for item in value
-            ]
+            sanitized[key] = [sanitize_body(item) if isinstance(item, dict) else item for item in value]
         else:
             sanitized[key] = value
     return sanitized
@@ -102,8 +100,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 json_body = ""
 
             error_msg = (
-                f"[{request_id}] {request.method} {request.url.path} - "
-                f"Error: {str(e)} - Time: {process_time:.3f}s"
+                f"[{request_id}] {request.method} {request.url.path} - Error: {str(e)} - Time: {process_time:.3f}s"
             )
             logger.error(
                 error_msg,

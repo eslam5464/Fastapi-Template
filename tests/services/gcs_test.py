@@ -48,9 +48,7 @@ class TestGCSContextManager:
     """Test GCS async context manager."""
 
     @pytest.mark.anyio
-    async def test_context_manager_enter_exit(
-        self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock
-    ):
+    async def test_context_manager_enter_exit(self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock):
         """Test GCS context manager enter and exit."""
         with patch("app.services.gcs.Storage", return_value=mock_gcs_storage):
             async with GCS(gcs_service_account) as gcs:
@@ -125,9 +123,7 @@ class TestGCSFileOperations:
                     mock_gcs_storage.upload.assert_called_once()
 
     @pytest.mark.anyio
-    async def test_upload_file_not_found(
-        self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock
-    ):
+    async def test_upload_file_not_found(self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock):
         """Test upload_file with nonexistent file."""
         with patch("app.services.gcs.Storage", return_value=mock_gcs_storage):
             async with GCS(gcs_service_account) as gcs:
@@ -177,9 +173,7 @@ class TestGCSFileOperations:
                 with patch.object(gcs, "get_file", new_callable=AsyncMock) as mock_get_file:
                     mock_get_file.return_value = sample_bucket_file
 
-                    result = await gcs.upload_bytesio(
-                        "test-bucket", sample_file_bytes, "test.txt", "folder/"
-                    )
+                    result = await gcs.upload_bytesio("test-bucket", sample_file_bytes, "test.txt", "folder/")
 
                     assert result == sample_bucket_file
 
@@ -200,9 +194,7 @@ class TestGCSFileOperations:
                 assert destination.read_text() == "test content"
 
     @pytest.mark.anyio
-    async def test_download_file_bytes_success(
-        self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock
-    ):
+    async def test_download_file_bytes_success(self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock):
         """Test successful file download as bytes."""
         with patch("app.services.gcs.Storage", return_value=mock_gcs_storage):
             mock_gcs_storage.download = AsyncMock(return_value=b"test content")
@@ -214,9 +206,7 @@ class TestGCSFileOperations:
                 assert result.read() == b"test content"
 
     @pytest.mark.anyio
-    async def test_download_file_bytes_failure(
-        self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock
-    ):
+    async def test_download_file_bytes_failure(self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock):
         """Test file download as bytes with exception."""
         with patch("app.services.gcs.Storage", return_value=mock_gcs_storage):
             mock_gcs_storage.download = AsyncMock(side_effect=Exception("Download failed"))
@@ -227,9 +217,7 @@ class TestGCSFileOperations:
                 assert result is None
 
     @pytest.mark.anyio
-    async def test_create_folder(
-        self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock
-    ):
+    async def test_create_folder(self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock):
         """Test folder creation."""
         with patch("app.services.gcs.Storage", return_value=mock_gcs_storage):
             mock_gcs_storage.upload = AsyncMock()
@@ -281,9 +269,7 @@ class TestGCSFileOperations:
                 assert result is None
 
     @pytest.mark.anyio
-    async def test_get_file_validation_error(
-        self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock
-    ):
+    async def test_get_file_validation_error(self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock):
         """Test get_file with URL validation error."""
         with patch("app.services.gcs.Storage", return_value=mock_gcs_storage):
             metadata = {"id": "123", "name": "test.txt", "size": "1024"}
@@ -319,9 +305,7 @@ class TestGCSFileOperations:
                     assert len(files) == 2
 
     @pytest.mark.anyio
-    async def test_list_folders(
-        self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock
-    ):
+    async def test_list_folders(self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock):
         """Test list_folders."""
         with patch("app.services.gcs.Storage", return_value=mock_gcs_storage):
             mock_gcs_storage.list_objects = AsyncMock(
@@ -336,9 +320,7 @@ class TestGCSFileOperations:
                 assert len(folders) == 2
 
     @pytest.mark.anyio
-    async def test_delete_file(
-        self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock
-    ):
+    async def test_delete_file(self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock):
         """Test delete_file."""
         with patch("app.services.gcs.Storage", return_value=mock_gcs_storage):
             mock_gcs_storage.delete = AsyncMock()
@@ -349,9 +331,7 @@ class TestGCSFileOperations:
                 mock_gcs_storage.delete.assert_called_once()
 
     @pytest.mark.anyio
-    async def test_delete_files(
-        self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock
-    ):
+    async def test_delete_files(self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock):
         """Test delete_files."""
         with patch("app.services.gcs.Storage", return_value=mock_gcs_storage):
             mock_gcs_storage.delete = AsyncMock()
@@ -362,9 +342,7 @@ class TestGCSFileOperations:
                 assert mock_gcs_storage.delete.call_count == 2
 
     @pytest.mark.anyio
-    async def test_copy_file_same_bucket(
-        self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock
-    ):
+    async def test_copy_file_same_bucket(self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock):
         """Test copy_file within same bucket."""
         with patch("app.services.gcs.Storage", return_value=mock_gcs_storage):
             mock_gcs_storage.copy = AsyncMock()
@@ -375,9 +353,7 @@ class TestGCSFileOperations:
                 mock_gcs_storage.copy.assert_called_once()
 
     @pytest.mark.anyio
-    async def test_copy_file_different_bucket(
-        self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock
-    ):
+    async def test_copy_file_different_bucket(self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock):
         """Test copy_file to different bucket."""
         with patch("app.services.gcs.Storage", return_value=mock_gcs_storage):
             mock_gcs_storage.copy = AsyncMock()
@@ -393,9 +369,7 @@ class TestGCSFileOperations:
                 mock_gcs_storage.copy.assert_called_once()
 
     @pytest.mark.anyio
-    async def test_move_file(
-        self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock
-    ):
+    async def test_move_file(self, gcs_service_account: ServiceAccount, mock_gcs_storage: AsyncMock):
         """Test move_file."""
         with patch("app.services.gcs.Storage", return_value=mock_gcs_storage):
             mock_gcs_storage.copy = AsyncMock()

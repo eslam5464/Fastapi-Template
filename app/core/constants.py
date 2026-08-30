@@ -48,9 +48,7 @@ class RateLimitPrefix:
             ```
         """
         return {
-            value
-            for key, value in cls.__dict__.items()
-            if isinstance(value, str) and value.startswith("ratelimit:")
+            value for key, value in cls.__dict__.items() if isinstance(value, str) and value.startswith("ratelimit:")
         }
 
     @classmethod
@@ -72,8 +70,7 @@ class RateLimitPrefix:
         """
         if prefix in cls.all_prefixes():
             raise ValueError(
-                f"Rate limit prefix '{prefix}' is already registered. "
-                f"Existing prefixes: {cls.all_prefixes()}"
+                f"Rate limit prefix '{prefix}' is already registered. Existing prefixes: {cls.all_prefixes()}"
             )
 
 

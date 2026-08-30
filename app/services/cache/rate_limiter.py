@@ -40,9 +40,7 @@ class RateLimiter(BaseRedisClient):
         ```
     """
 
-    async def check_rate_limit(
-        self, key: str, limit: int, window: int = 60
-    ) -> tuple[bool, RateLimitInfoDict]:
+    async def check_rate_limit(self, key: str, limit: int, window: int = 60) -> tuple[bool, RateLimitInfoDict]:
         """
         Check if rate limit is exceeded for a given key.
 
@@ -72,9 +70,7 @@ class RateLimiter(BaseRedisClient):
         # Redis is unavailable or the check fails (see BaseRedisClient._safe_call).
         allow_default = (
             True,
-            RateLimitInfoDict(
-                limit=limit, remaining=limit, reset_time=int(time.time()) + window, window=window
-            ),
+            RateLimitInfoDict(limit=limit, remaining=limit, reset_time=int(time.time()) + window, window=window),
         )
 
         # Skip rate limiting if disabled
@@ -93,9 +89,7 @@ class RateLimiter(BaseRedisClient):
 
             # 2. Add current request with unique timestamp-based member
             # Format: "{timestamp}:{hash}" to ensure uniqueness
-            member = (
-                f"{now}:{hashlib.md5(str(now).encode(), usedforsecurity=False).hexdigest()[:8]}"
-            )
+            member = f"{now}:{hashlib.md5(str(now).encode(), usedforsecurity=False).hexdigest()[:8]}"
             pipe.zadd(key, {member: now})
 
             # 3. Count requests in current window (AFTER adding current request)
@@ -114,14 +108,10 @@ class RateLimiter(BaseRedisClient):
             reset_time = now + window
             is_allowed = request_count <= limit  # Changed from < to <=
 
-            return is_allowed, RateLimitInfoDict(
-                limit=limit, remaining=remaining, reset_time=reset_time, window=window
-            )
+            return is_allowed, RateLimitInfoDict(limit=limit, remaining=remaining, reset_time=reset_time, window=window)
 
         # Fail-open on Redis unavailability or error (see BaseRedisClient._safe_call).
-        return await self._safe_call(
-            _check, default=allow_default, context=f"Rate limit check for key {key}"
-        )
+        return await self._safe_call(_check, default=allow_default, context=f"Rate limit check for key {key}")
 
     async def get_limit_info(self, key: str, limit: int, window: int = 60) -> RateLimitInfoDict:
         """
@@ -159,13 +149,9 @@ class RateLimiter(BaseRedisClient):
             request_count = results[1]
             remaining = max(0, limit - request_count)
 
-            return RateLimitInfoDict(
-                limit=limit, remaining=remaining, reset_time=now + window, window=window
-            )
+            return RateLimitInfoDict(limit=limit, remaining=remaining, reset_time=now + window, window=window)
 
-        return await self._safe_call(
-            _get_info, default=default_info, context=f"Rate limit info for key {key}"
-        )
+        return await self._safe_call(_get_info, default=default_info, context=f"Rate limit info for key {key}")
 
     async def reset_limit(self, key: str) -> bool:
         """

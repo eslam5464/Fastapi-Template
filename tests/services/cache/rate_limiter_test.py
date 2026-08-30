@@ -141,9 +141,7 @@ class TestRateLimiterOperations:
             mock_pipeline.zadd = Mock(return_value=mock_pipeline)
             mock_pipeline.zcard = Mock(return_value=mock_pipeline)
             mock_pipeline.expire = Mock(return_value=mock_pipeline)
-            mock_pipeline.execute = AsyncMock(
-                return_value=[0, 1, 11, True]
-            )  # 11 requests, limit is 10
+            mock_pipeline.execute = AsyncMock(return_value=[0, 1, 11, True])  # 11 requests, limit is 10
 
             mock_redis_client.pipeline = Mock(return_value=mock_pipeline)
 
@@ -369,9 +367,7 @@ class TestRateLimiterSlidingWindow:
             rate_limiter = RateLimiter()
             rate_limiter.redis_client = mock_redis_client
 
-            is_allowed, info = await rate_limiter.check_rate_limit(
-                "test_key", limit=100, window=120
-            )
+            is_allowed, info = await rate_limiter.check_rate_limit("test_key", limit=100, window=120)
 
             assert is_allowed is True
             assert info["window"] == 120

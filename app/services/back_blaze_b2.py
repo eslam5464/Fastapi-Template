@@ -129,9 +129,7 @@ class BackBlaze:
             logger.exception(error_msg)
             raise B2FileOperationError(error_msg, ex) from ex
 
-    async def create_bucket(
-        self, bucket_name: str, bucket_type: B2BucketTypeEnum | None = None
-    ) -> Self:
+    async def create_bucket(self, bucket_name: str, bucket_type: B2BucketTypeEnum | None = None) -> Self:
         """
         Create a new bucket.
 
@@ -155,9 +153,7 @@ class BackBlaze:
             bucket_type = B2BucketTypeEnum.ALL_PRIVATE
 
         try:
-            await asyncio.to_thread(
-                self._b2_api.create_bucket, name=bucket_name, bucket_type=bucket_type.value
-            )
+            await asyncio.to_thread(self._b2_api.create_bucket, name=bucket_name, bucket_type=bucket_type.value)
             logger.info(f"Successfully created bucket: {bucket_name}")
             return self
         except Exception as ex:
@@ -231,9 +227,7 @@ class BackBlaze:
         try:
             bucket = await asyncio.to_thread(self._b2_api.get_bucket_by_name, self._bucket.name)
             bucket_type_value = bucket_type.value if bucket_type else None
-            await asyncio.to_thread(
-                bucket.update, bucket_type=bucket_type_value, bucket_info=bucket_info
-            )
+            await asyncio.to_thread(bucket.update, bucket_type=bucket_type_value, bucket_info=bucket_info)
             logger.info(f"Successfully updated bucket: {self._bucket.name}")
             return self
         except Exception as ex:
@@ -352,9 +346,7 @@ class BackBlaze:
             raise ValueError("File ID cannot be empty")
 
         try:
-            download_url = await asyncio.to_thread(
-                self._b2_api.get_download_url_for_fileid, file_id
-            )
+            download_url = await asyncio.to_thread(self._b2_api.get_download_url_for_fileid, file_id)
             return FileDownloadLink(download_url=download_url)
         except Exception as ex:
             error_msg = f"Failed to get download URL for file ID '{file_id}'"
@@ -386,9 +378,7 @@ class BackBlaze:
             raise ValueError("File ID and name cannot be empty")
 
         try:
-            result = await asyncio.to_thread(
-                self._b2_api.delete_file_version, file_id=file_id, file_name=file_name
-            )
+            result = await asyncio.to_thread(self._b2_api.delete_file_version, file_id=file_id, file_name=file_name)
             logger.info(f"Successfully deleted file: {file_name}")
             return result
         except Exception as ex:
@@ -434,9 +424,7 @@ class BackBlaze:
                 file_name_prefix=file_info.file_name,
                 valid_duration_in_seconds=valid_duration_in_seconds,
             )
-            download_url = await asyncio.to_thread(
-                self._bucket.get_download_url, file_info.file_name
-            )
+            download_url = await asyncio.to_thread(self._bucket.get_download_url, file_info.file_name)
 
             return FileDownloadLink(download_url=download_url, auth_token=auth_token)
         except Exception as ex:

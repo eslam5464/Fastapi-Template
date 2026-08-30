@@ -62,9 +62,7 @@ def strip_marked_block(path: Path, start_marker: str, end_marker: str) -> None:
     start = next((i for i, line in enumerate(lines) if start_marker in line), None)
     end = next((i for i, line in enumerate(lines) if end_marker in line), None)
     if start is None or end is None:
-        raise SystemExit(
-            f"post_gen.py: markers {start_marker!r}/{end_marker!r} not found in {path}"
-        )
+        raise SystemExit(f"post_gen.py: markers {start_marker!r}/{end_marker!r} not found in {path}")
     del lines[start : end + 1]
 
     # Deleting the block can leave 3+ consecutive blank lines behind (blank
@@ -103,9 +101,7 @@ def bump_python_version(old_version: str, new_version: str) -> None:
         content = path.read_text(encoding="utf-8")
         new_content, count = pattern.subn(new_version, content)
         if count == 0:
-            raise SystemExit(
-                f"post_gen.py: expected Python version {old_version!r} not found in {path}"
-            )
+            raise SystemExit(f"post_gen.py: expected Python version {old_version!r} not found in {path}")
         path.write_text(new_content, encoding="utf-8")
 
     old_ruff_target = "py" + old_version.replace(".", "")
@@ -156,9 +152,7 @@ def apply_identity_substitutions(args: argparse.Namespace) -> None:
 
     readme = Path("README.md")
     replace_required(readme, "# FastAPI Template", f"# {args.project_name}")
-    replace_required(
-        readme, "eslam5464/Fastapi-Template", f"{args.github_username}/{args.project_slug}"
-    )
+    replace_required(readme, "eslam5464/Fastapi-Template", f"{args.github_username}/{args.project_slug}")
     replace_required(
         readme,
         "A production-ready FastAPI project template with modern best practices, "
@@ -183,14 +177,10 @@ def apply_identity_substitutions(args: argparse.Namespace) -> None:
 
     deployment_doc = Path("docs/deployment.md")
     replace_required(deployment_doc, "for the FastAPI Template.", f"for {args.project_name}.")
-    replace_required(
-        deployment_doc, "The FastAPI Template supports", f"{args.project_name} supports"
-    )
+    replace_required(deployment_doc, "The FastAPI Template supports", f"{args.project_name} supports")
     replace_required(deployment_doc, "fastapi_template", slug_us)
 
-    replace_required(
-        Path("docs/guides/getting-started.md"), "cd Fastapi-Template", f"cd {args.project_slug}"
-    )
+    replace_required(Path("docs/guides/getting-started.md"), "cd Fastapi-Template", f"cd {args.project_slug}")
 
 
 def remove_apple_pay() -> None:
@@ -276,9 +266,7 @@ def git_init_and_commit() -> None:
         run_quiet(["git", "add", "-A"])
         run_quiet(["git", "commit", "-m", "chore: initial commit from copier template"])
     except (OSError, subprocess.CalledProcessError) as exc:
-        print(
-            f"Warning: could not initialize git repository automatically ({exc}). Run 'git init' yourself."
-        )
+        print(f"Warning: could not initialize git repository automatically ({exc}). Run 'git init' yourself.")
 
 
 def parse_args() -> argparse.Namespace:

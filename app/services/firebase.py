@@ -251,9 +251,7 @@ class Firebase:
             logger.exception("Error getting all users")
             raise ConnectionError("Unknown error getting all users")
 
-    async def create_custom_id_token(
-        self, uid: str, additional_claims: dict | None = None
-    ) -> bytes:
+    async def create_custom_id_token(self, uid: str, additional_claims: dict | None = None) -> bytes:
         """
         Create a custom ID token for a user
 
@@ -442,8 +440,7 @@ class Firebase:
                 for result in response.responses:
                     if result.success is False:
                         logger.error(
-                            "Failed to send push notification to device token "
-                            f"{result.message_id}: {result.exception}"
+                            f"Failed to send push notification to device token {result.message_id}: {result.exception}"
                         )
             except FirebaseError:
                 logger.exception("Firebase error sending push notification to multiple devices")

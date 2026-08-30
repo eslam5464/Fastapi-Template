@@ -312,9 +312,7 @@ class TestTokenRevocationIntegration:
         with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
             mock_blacklist.is_revoked = AsyncMock(return_value=False)
             # Set revocation time to now (after token was issued)
-            mock_blacklist.get_user_revocation_time = AsyncMock(
-                return_value=int(datetime.now(UTC).timestamp()) + 1
-            )
+            mock_blacklist.get_user_revocation_time = AsyncMock(return_value=int(datetime.now(UTC).timestamp()) + 1)
 
             # Try to use the token
             response = await client.get(

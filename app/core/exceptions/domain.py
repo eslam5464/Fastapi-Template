@@ -29,7 +29,5 @@ class ProcessingError(AppException):
 class DuplicateResourceError(AppException):
     """Attempted to create a resource that already exists."""
 
-    def __init__(
-        self, message: str = "Resource already exists", exception: Exception | None = None
-    ):
+    def __init__(self, message: str = "Resource already exists", exception: Exception | None = None):
         super().__init__(message, exception)

@@ -23,9 +23,7 @@ class TestCreateRateLimitIPOnly:
         custom_window = 300
         custom_prefix = "export"
 
-        rate_limiter = create_rate_limit_ip_only(
-            limit=custom_limit, window=custom_window, prefix=custom_prefix
-        )
+        rate_limiter = create_rate_limit_ip_only(limit=custom_limit, window=custom_window, prefix=custom_prefix)
 
         request = MagicMock(spec=Request)
         request.client = MagicMock(host="192.168.1.1")
@@ -102,9 +100,7 @@ class TestCreateRateLimitUserOnly:
         custom_window = 600
         custom_prefix = "upload"
 
-        rate_limiter = create_rate_limit_user_only(
-            limit=custom_limit, window=custom_window, prefix=custom_prefix
-        )
+        rate_limiter = create_rate_limit_user_only(limit=custom_limit, window=custom_window, prefix=custom_prefix)
 
         request = MagicMock(spec=Request)
         request.client = MagicMock(host="192.168.1.1")
@@ -177,9 +173,7 @@ class TestCreateRateLimitUserAndIP:
         custom_window = 600
         custom_prefix = "sensitive"
 
-        rate_limiter = create_rate_limit_user_and_ip(
-            limit=custom_limit, window=custom_window, prefix=custom_prefix
-        )
+        rate_limiter = create_rate_limit_user_and_ip(limit=custom_limit, window=custom_window, prefix=custom_prefix)
 
         request = MagicMock(spec=Request)
         request.client = MagicMock(host="192.168.1.1")
