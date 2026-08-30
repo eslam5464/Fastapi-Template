@@ -61,7 +61,7 @@ repos:
     hooks:
       - id: detect-secrets
         args: [--baseline, .secrets.baseline]
-        exclude: ^(uv\.lock|htmlcov/|\.venv/)
+        exclude: ^(uv\.lock|htmlcov/|\.venv/|docs/architecture/.*\.html)$
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.37.4
