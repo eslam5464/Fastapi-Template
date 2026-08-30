@@ -15,11 +15,11 @@
 | app/api/v1/endpoints/auth.py                   |       35 |        1 |     97% |       128 |
 | app/api/v1/endpoints/user.py                   |       11 |        0 |    100% |           |
 | app/api/v1/router.py                           |        8 |        0 |    100% |           |
-| app/api/v2/\_\_init\_\_.py                     |       11 |        1 |     91% |        44 |
+| app/api/v2/\_\_init\_\_.py                     |       11 |        1 |     91% |        42 |
 | app/api/v2/router.py                           |        2 |        0 |    100% |           |
 | app/core/\_\_init\_\_.py                       |        0 |        0 |    100% |           |
-| app/core/config.py                             |      112 |       14 |     88% |174, 182-185, 240-244, 298-301, 313-316 |
-| app/core/constants.py                          |       29 |        3 |     90% | 50, 73-74 |
+| app/core/config.py                             |      112 |       14 |     88% |170, 178-181, 236-240, 294-297, 309-312 |
+| app/core/constants.py                          |       29 |        3 |     90% | 50, 71-72 |
 | app/core/credentials.py                        |       23 |        1 |     96% |        68 |
 | app/core/db.py                                 |       17 |        0 |    100% |           |
 | app/core/exceptions/apple\_pay.py              |       37 |        4 |     89% |23, 88, 114, 140 |
@@ -29,7 +29,7 @@
 | app/core/exceptions/gcs\_exceptions.py         |       11 |        2 |     82% |    21, 30 |
 | app/core/exceptions/http\_exceptions.py        |       33 |        0 |    100% |           |
 | app/core/exceptions/rate\_limiter.py           |       13 |        2 |     85% |    19, 37 |
-| app/core/logger.py                             |      157 |       55 |     65% |118-124, 129-132, 136-164, 168-192, 214, 286-287, 378-425 |
+| app/core/logger.py                             |      157 |       55 |     65% |118-124, 129-130, 134-162, 166-190, 212, 284-285, 376-423 |
 | app/core/responses.py                          |       21 |        0 |    100% |           |
 | app/core/types.py                              |        2 |        0 |    100% |           |
 | app/core/utils.py                              |       54 |        0 |    100% |           |
@@ -43,7 +43,7 @@
 | app/models/base.py                             |       37 |        4 |     89% |58, 72, 82, 92 |
 | app/models/user.py                             |       11 |        0 |    100% |           |
 | app/repos/\_\_init\_\_.py                      |        3 |        0 |    100% |           |
-| app/repos/base.py                              |      110 |       13 |     88% |51-52, 267-271, 275-277, 335-336, 412 |
+| app/repos/base.py                              |      110 |       13 |     88% |49-50, 252-256, 260-262, 320-321, 397 |
 | app/repos/user.py                              |       16 |        0 |    100% |           |
 | app/schemas/\_\_init\_\_.py                    |        8 |        0 |    100% |           |
 | app/schemas/back\_blaze\_bucket.py             |        5 |        0 |    100% |           |
@@ -53,8 +53,8 @@
 | app/schemas/health\_check.py                   |        2 |        0 |    100% |           |
 | app/schemas/token.py                           |       19 |        2 |     89% |    16, 30 |
 | app/schemas/user.py                            |       33 |        0 |    100% |           |
-| app/services/auth\_service.py                  |      140 |       13 |     91% |67-71, 92, 186, 195-198, 381-382, 430-431 |
-| app/services/back\_blaze\_b2.py                |      229 |        4 |     98% |282, 325, 512-513 |
+| app/services/auth\_service.py                  |      140 |       13 |     91% |65-69, 90, 180, 189-192, 373-374, 422-423 |
+| app/services/back\_blaze\_b2.py                |      229 |        4 |     98% |276, 319, 500-501 |
 | app/services/cache/\_\_init\_\_.py             |        6 |        0 |    100% |           |
 | app/services/cache/base.py                     |       56 |        0 |    100% |           |
 | app/services/cache/decorators.py               |       17 |        0 |    100% |           |
@@ -63,16 +63,16 @@
 | app/services/cache/token\_blacklist.py         |       42 |        0 |    100% |           |
 | app/services/email/\_\_init\_\_.py             |        0 |        0 |    100% |           |
 | app/services/email/base.py                     |       25 |        0 |    100% |           |
-| app/services/email/brevo.py                    |       72 |        6 |     92% |40, 74, 96, 100, 106, 130 |
+| app/services/email/brevo.py                    |       72 |        6 |     92% |40, 72, 94, 98, 102, 124 |
 | app/services/email/resend.py                   |       55 |        0 |    100% |           |
 | app/services/exceptions/\_\_init\_\_.py        |        4 |        0 |    100% |           |
 | app/services/exceptions/auth.py                |        4 |        0 |    100% |           |
 | app/services/exceptions/base.py                |        1 |        0 |    100% |           |
 | app/services/exceptions/email.py               |        6 |        0 |    100% |           |
-| app/services/firebase.py                       |      206 |       42 |     80% |38, 88, 137-157, 176, 210, 243, 273, 305, 342, 383-390, 426-433, 473-487, 505-522 |
+| app/services/firebase.py                       |      206 |       42 |     80% |38, 88, 137-157, 176, 210, 243, 271, 303, 340, 381-388, 424-431, 470-484, 502-519 |
 | app/services/firestore.py                      |       94 |        0 |    100% |           |
-| app/services/gcs.py                            |      125 |        4 |     97% |130, 174, 284, 363 |
-| app/services/payments/apple\_pay.py            |      285 |       47 |     84% |90, 106, 196, 203-208, 303-304, 403-406, 412-414, 472-486, 614-615, 651-676, 711-712, 862-864 |
+| app/services/gcs.py                            |      125 |        4 |     97% |130, 174, 282, 357 |
+| app/services/payments/apple\_pay.py            |      285 |       47 |     84% |90, 106, 194, 201-206, 293-294, 386-387, 393-395, 449-459, 579-580, 609-630, 663-664, 814-816 |
 | app/services/types/\_\_init\_\_.py             |        3 |        0 |    100% |           |
 | app/services/types/auth.py                     |        5 |        0 |    100% |           |
 | app/services/types/email.py                    |       77 |        4 |     95% |78, 92, 95-96 |

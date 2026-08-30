@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_257b53c25398f6ee_router_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.15.4">coverage.py v7.15.4</a>,
-            created at 2026-08-30 09:00 +0000
+            created at 2026-08-30 09:26 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -116,14 +116,12 @@
     <p class="run run2"><span class="n"><a id="t34" href="#t34">34</a></span><span class="t">            <span class="op">}</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t35" href="#t35">35</a></span><span class="t">        <span class="op">}</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t36" href="#t36">36</a></span><span class="t">    <span class="op">}</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t37" href="#t37">37</a></span><span class="t">    <span class="nam">dependencies</span><span class="op">=</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t38" href="#t38">38</a></span><span class="t">        <span class="op">[</span><span class="nam">Depends</span><span class="op">(</span><span class="nam">create_rate_limit_user_and_ip</span><span class="op">(</span><span class="nam">limit</span><span class="op">=</span><span class="num">60</span><span class="op">,</span> <span class="nam">window</span><span class="op">=</span><span class="num">60</span><span class="op">,</span> <span class="nam">prefix</span><span class="op">=</span><span class="str">&quot;users:me:get&quot;</span><span class="op">)</span><span class="op">)</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t39" href="#t39">39</a></span><span class="t">    <span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t40" href="#t40">40</a></span><span class="t">    <span class="nam">summary</span><span class="op">=</span><span class="str">&quot;Read current user&quot;</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t41" href="#t41">41</a></span><span class="t">    <span class="nam">description</span><span class="op">=</span><span class="str">&quot;Get the details of the currently authenticated user.&quot;</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t42" href="#t42">42</a></span><span class="t"><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t43" href="#t43">43</a></span><span class="t"><span class="key">async</span> <span class="key">def</span> <span class="nam">read_user_me</span><span class="op">(</span><span class="nam">current_user</span><span class="op">:</span> <span class="nam">Annotated</span><span class="op">[</span><span class="nam">User</span><span class="op">,</span> <span class="nam">Depends</span><span class="op">(</span><span class="nam">get_current_user</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t44" href="#t44">44</a></span><span class="t">    <span class="key">return</span> <span class="nam">current_user</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t37" href="#t37">37</a></span><span class="t">    <span class="nam">dependencies</span><span class="op">=</span><span class="op">(</span><span class="op">[</span><span class="nam">Depends</span><span class="op">(</span><span class="nam">create_rate_limit_user_and_ip</span><span class="op">(</span><span class="nam">limit</span><span class="op">=</span><span class="num">60</span><span class="op">,</span> <span class="nam">window</span><span class="op">=</span><span class="num">60</span><span class="op">,</span> <span class="nam">prefix</span><span class="op">=</span><span class="str">&quot;users:me:get&quot;</span><span class="op">)</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t38" href="#t38">38</a></span><span class="t">    <span class="nam">summary</span><span class="op">=</span><span class="str">&quot;Read current user&quot;</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t39" href="#t39">39</a></span><span class="t">    <span class="nam">description</span><span class="op">=</span><span class="str">&quot;Get the details of the currently authenticated user.&quot;</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t40" href="#t40">40</a></span><span class="t"><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t41" href="#t41">41</a></span><span class="t"><span class="key">async</span> <span class="key">def</span> <span class="nam">read_user_me</span><span class="op">(</span><span class="nam">current_user</span><span class="op">:</span> <span class="nam">Annotated</span><span class="op">[</span><span class="nam">User</span><span class="op">,</span> <span class="nam">Depends</span><span class="op">(</span><span class="nam">get_current_user</span><span class="op">)</span><span class="op">]</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t42" href="#t42">42</a></span><span class="t">    <span class="key">return</span> <span class="nam">current_user</span>&nbsp;</span><span class="r"></span></p>
 </main>
 <footer>
     <div class="content">
@@ -133,7 +131,7 @@
             <a class="nav" href="z_257b53c25398f6ee_router_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.15.4">coverage.py v7.15.4</a>,
-            created at 2026-08-30 09:00 +0000
+            created at 2026-08-30 09:26 +0000
         </p>
     </div>
 </footer>
