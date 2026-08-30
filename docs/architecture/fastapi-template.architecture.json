@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "FastAPI Template — Runtime Architecture",
+    "output": "fastapi-template.architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/eslam5464/Fastapi-Template.git",
+      "revision": "e380ce115d7cda959bce7fdf80f30ec43ccf6271"
+    },
+    "views": [
+      {
+        "id": "request-path",
+        "label": "Request path",
+        "focus": ["client", "gateway", "api_v1", "service", "repo_orm", "postgres"],
+        "note": "Follow an authenticated request from the edge to durable state."
+      },
+      {
+        "id": "async-and-cache",
+        "label": "Async and cache",
+        "focus": ["service", "redis", "celery", "postgres"],
+        "note": "Redis-backed cache/rate-limit/blacklist and the not-yet-deployed Celery path."
+      },
+      {
+        "id": "trust-boundary",
+        "label": "Trust boundary",
+        "focus": ["gateway", "api_v1", "api_v2", "service", "repo_orm", "redis", "postgres"],
+        "note": "Everything inside the Docker Compose trusted network."
+      }
+    ]
+  },
+  "components": [
+    { "id": "client", "type": "external", "label": "Client", "sublabel": "web / mobile", "pos": [40, 340], "size": [120, 60] },
+    { "id": "observability", "type": "external", "label": "OpenObserve", "sublabel": "log shipping", "pos": [40, 130], "size": [120, 60], "sources": [{ "path": "app/core/logger.py", "label": "loguru sink" }] },
+    { "id": "gateway", "type": "security", "label": "API Gateway", "sublabel": "security middleware", "pos": [230, 340], "size": [140, 64], "sources": [{ "path": "app/main.py", "label": "middleware stack" }] },
+    { "id": "api_v1", "type": "backend", "label": "/v1 API", "sublabel": "auth + users", "pos": [440, 235], "size": [130, 64], "sources": [{ "path": "app/api/v1/router.py" }] },
+    { "id": "api_v2", "type": "backend", "label": "/v2 API", "sublabel": "stub", "pos": [440, 445], "size": [130, 64], "sources": [{ "path": "app/api/v2/router.py" }] },
+    { "id": "service", "type": "backend", "label": "Service Layer", "sublabel": "business logic", "pos": [610, 235], "size": [130, 64], "sources": [{ "path": "app/services/auth_service.py" }] },
+    { "id": "repo_orm", "type": "backend", "label": "Repository / ORM", "sublabel": "async SQLAlchemy", "pos": [610, 445], "size": [130, 64], "sources": [{ "path": "app/repos/base.py" }] },
+    { "id": "redis", "type": "database", "label": "Redis", "sublabel": "cache + limits", "brand": "redis", "pos": [800, 235], "size": [130, 64], "sources": [{ "path": "app/services/cache/base.py" }] },
+    { "id": "postgres", "type": "database", "label": "PostgreSQL", "sublabel": "primary datastore", "brand": "postgresql", "pos": [800, 445], "size": [130, 64], "sources": [{ "path": "app/core/db.py" }] },
+    { "id": "celery", "type": "backend", "label": "Celery Worker + Beat", "sublabel": "background tasks", "pos": [980, 235], "size": [140, 64], "sources": [{ "path": "app/services/task_queue/celery_config.py" }] },
+    { "id": "integrations", "type": "external", "label": "External Integrations", "sublabel": "pluggable extras", "pos": [1000, 445], "size": [140, 64], "sources": [{ "path": "app/services/firebase.py", "label": "one of several" }] }
+  ],
+  "boundaries": [
+    { "kind": "security-group", "label": "Docker Compose trusted network (backend + db + redis)", "wraps": ["gateway", "api_v1", "api_v2", "service", "repo_orm", "redis", "postgres"], "pad": 20 }
+  ],
+  "connections": [
+    { "id": "client-gateway", "from": "client", "to": "gateway", "label": "HTTPS", "variant": "emphasis" },
+    { "id": "gateway-observability", "from": "gateway", "to": "observability", "label": "shipped logs (Loguru → OpenObserve)", "variant": "dashed", "fromSide": "top", "toSide": "right" },
+    { "id": "gateway-v1", "from": "gateway", "to": "api_v1", "label": "routed request", "route": "orthogonal-h" },
+    { "id": "gateway-v2", "from": "gateway", "to": "api_v2", "label": "routed request (stub)", "variant": "dashed", "route": "orthogonal-h" },
+    { "id": "v1-service", "from": "api_v1", "to": "service", "label": "deps: auth + rate-limit + DB session", "labelAt": [503, 210] },
+    { "id": "service-repo", "from": "service", "to": "repo_orm", "label": "BaseRepository CRUD", "labelAt": [605, 313] },
+    { "id": "repo-postgres", "from": "repo_orm", "to": "postgres", "label": "async SQLAlchemy (asyncpg)", "labelAt": [770, 535] },
+    { "id": "service-redis", "from": "service", "to": "redis", "label": "cache / rate-limit / blacklist", "labelAt": [770, 210] },
+    { "id": "service-celery", "from": "service", "to": "celery", "label": "dispatch task (Celery apply_async)", "variant": "dashed", "fromSide": "top", "toSide": "top", "via": [[675, 180], [1050, 180]], "labelAt": [862, 165] },
+    { "id": "celery-redis", "from": "celery", "to": "redis", "label": "broker + result backend", "variant": "dashed", "labelAt": [955, 210] },
+    { "id": "celery-postgres", "from": "celery", "to": "postgres", "label": "sync SQLAlchemy (psycopg)", "variant": "dashed", "fromSide": "right", "toSide": "bottom", "via": [[1170, 267], [1170, 560], [865, 560]], "labelAt": [1017, 548] },
+    { "id": "service-integrations", "from": "service", "to": "integrations", "label": "outbound SDK calls", "fromSide": "bottom", "toSide": "top" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Notes",
+      "items": [
+        "Gateway order: CORS → security headers → CSRF → rate-limit → logging",
+        "Redis backs cache, rate-limiter, and JWT blacklist — pickle is safe only inside this trusted network",
+        "Celery worker/beat exist in code but aren't in docker-compose.yml today",
+        "/v2 is a stub; CI/CD (GitHub Actions) is build-time and not drawn here"
+      ]
+    }
+  ]
+}
