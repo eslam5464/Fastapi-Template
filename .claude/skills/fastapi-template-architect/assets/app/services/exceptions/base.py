@@ -6,5 +6,6 @@
 # (see references/copier-template-mechanics.md) whenever that's available.
 # --- END SNAPSHOT NOTICE ---
 
+
 class ServiceException(Exception):
     """Base exception for service layer errors."""
