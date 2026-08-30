@@ -1,9 +1,12 @@
 from abc import ABC
+from typing import Awaitable, Callable, TypeVar
 
 from loguru import logger
 from redis.asyncio import ConnectionPool, Redis
 
 from app.core.config import Environment, settings
+
+T = TypeVar("T")
 
 # Global shared Redis connection pool
 _redis_pool: ConnectionPool | None = None
@@ -110,3 +113,37 @@ class BaseRedisClient(ABC):
                 logger.info(f"Redis connection closed for {self.__class__.__name__}")
             except Exception as e:
                 logger.error(f"Error closing Redis connection for {self.__class__.__name__}: {e}")
+
+    async def _safe_call(
+        self,
+        op: Callable[[Redis], Awaitable[T]],
+        *,
+        default: T,
+        context: str,
+    ) -> T:
+        """
+        Run a Redis operation with the shared fail-safe shell.
+
+        Returns `default` (and logs) whenever there's no Redis client to call, or the
+        operation raises — both are the "Redis is unavailable" case as far as any caller
+        of a Redis-backed service should be concerned. Domain-specific guards (feature
+        flags, environment short-circuits, input validation) are the caller's job and
+        should run before this is invoked.
+
+        Args:
+            op: Async callable that performs the Redis operation, given the live client.
+            default: Value to return if Redis is unavailable or `op` raises.
+            context: Short description of the operation, used in log messages.
+
+        Returns:
+            T: The result of `op`, or `default` on unavailability/failure.
+        """
+        if not self.redis_client:
+            logger.warning(f"Redis client not initialized in {self.__class__.__name__} ({context})")
+            return default
+
+        try:
+            return await op(self.redis_client)
+        except Exception:
+            logger.exception(f"{context} failed in {self.__class__.__name__}")
+            return default

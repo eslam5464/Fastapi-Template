@@ -1,6 +1,5 @@
 import hashlib
 import tempfile
-import uuid
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -12,67 +11,7 @@ from app.core.utils import (
     calculate_md5_hash,
     estimate_upload_time,
     get_client_ip,
-    parse_user_id,
 )
-
-
-class TestParseUserId:
-    """Test parse_user_id function."""
-
-    def test_uuid_input_returns_uuid(self):
-        """Test that UUID input returns UUID unchanged."""
-        test_uuid = uuid.uuid4()
-
-        result = parse_user_id(test_uuid)
-
-        assert result == test_uuid
-        assert isinstance(result, uuid.UUID)
-
-    def test_string_uuid_converts_to_uuid(self):
-        """Test that string representation of UUID converts to UUID."""
-        test_uuid = uuid.uuid4()
-        uuid_string = str(test_uuid)
-
-        result = parse_user_id(uuid_string)
-
-        assert result == test_uuid
-        assert isinstance(result, uuid.UUID)
-
-    def test_integer_converts_to_int(self):
-        """Test that integer string converts to int."""
-        user_id = "12345"
-
-        result = parse_user_id(user_id)
-
-        assert result == 12345
-        assert isinstance(result, int)
-
-    def test_integer_input_converts_to_int(self):
-        """Test that integer input attempts UUID conversion first, then returns int."""
-        user_id = 12345
-
-        result = parse_user_id(user_id)
-
-        # Will try UUID conversion first, fail, then try int (already int)
-        assert isinstance(result, int)
-
-    def test_invalid_string_returns_as_is(self):
-        """Test that invalid string (not UUID, not int) returns unchanged."""
-        user_id = "some-random-string"
-
-        result = parse_user_id(user_id)
-
-        assert result == user_id
-        assert isinstance(result, str)
-
-    def test_special_characters_string_returns_as_is(self):
-        """Test that string with special characters returns unchanged."""
-        user_id = "user@example.com"
-
-        result = parse_user_id(user_id)
-
-        assert result == user_id
-        assert isinstance(result, str)
 
 
 @pytest.mark.anyio

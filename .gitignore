@@ -62,6 +62,7 @@ log/
 # Test
 .pytest_cache/
 .hypothesis/
+.apple_pay_test_credentials/
 
 # Alembic
 versions/__pycache__/

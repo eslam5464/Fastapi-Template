@@ -1,4 +1,7 @@
+import time
+
 from loguru import logger
+from redis.asyncio import Redis
 
 from app.core.config import Environment, settings
 from app.services.cache import BaseRedisClient
@@ -37,19 +40,14 @@ class TokenBlacklist(BaseRedisClient):
             logger.debug(f"Token blacklist skipped in LOCAL environment: {jti}")
             return True
 
-        if not self.redis_client:
-            logger.warning("Redis client not initialized in TokenBlacklist")
-            return False
-
-        try:
+        async def _revoke(client: Redis) -> bool:
             key = f"{self.KEY_PREFIX}{jti}"
             # Store with expiration matching token TTL
-            await self.redis_client.setex(key, ttl_seconds, "revoked")
+            await client.setex(key, ttl_seconds, "revoked")
             logger.info(f"Token revoked: {jti[:8]}... (TTL: {ttl_seconds}s)")
             return True
-        except Exception:
-            logger.exception(f"Failed to revoke token {jti[:8]}...")
-            return False
+
+        return await self._safe_call(_revoke, default=False, context=f"Token revoke for {jti[:8]}...")
 
     async def is_revoked(self, jti: str) -> bool:
         """
@@ -65,19 +63,15 @@ class TokenBlacklist(BaseRedisClient):
         if settings.current_environment == Environment.LOCAL:
             return False
 
-        if not self.redis_client:
-            logger.warning("Redis client not initialized in TokenBlacklist")
-            # Fail open - if Redis is unavailable, don't block requests
-            # In high-security environments, you may want to fail closed instead
-            return False
-
-        try:
+        async def _is_revoked(client: Redis) -> bool:
             key = f"{self.KEY_PREFIX}{jti}"
-            return bool(await self.redis_client.exists(key) > 0)
-        except Exception:
-            logger.exception(f"Failed to check token revocation {jti[:8]}...")
-            # Fail open on error
-            return False
+            return bool(await client.exists(key) > 0)
+
+        # Fail open (not revoked) if Redis is unavailable or the check errors — see
+        # BaseRedisClient._safe_call. In high-security environments, fail closed instead.
+        return await self._safe_call(
+            _is_revoked, default=False, context=f"Token revocation check for {jti[:8]}..."
+        )
 
     async def revoke_all_user_tokens(self, user_id: str, ttl_seconds: int) -> bool:
         """
@@ -96,21 +90,16 @@ class TokenBlacklist(BaseRedisClient):
         if settings.current_environment == Environment.LOCAL:
             return True
 
-        if not self.redis_client:
-            logger.warning("Redis client not initialized in TokenBlacklist")
-            return False
-
-        try:
-            import time
-
+        async def _revoke_all(client: Redis) -> bool:
             key = f"token:revoke_all:{user_id}"
             # Store the timestamp when all tokens were revoked
-            await self.redis_client.setex(key, ttl_seconds, str(int(time.time())))
+            await client.setex(key, ttl_seconds, str(int(time.time())))
             logger.info(f"All tokens revoked for user: {user_id}")
             return True
-        except Exception:
-            logger.exception(f"Failed to revoke all tokens for user {user_id}")
-            return False
+
+        return await self._safe_call(
+            _revoke_all, default=False, context=f"Revoke-all-tokens for user {user_id}"
+        )
 
     async def get_user_revocation_time(self, user_id: str) -> int | None:
         """
@@ -125,18 +114,16 @@ class TokenBlacklist(BaseRedisClient):
         if settings.current_environment == Environment.LOCAL:
             return None
 
-        if not self.redis_client:
-            return None
-
-        try:
+        async def _get_revocation_time(client: Redis) -> int | None:
             key = f"token:revoke_all:{user_id}"
-            value = await self.redis_client.get(key)
-            if value:
-                return int(value)
-            return None
-        except Exception:
-            logger.exception(f"Failed to get revocation time for user {user_id}")
-            return None
+            value = await client.get(key)
+            return int(value) if value else None
+
+        return await self._safe_call(
+            _get_revocation_time,
+            default=None,
+            context=f"Revocation-time lookup for user {user_id}",
+        )
 
 
 # Global token blacklist instance

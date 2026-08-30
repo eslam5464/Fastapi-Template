@@ -2,6 +2,7 @@ import hashlib
 import time
 
 from loguru import logger
+from redis.asyncio import Redis
 
 from app.core.config import settings
 from app.core.exceptions.rate_limiter import (
@@ -67,27 +68,25 @@ class RateLimiter(BaseRedisClient):
         if window <= 0:
             raise RateLimitConfigurationError(f"Rate limit window must be positive, got {window}")
 
+        # Fail-open default: used both when rate limiting is disabled and when
+        # Redis is unavailable or the check fails (see BaseRedisClient._safe_call).
+        allow_default = (
+            True,
+            RateLimitInfoDict(
+                limit=limit, remaining=limit, reset_time=int(time.time()) + window, window=window
+            ),
+        )
+
         # Skip rate limiting if disabled
         if not settings.rate_limit_enabled:
-            return True, RateLimitInfoDict(
-                limit=limit, remaining=limit, reset_time=int(time.time()) + window, window=window
-            )
+            return allow_default
 
-        # Check if Redis client is available
-        if not self.redis_client:
-            logger.warning(
-                f"Redis client not initialized in RateLimiter, allowing request for key {key}"
-            )
-            return True, RateLimitInfoDict(
-                limit=limit, remaining=limit, reset_time=int(time.time()) + window, window=window
-            )
-
-        try:
+        async def _check(client: Redis) -> tuple[bool, RateLimitInfoDict]:
             now = int(time.time() * 1000000)  # Current time in microseconds
             window_start = now - (window * 1000000)  # Window start time in microseconds
 
             # Create pipeline for atomic operations
-            pipe = self.redis_client.pipeline()
+            pipe = client.pipeline()
 
             # 1. Remove requests older than the window
             pipe.zremrangebyscore(key, 0, window_start)
@@ -115,21 +114,14 @@ class RateLimiter(BaseRedisClient):
             reset_time = now + window
             is_allowed = request_count <= limit  # Changed from < to <=
 
-            rate_limit_info = RateLimitInfoDict(
+            return is_allowed, RateLimitInfoDict(
                 limit=limit, remaining=remaining, reset_time=reset_time, window=window
             )
 
-            return is_allowed, rate_limit_info
-
-        except Exception:
-            logger.exception(f"Rate limit check failed for key {key}. Allowing request.")
-            # On error, allow request (fail open)
-            return True, RateLimitInfoDict(
-                limit=limit,
-                remaining=limit,
-                reset_time=int(time.time()) + window,
-                window=window,
-            )
+        # Fail-open on Redis unavailability or error (see BaseRedisClient._safe_call).
+        return await self._safe_call(
+            _check, default=allow_default, context=f"Rate limit check for key {key}"
+        )
 
     async def get_limit_info(self, key: str, limit: int, window: int = 60) -> RateLimitInfoDict:
         """
@@ -147,37 +139,33 @@ class RateLimiter(BaseRedisClient):
             This method only reads the current state, it does NOT increment counters.
             Use check_rate_limit() for actual rate limiting with counter increment.
         """
-        if not settings.rate_limit_enabled or not self.redis_client:
-            return RateLimitInfoDict(
-                limit=limit,
-                remaining=limit,
-                reset_time=int(time.time()) + window,
-                window=window,
-            )
+        default_info = RateLimitInfoDict(
+            limit=limit, remaining=limit, reset_time=int(time.time()) + window, window=window
+        )
 
-        try:
+        if not settings.rate_limit_enabled:
+            return default_info
+
+        async def _get_info(client: Redis) -> RateLimitInfoDict:
             now = int(time.time())
             window_start = now - window
 
             # Count requests in current window without modifying
-            pipe = self.redis_client.pipeline()
+            pipe = client.pipeline()
             pipe.zremrangebyscore(key, 0, window_start)  # Clean old entries
             pipe.zcard(key)
             results = await pipe.execute()
 
             request_count = results[1]
             remaining = max(0, limit - request_count)
-            reset_time = now + window
 
             return RateLimitInfoDict(
-                limit=limit, remaining=remaining, reset_time=reset_time, window=window
+                limit=limit, remaining=remaining, reset_time=now + window, window=window
             )
 
-        except Exception:
-            logger.exception(f"Failed to get limit info for key {key}")
-            return RateLimitInfoDict(
-                limit=limit, remaining=limit, reset_time=int(time.time()) + window, window=window
-            )
+        return await self._safe_call(
+            _get_info, default=default_info, context=f"Rate limit info for key {key}"
+        )
 
     async def reset_limit(self, key: str) -> bool:
         """
@@ -192,18 +180,23 @@ class RateLimiter(BaseRedisClient):
         Note:
             This is useful for testing or manual intervention (e.g., unblocking a user).
         """
-        if not settings.rate_limit_enabled or not self.redis_client:
-            logger.debug(f"Skipping rate limit reset for key {key} (disabled or no Redis)")
+        # Nothing to reset if rate limiting is off or Redis isn't reachable — that's not
+        # a failure, so it's handled here rather than folded into the shared fail-safe
+        # shell below (which defaults to False, since an actual delete error is unknown state).
+        if not settings.rate_limit_enabled:
+            logger.debug(f"Skipping rate limit reset for key {key} (rate limiting disabled)")
+            return True
+        if not self.redis_client:
+            logger.debug(f"Skipping rate limit reset for key {key} (Redis unavailable)")
             return True
 
-        try:
-            deleted = await self.redis_client.delete(key)
+        async def _reset(client: Redis) -> bool:
+            deleted = await client.delete(key)
             if deleted:
                 logger.info(f"Rate limit reset for key {key}")
             return bool(deleted > 0)
-        except Exception:
-            logger.exception(f"Failed to reset rate limit for key {key}")
-            return False
+
+        return await self._safe_call(_reset, default=False, context=f"Rate limit reset for key {key}")
 
 
 rate_limiter = RateLimiter()

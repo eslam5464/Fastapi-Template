@@ -2,7 +2,7 @@
 import pickle  # nosec B403
 from typing import Any, Optional
 
-from loguru import logger
+from redis.asyncio import Redis
 
 from app.core.config import settings
 from app.services.cache import BaseRedisClient
@@ -26,22 +26,16 @@ class CacheManager(BaseRedisClient):
         Returns:
             Optional[Any]: Cached value or None if not found
         """
-        if not self.redis_client:
-            logger.warning("Redis client not initialized in CacheManager")
-            return None
 
-        try:
-            data = await self.redis_client.get(key)
-            if data:
-                # Accepted risk: only this service ever writes to these keys (via set()
-                # below), and Redis is treated as trusted internal infra, not attacker-
-                # reachable storage. Revisit if that trust boundary ever changes (e.g.
-                # Redis shared with untrusted services) by switching to JSON.
-                return pickle.loads(data)  # nosec B301
-            return None
-        except Exception:
-            logger.exception(f"Cache get failed for key {key}")
-            return None
+        async def _get(client: Redis) -> Optional[Any]:
+            data = await client.get(key)
+            # Accepted risk: only this service ever writes to these keys (via set()
+            # below), and Redis is treated as trusted internal infra, not attacker-
+            # reachable storage. Revisit if that trust boundary ever changes (e.g.
+            # Redis shared with untrusted services) by switching to JSON.
+            return pickle.loads(data) if data else None  # nosec B301
+
+        return await self._safe_call(_get, default=None, context=f"Cache get for key {key}")
 
     async def set(self, key: str, value: Any, expire: int | None = None) -> bool:
         """
@@ -55,17 +49,13 @@ class CacheManager(BaseRedisClient):
         Returns:
             bool: True if set successfully, False otherwise
         """
-        if not self.redis_client:
-            logger.warning("Redis client not initialized in CacheManager")
-            return False
+        ttl = expire or settings.cache_ttl_default
 
-        try:
+        async def _set(client: Redis) -> bool:
             serialized = pickle.dumps(value)
-            expire = expire or settings.cache_ttl_default
-            return bool(await self.redis_client.set(key, serialized, ex=expire))
-        except Exception:
-            logger.exception(f"Cache set failed for key {key}")
-            return False
+            return bool(await client.set(key, serialized, ex=ttl))
+
+        return await self._safe_call(_set, default=False, context=f"Cache set for key {key}")
 
     async def delete(self, key: str) -> bool:
         """
@@ -77,15 +67,11 @@ class CacheManager(BaseRedisClient):
         Returns:
             bool: True if deleted successfully, False otherwise
         """
-        if not self.redis_client:
-            logger.warning("Redis client not initialized in CacheManager")
-            return False
 
-        try:
-            return bool(await self.redis_client.delete(key) > 0)
-        except Exception:
-            logger.exception(f"Cache delete failed for key {key}")
-            return False
+        async def _delete(client: Redis) -> bool:
+            return bool(await client.delete(key) > 0)
+
+        return await self._safe_call(_delete, default=False, context=f"Cache delete for key {key}")
 
     async def delete_pattern(self, pattern: str) -> int:
         """
@@ -97,18 +83,16 @@ class CacheManager(BaseRedisClient):
         Returns:
             int: Number of keys deleted
         """
-        if not self.redis_client:
-            logger.warning("Redis client not initialized in CacheManager")
+
+        async def _delete_pattern(client: Redis) -> int:
+            keys = await client.keys(pattern)
+            if keys:
+                return int(await client.delete(*keys))
             return 0
 
-        try:
-            keys = await self.redis_client.keys(pattern)
-            if keys:
-                return int(await self.redis_client.delete(*keys))
-            return 0
-        except Exception:
-            logger.exception(f"Cache delete pattern failed for pattern {pattern}")
-            return 0
+        return await self._safe_call(
+            _delete_pattern, default=0, context=f"Cache delete pattern {pattern}"
+        )
 
     async def exists(self, key: str) -> bool:
         """
@@ -120,15 +104,13 @@ class CacheManager(BaseRedisClient):
         Returns:
             bool: True if key exists, False otherwise
         """
-        if not self.redis_client:
-            logger.warning("Redis client not initialized in CacheManager")
-            return False
 
-        try:
-            return bool(await self.redis_client.exists(key) > 0)
-        except Exception:
-            logger.exception(f"Cache exists check failed for key {key}")
-            return False
+        async def _exists(client: Redis) -> bool:
+            return bool(await client.exists(key) > 0)
+
+        return await self._safe_call(
+            _exists, default=False, context=f"Cache exists check for key {key}"
+        )
 
 
 # Global cache manager instance

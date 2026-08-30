@@ -77,14 +77,11 @@ jobs:
           sed -i 's/^REDIS_PASS=.*/REDIS_PASS=/' .env
           sed -i 's/^REDIS_USER=.*/REDIS_USER=/' .env
 
-      - name: Generate dummy Apple Pay test credentials
-        if: matrix.include_apple_pay == 'true'
-        working-directory: /tmp/baked
-        run: |
-          uv run python -c "from cryptography.hazmat.primitives.asymmetric import ec; from cryptography.hazmat.primitives import serialization; key = ec.generate_private_key(ec.SECP256R1()); open('apple_pay_test_key.p8', 'wb').write(key.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption()))"
-          echo "dummy cert content for CI tests" > apple_pay_test_root_ca.cer
-          sed -i 's#^APPLE_PAY_STORE_PRIVATE_KEY_PATH=.*#APPLE_PAY_STORE_PRIVATE_KEY_PATH=apple_pay_test_key.p8#' .env
-          sed -i 's#^APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH=.*#APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH=apple_pay_test_root_ca.cer#' .env
+      # Dummy Apple Pay test credentials no longer need a dedicated CI step —
+      # `tests/conftest.py`'s `_ensure_apple_pay_test_credentials()` generates them
+      # automatically before any app module is imported, for both variants alike
+      # (a no-op when include_apple_pay=false, since that baked project has neither
+      # the apple_pay module nor its settings fields to consume them).
 
       - name: Create test database
         working-directory: /tmp/baked

@@ -124,22 +124,11 @@ jobs:
       # singleton at import time, which eagerly PEM-parses the private key. Real
       # API calls are always mocked in tests, but the key still has to be a
       # syntactically valid PEM or importing the module (and therefore collecting
-      # any apple_pay test file) crashes before a single test runs. Similarly,
-      # decode_transaction_info()/webhook verification eagerly read the root
-      # certificate file's bytes as a SignedDataVerifier constructor argument
-      # before that (mocked-in-tests) class is invoked, so the path needs to
-      # exist and be readable even though its content is never really parsed
-      # under test. .env.example's values are intentionally empty/placeholder
-      # (real credentials, not runnable as-is), so throwaway files are generated
-      # here and wired in via the existing *_PATH file-based credential loading.
-      # --- APPLE_PAY_CI_START ---
-      - name: Generate dummy Apple Pay test credentials
-        run: |
-          uv run python -c "from cryptography.hazmat.primitives.asymmetric import ec; from cryptography.hazmat.primitives import serialization; key = ec.generate_private_key(ec.SECP256R1()); open('apple_pay_test_key.p8', 'wb').write(key.private_bytes(encoding=serialization.Encoding.PEM, format=serialization.PrivateFormat.PKCS8, encryption_algorithm=serialization.NoEncryption()))"
-          echo "dummy cert content for CI tests" > apple_pay_test_root_ca.cer
-          sed -i 's#^APPLE_PAY_STORE_PRIVATE_KEY_PATH=.*#APPLE_PAY_STORE_PRIVATE_KEY_PATH=apple_pay_test_key.p8#' .env
-          sed -i 's#^APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH=.*#APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH=apple_pay_test_root_ca.cer#' .env
-      # --- APPLE_PAY_CI_END ---
+      # any apple_pay test file) crashes before a single test runs. .env.example's
+      # values are intentionally empty/placeholder (real credentials, not runnable
+      # as-is) — `tests/conftest.py`'s `_ensure_apple_pay_test_credentials()`
+      # generates throwaway ones automatically (locally and here in CI) before any
+      # app module is imported, so no separate CI step is needed for this anymore.
 
       - name: Create test database
         run: >

@@ -5,7 +5,7 @@ import pytest
 from jose import jwt
 from jose.exceptions import JWTClaimsError, JWTError
 
-from app.api.v1.deps.auth import generate_refresh_token, get_current_user
+from app.api.v1.deps.auth import generate_refresh_token, get_auth_service, get_current_user
 from app.core.config import settings
 from app.core.exceptions.http_exceptions import UnauthorizedException
 from app.models.user import User
@@ -29,7 +29,7 @@ class TestGetCurrentUserEdgeCases:
         )
 
         with pytest.raises(UnauthorizedException, match="Token has expired"):
-            await get_current_user(expired_token, db_session)
+            await get_current_user(expired_token, get_auth_service(db_session))
 
     async def test_jwt_claims_error(self, db_session):
         """Test that JWTClaimsError is caught and handled."""
@@ -38,14 +38,14 @@ class TestGetCurrentUserEdgeCases:
             mock_decode.side_effect = JWTClaimsError("Invalid claims")
 
             with pytest.raises(UnauthorizedException, match="Token has invalid claims"):
-                await get_current_user("invalid_token", db_session)
+                await get_current_user("invalid_token", get_auth_service(db_session))
 
     async def test_jwt_error(self, db_session):
         """Test that general JWTError is caught and handled."""
         invalid_token = "completely.invalid.token"
 
         with pytest.raises(UnauthorizedException, match="Could not validate credentials"):
-            await get_current_user(invalid_token, db_session)
+            await get_current_user(invalid_token, get_auth_service(db_session))
 
     async def test_missing_subject(self, db_session):
         """Test that missing 'sub' in token raises exception."""
@@ -60,7 +60,7 @@ class TestGetCurrentUserEdgeCases:
         )
 
         with pytest.raises(UnauthorizedException, match="Could not validate credentials"):
-            await get_current_user(token_without_sub, db_session)
+            await get_current_user(token_without_sub, get_auth_service(db_session))
 
     async def test_missing_exp(self, db_session, user: User):
         """Test that missing 'exp' in token raises exception."""
@@ -75,7 +75,7 @@ class TestGetCurrentUserEdgeCases:
         )
 
         with pytest.raises(UnauthorizedException, match="Could not validate credentials"):
-            await get_current_user(token_without_exp, db_session)
+            await get_current_user(token_without_exp, get_auth_service(db_session))
 
     async def test_user_not_found_in_database(self, db_session):
         """Test that exception is raised when user is not found in database."""
@@ -98,7 +98,7 @@ class TestGetCurrentUserEdgeCases:
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
 
             with pytest.raises(UnauthorizedException, match="User not found"):
-                await get_current_user(valid_token, db_session)
+                await get_current_user(valid_token, get_auth_service(db_session))
 
     async def test_token_expired_after_decode(self, db_session, user: User):
         """Test expiration check after successful decode."""
@@ -115,7 +115,7 @@ class TestGetCurrentUserEdgeCases:
 
         # This should be caught by either ExpiredSignatureError or the manual exp check
         with pytest.raises(UnauthorizedException):
-            await get_current_user(token, db_session)
+            await get_current_user(token, get_auth_service(db_session))
 
     async def test_wrong_secret_key(self, db_session, user: User):
         """Test that token signed with wrong key fails validation."""
@@ -130,7 +130,7 @@ class TestGetCurrentUserEdgeCases:
         )
 
         with pytest.raises(UnauthorizedException):
-            await get_current_user(wrong_key_token, db_session)
+            await get_current_user(wrong_key_token, get_auth_service(db_session))
 
 
 @pytest.mark.anyio
@@ -152,7 +152,7 @@ class TestGenerateRefreshToken:
 
         token_payload = TokenPayload(refresh_token=refresh_token)
 
-        result = await generate_refresh_token(token_payload, db_session)
+        result = await generate_refresh_token(token_payload, get_auth_service(db_session))
 
         assert "access_token" in result
         assert "refresh_token" in result
@@ -164,7 +164,7 @@ class TestGenerateRefreshToken:
         token_payload = TokenPayload(refresh_token="invalid.token.format")
 
         with pytest.raises(UnauthorizedException, match="Invalid refresh token"):
-            await generate_refresh_token(token_payload, db_session)
+            await generate_refresh_token(token_payload, get_auth_service(db_session))
 
     async def test_missing_user_id_in_token(self, db_session):
         """Test that token without user_id raises exception."""
@@ -181,7 +181,7 @@ class TestGenerateRefreshToken:
         token_payload = TokenPayload(refresh_token=refresh_token)
 
         with pytest.raises(UnauthorizedException, match="Invalid refresh token"):
-            await generate_refresh_token(token_payload, db_session)
+            await generate_refresh_token(token_payload, get_auth_service(db_session))
 
     async def test_user_not_found_in_database(self, db_session):
         """Test that non-existent user raises exception."""
@@ -201,7 +201,7 @@ class TestGenerateRefreshToken:
         token_payload = TokenPayload(refresh_token=refresh_token)
 
         with pytest.raises(UnauthorizedException, match="Invalid user"):
-            await generate_refresh_token(token_payload, db_session)
+            await generate_refresh_token(token_payload, get_auth_service(db_session))
 
     async def test_jwt_decode_error(self, db_session):
         """Test that JWT decode errors are handled."""
@@ -211,7 +211,7 @@ class TestGenerateRefreshToken:
             token_payload = TokenPayload(refresh_token="some_token")
 
             with pytest.raises(UnauthorizedException, match="Invalid refresh token"):
-                await generate_refresh_token(token_payload, db_session)
+                await generate_refresh_token(token_payload, get_auth_service(db_session))
 
     async def test_wrong_secret_key_for_refresh(self, db_session):
         """Test that refresh token with wrong secret key fails."""
@@ -228,7 +228,7 @@ class TestGenerateRefreshToken:
         token_payload = TokenPayload(refresh_token=refresh_token)
 
         with pytest.raises(UnauthorizedException, match="Invalid refresh token"):
-            await generate_refresh_token(token_payload, db_session)
+            await generate_refresh_token(token_payload, get_auth_service(db_session))
 
     async def test_returns_new_tokens(self, db_session, user: User):
         """Test that new access and refresh tokens are different from input."""
@@ -245,7 +245,7 @@ class TestGenerateRefreshToken:
 
         token_payload = TokenPayload(refresh_token=original_refresh)
 
-        result = await generate_refresh_token(token_payload, db_session)
+        result = await generate_refresh_token(token_payload, get_auth_service(db_session))
 
         # New tokens should be different from original
         assert result["access_token"] != original_refresh

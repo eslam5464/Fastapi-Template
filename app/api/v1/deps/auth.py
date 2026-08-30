@@ -21,19 +21,14 @@ from app.services.types.auth import TokenPairDict
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/v1/auth/login")
 
 
-def _get_auth_service(db: AsyncSession) -> AuthService:
-    """Create AuthService with UserRepo injected."""
-    return AuthService(user_repo=repos.UserRepo(db))
-
-
 def get_auth_service(db: Annotated[AsyncSession, Depends(get_session)]) -> AuthService:
-    """Dependency provider for AuthService."""
-    return _get_auth_service(db)
+    """Dependency provider for AuthService — the single place AuthService is constructed."""
+    return AuthService(user_repo=repos.UserRepo(db))
 
 
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
-    db: Annotated[AsyncSession, Depends(get_session)],
+    service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> User:
     """
     Get current authenticated user from JWT token.
@@ -43,7 +38,7 @@ async def get_current_user(
 
     Args:
         token: JWT token
-        db: Database session
+        service: AuthService instance
 
     Returns:
         Current authenticated user
@@ -51,7 +46,6 @@ async def get_current_user(
     Raises:
         HTTPException: If token is invalid or user not found
     """
-    service = _get_auth_service(db)
     try:
         return await service.validate_access_token(token)
     except (ValidationError, ResourceNotFoundError) as e:
@@ -63,7 +57,7 @@ async def get_current_user(
 
 async def generate_access_token(
     user_in: Annotated[UserSignup, Form()],
-    db: AsyncSession = Depends(get_session),
+    service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> TokenPairDict:
     """
     Register a new user and return access + refresh tokens.
@@ -73,7 +67,7 @@ async def generate_access_token(
 
     Args:
         user_in: User signup form data.
-        db: Database session.
+        service: AuthService instance.
 
     Returns:
         TokenPairDict with access and refresh tokens.
@@ -81,7 +75,6 @@ async def generate_access_token(
     Raises:
         BadRequestException: If registration fails (e.g., duplicate email).
     """
-    service = _get_auth_service(db)
     hashed_password = service.get_password_hash(user_in.password.get_secret_value())
     try:
         return await service.register_user(
@@ -99,7 +92,7 @@ async def generate_access_token(
 
 async def generate_refresh_token(
     token_payload: TokenPayload,
-    db: AsyncSession = Depends(get_session),
+    service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> TokenPairDict:
     """
     Generate new access and refresh tokens using the provided refresh token.
@@ -109,7 +102,7 @@ async def generate_refresh_token(
 
     Args:
         token_payload: Payload containing the refresh token.
-        db: Database session.
+        service: AuthService instance.
 
     Returns:
         TokenPairDict with new access and refresh tokens.
@@ -117,7 +110,6 @@ async def generate_refresh_token(
     Raises:
         UnauthorizedException: If the refresh token is invalid or user not found.
     """
-    service = _get_auth_service(db)
     try:
         return await service.refresh_tokens(token_payload.refresh_token)
     except (ValidationError, ResourceNotFoundError) as e:
@@ -129,7 +121,7 @@ async def generate_refresh_token(
 
 async def login_user_for_access_token(
     user_data: Annotated[OAuth2PasswordRequestForm, Depends()],
-    db: AsyncSession = Depends(get_session),
+    service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> TokenPairDict:
     """
     OAuth2 compatible token login, get an access token for future requests.
@@ -139,7 +131,7 @@ async def login_user_for_access_token(
 
     Args:
         user_data: OAuth2 password request form data
-        db: Database session
+        service: AuthService instance
 
     Returns:
         TokenPairDict with access and refresh tokens
@@ -147,7 +139,6 @@ async def login_user_for_access_token(
     Raises:
         UnauthorizedException: If username or password is incorrect
     """
-    service = _get_auth_service(db)
     try:
         return await service.authenticate_user(
             username=user_data.username,

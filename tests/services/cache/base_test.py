@@ -120,3 +120,52 @@ class TestBaseRedisClient:
 
         # Should not raise exception
         await client.close()
+
+
+class TestBaseRedisClientSafeCall:
+    """Test the shared BaseRedisClient._safe_call fail-safe wrapper."""
+
+    @pytest.mark.anyio
+    async def test_safe_call_no_redis_client_returns_default(self):
+        """Test _safe_call returns default and logs a warning when redis_client is unavailable."""
+        with patch("app.services.cache.base.settings.current_environment", Environment.DEV):
+            client = BaseRedisClient.__new__(BaseRedisClient)
+            client.redis_client = None
+            op = AsyncMock()
+
+            with patch("app.services.cache.base.logger") as mock_logger:
+                result = await client._safe_call(op, default="fallback", context="test-op")
+
+            assert result == "fallback"
+            op.assert_not_called()
+            mock_logger.warning.assert_called_once()
+
+    @pytest.mark.anyio
+    async def test_safe_call_op_raises_returns_default(self, mock_redis_client: AsyncMock):
+        """Test _safe_call returns default and logs via logger.exception when op raises."""
+        with patch("app.services.cache.base.settings.current_environment", Environment.DEV):
+            client = BaseRedisClient.__new__(BaseRedisClient)
+            client.redis_client = mock_redis_client
+            op = AsyncMock(side_effect=Exception("boom"))
+
+            with patch("app.services.cache.base.logger") as mock_logger:
+                result = await client._safe_call(op, default=None, context="test-op")
+
+            assert result is None
+            mock_logger.exception.assert_called_once()
+
+    @pytest.mark.anyio
+    async def test_safe_call_success_returns_op_result(self, mock_redis_client: AsyncMock):
+        """Test _safe_call returns the operation's result without logging on success."""
+        with patch("app.services.cache.base.settings.current_environment", Environment.DEV):
+            client = BaseRedisClient.__new__(BaseRedisClient)
+            client.redis_client = mock_redis_client
+            op = AsyncMock(return_value="value")
+
+            with patch("app.services.cache.base.logger") as mock_logger:
+                result = await client._safe_call(op, default=None, context="test-op")
+
+            assert result == "value"
+            op.assert_called_once_with(mock_redis_client)
+            mock_logger.warning.assert_not_called()
+            mock_logger.exception.assert_not_called()

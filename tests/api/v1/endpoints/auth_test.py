@@ -6,7 +6,7 @@ from httpx import AsyncClient
 from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.deps.auth import get_current_user
+from app.api.v1.deps.auth import get_auth_service, get_current_user
 from app.core.config import settings
 from app.models import User
 from tests.utils import generate_user_credentials
@@ -732,7 +732,7 @@ class TestGetCurrentUser:
         )
 
         # Call get_current_user
-        current_user = await get_current_user(token=token, db=db_session)
+        current_user = await get_current_user(token=token, service=get_auth_service(db_session))
         assert current_user.id == user.id
         assert current_user.username == user.username
         assert current_user.email == user.email
@@ -746,7 +746,7 @@ class TestGetCurrentUser:
         from app.core.exceptions.http_exceptions import UnauthorizedException
 
         with pytest.raises(UnauthorizedException) as exc_info:
-            await get_current_user(token="invalid.token.format", db=db_session)
+            await get_current_user(token="invalid.token.format", service=get_auth_service(db_session))
 
         assert exc_info.value.status_code == 401
         assert "Could not validate credentials" in str(exc_info.value.detail)
@@ -772,7 +772,7 @@ class TestGetCurrentUser:
         )
 
         with pytest.raises(UnauthorizedException) as exc_info:
-            await get_current_user(token=expired_token, db=db_session)
+            await get_current_user(token=expired_token, service=get_auth_service(db_session))
 
         assert exc_info.value.status_code == 401
         assert "Token has expired" in str(exc_info.value.detail)
@@ -796,7 +796,7 @@ class TestGetCurrentUser:
         )
 
         with pytest.raises(UnauthorizedException) as exc_info:
-            await get_current_user(token=token_no_sub, db=db_session)
+            await get_current_user(token=token_no_sub, service=get_auth_service(db_session))
 
         assert exc_info.value.status_code == 401
         assert "Could not validate credentials" in str(exc_info.value.detail)
@@ -821,7 +821,7 @@ class TestGetCurrentUser:
         )
 
         with pytest.raises(UnauthorizedException) as exc_info:
-            await get_current_user(token=token_no_exp, db=db_session)
+            await get_current_user(token=token_no_exp, service=get_auth_service(db_session))
 
         assert exc_info.value.status_code == 401
         assert "Could not validate credentials" in str(exc_info.value.detail)
@@ -854,7 +854,7 @@ class TestGetCurrentUser:
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
 
             with pytest.raises(UnauthorizedException) as exc_info:
-                await get_current_user(token=token, db=db_session)
+                await get_current_user(token=token, service=get_auth_service(db_session))
 
             assert exc_info.value.status_code == 401
             assert "User not found" in str(exc_info.value.detail)
@@ -880,7 +880,7 @@ class TestGetCurrentUser:
         )
 
         with pytest.raises(UnauthorizedException) as exc_info:
-            await get_current_user(token=wrong_token, db=db_session)
+            await get_current_user(token=wrong_token, service=get_auth_service(db_session))
 
         assert exc_info.value.status_code == 401
         assert "Could not validate credentials" in str(exc_info.value.detail)
@@ -907,7 +907,7 @@ class TestGetCurrentUser:
         )
 
         with pytest.raises(UnauthorizedException) as exc_info:
-            await get_current_user(token=token, db=db_session)
+            await get_current_user(token=token, service=get_auth_service(db_session))
 
         assert exc_info.value.status_code == 401
 
@@ -933,7 +933,7 @@ class TestGetCurrentUser:
         )
 
         with pytest.raises(UnauthorizedException) as exc_info:
-            await get_current_user(token=malformed_token, db=db_session)
+            await get_current_user(token=malformed_token, service=get_auth_service(db_session))
 
         assert exc_info.value.status_code == 401
 

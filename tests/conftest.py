@@ -1,22 +1,73 @@
-from datetime import UTC, datetime, timedelta
+import os
+from pathlib import Path
 from typing import AsyncGenerator
 
-import pytest
-from faker import Faker
-from fastapi import FastAPI
-from httpx import ASGITransport, AsyncClient
-from jose import jwt
-from pwdlib import PasswordHash
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.pool import NullPool
-from sqlalchemy.sql import text
 
-from app import repos
-from app.core.config import settings
-from app.core.db import get_session
-from app.main import app, v1_app, v2_app
-from app.models import Base, User
-from app.schemas import Token, UserCreate
+def _ensure_apple_pay_test_credentials() -> None:
+    """
+    Generate throwaway Apple Pay test credentials before any `app.*` module is imported.
+
+    `app/services/payments/apple_pay.py` builds a module-level `ApplePay()` singleton at
+    import time, which eagerly PEM-parses the private key (and, for webhook/receipt
+    verification, reads the root certificate file's bytes). Real Apple API calls are
+    always mocked in tests, but these files still need to exist and be syntactically
+    valid just to *import* the module — `.env.example`'s Apple Pay values are
+    intentionally empty/placeholder (real credentials, not runnable as-is).
+
+    Generating them here (module scope, before the `app.*` imports below) rather than in
+    a fixture means they exist before pytest even starts collecting test modules — a
+    fixture would run too late, since the crash happens at import time. This runs
+    identically locally and in CI/CD; no separate CI-only credential-generation step
+    needed. The env vars set here take precedence over whatever `.env` has, since
+    pydantic-settings resolves environment variables before dotenv file values.
+    """
+    creds_dir = Path(__file__).resolve().parent.parent / ".apple_pay_test_credentials"
+    creds_dir.mkdir(exist_ok=True)
+
+    key_path = creds_dir / "test_key.p8"
+    if not key_path.exists():
+        from cryptography.hazmat.primitives import serialization
+        from cryptography.hazmat.primitives.asymmetric import ec
+
+        key = ec.generate_private_key(ec.SECP256R1())
+        key_path.write_bytes(
+            key.private_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PrivateFormat.PKCS8,
+                encryption_algorithm=serialization.NoEncryption(),
+            )
+        )
+
+    cert_path = creds_dir / "test_root_ca.cer"
+    if not cert_path.exists():
+        cert_path.write_text("dummy cert content for tests\n")
+
+    os.environ["APPLE_PAY_STORE_PRIVATE_KEY_PATH"] = str(key_path)
+    os.environ["APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH"] = str(cert_path)
+
+
+_ensure_apple_pay_test_credentials()
+
+import pytest  # noqa: E402
+from faker import Faker  # noqa: E402
+from fastapi import FastAPI  # noqa: E402
+from httpx import ASGITransport, AsyncClient  # noqa: E402
+from pwdlib import PasswordHash  # noqa: E402
+from sqlalchemy.ext.asyncio import (  # noqa: E402
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from sqlalchemy.pool import NullPool  # noqa: E402
+from sqlalchemy.sql import text  # noqa: E402
+
+from app import repos  # noqa: E402
+from app.core.config import settings  # noqa: E402
+from app.core.db import get_session  # noqa: E402
+from app.main import app, v1_app, v2_app  # noqa: E402
+from app.models import Base, User  # noqa: E402
+from app.schemas import Token, UserCreate  # noqa: E402
+from app.services.auth_service import AuthService  # noqa: E402
 
 DEFAULT_PASSWORD = "P@ssword123"
 _PASSWORD_HASH = PasswordHash.recommended()
@@ -148,15 +199,8 @@ async def default_password() -> str:
 @pytest.fixture
 async def token(user: User) -> Token:
     """Create a test token."""
-    access_token = jwt.encode(
-        {
-            "sub": str(user.id),
-            "exp": datetime.now(UTC) + timedelta(seconds=settings.access_token_expire_seconds),
-        },
-        settings.secret_key,
-        algorithm=settings.jwt_algorithm,
-    )
+    access_token_data = AuthService.create_access_token(subject=str(user.id))
     return Token(
-        access_token=access_token,
+        access_token=access_token_data["token"],
         token_type="Bearer",
     )

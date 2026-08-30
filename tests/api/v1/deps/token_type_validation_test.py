@@ -7,7 +7,7 @@ from httpx import AsyncClient
 from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.deps.auth import get_current_user
+from app.api.v1.deps.auth import get_auth_service, get_current_user
 from app.core.config import settings
 from app.core.exceptions.http_exceptions import UnauthorizedException
 from app.models import User
@@ -41,7 +41,7 @@ class TestAccessTokenTypeValidation:
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
 
             with pytest.raises(UnauthorizedException) as exc_info:
-                await get_current_user(token=refresh_token, db=db_session)
+                await get_current_user(token=refresh_token, service=get_auth_service(db_session))
 
             assert exc_info.value.status_code == 401
             assert "invalid claims" in str(exc_info.value.detail).lower()
@@ -70,7 +70,7 @@ class TestAccessTokenTypeValidation:
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
 
             with pytest.raises(UnauthorizedException) as exc_info:
-                await get_current_user(token=token_no_type, db=db_session)
+                await get_current_user(token=token_no_type, service=get_auth_service(db_session))
 
             assert exc_info.value.status_code == 401
             assert "invalid claims" in str(exc_info.value.detail).lower()
@@ -100,7 +100,7 @@ class TestAccessTokenTypeValidation:
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
 
             with pytest.raises(UnauthorizedException) as exc_info:
-                await get_current_user(token=token_invalid_type, db=db_session)
+                await get_current_user(token=token_invalid_type, service=get_auth_service(db_session))
 
             assert exc_info.value.status_code == 401
             assert "invalid claims" in str(exc_info.value.detail).lower()
@@ -237,7 +237,7 @@ class TestTokenBlacklistIntegration:
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
 
             with pytest.raises(UnauthorizedException) as exc_info:
-                await get_current_user(token=access_token, db=db_session)
+                await get_current_user(token=access_token, service=get_auth_service(db_session))
 
             assert exc_info.value.status_code == 401
             assert "revoked" in str(exc_info.value.detail).lower()
@@ -275,7 +275,7 @@ class TestTokenBlacklistIntegration:
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=revocation_time)
 
             with pytest.raises(UnauthorizedException) as exc_info:
-                await get_current_user(token=access_token, db=db_session)
+                await get_current_user(token=access_token, service=get_auth_service(db_session))
 
             assert exc_info.value.status_code == 401
             assert "revoked" in str(exc_info.value.detail).lower()
@@ -310,5 +310,5 @@ class TestTokenBlacklistIntegration:
             mock_blacklist.get_user_revocation_time = AsyncMock(return_value=revocation_time)
 
             # Should succeed
-            current_user = await get_current_user(token=access_token, db=db_session)
+            current_user = await get_current_user(token=access_token, service=get_auth_service(db_session))
             assert current_user.id == user.id
