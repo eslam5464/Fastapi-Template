@@ -138,6 +138,17 @@ Detailed documentation is available in the [docs/](docs/) folder:
 - **[Roadmap](docs/strategy/roadmap.md)** - Milestones and priorities
 - **[Changelog](docs/changelog/CHANGELOG.md)** - Release history
 
+## 🏛️ Architecture
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/fastapi-template.architecture.visual-check.1440x900.dark.png">
+  <img src="docs/architecture/fastapi-template.architecture.visual-check.1440x900.light.png" alt="FastAPI Template runtime architecture diagram: client through the API gateway, versioned routers, service layer, repository/ORM, PostgreSQL, Redis-backed caching and rate limiting, and an optional Celery worker, all inside a Docker Compose trusted network." width="800">
+</picture>
+
+*Screenshot of the interactive diagram — client → API Gateway → versioned API → Service Layer → Repository/ORM → PostgreSQL, with Redis-backed caching/rate-limiting/token-blacklisting and an optional Celery worker for background jobs, all inside the Docker Compose trusted network.*
+
+See **[Architecture Overview](docs/architecture/overview.md)** for the full write-up. The interactive version lives at [`docs/architecture/fastapi-template.architecture.html`](docs/architecture/fastapi-template.architecture.html) — download it and open it locally for guided views, theme toggling, and per-node source links (GitHub renders `.html` files as source, not a live page, so the link above won't run it in-browser).
+
 ## 🏗️ Project Structure
 
 ```text
