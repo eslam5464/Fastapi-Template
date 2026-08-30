@@ -13,7 +13,6 @@ from datetime import datetime
 from pathlib import Path
 
 APPLE_PAY_MARKERS = ("# --- APPLE_PAY_START ---", "# --- APPLE_PAY_END ---")
-APPLE_PAY_CI_MARKERS = ("# --- APPLE_PAY_CI_START ---", "# --- APPLE_PAY_CI_END ---")
 APPLE_PAY_SETTINGS_MARKERS = (
     "# --- APPLE_PAY_SETTINGS_START ---",
     "# --- APPLE_PAY_SETTINGS_END ---",
@@ -218,7 +217,6 @@ def remove_apple_pay() -> None:
     strip_marked_block(config_path, *APPLE_PAY_SETTINGS_MARKERS)
     strip_marked_block(config_path, *APPLE_PAY_PROPERTY_MARKERS)
 
-    strip_marked_block(Path(".github/workflows/ci.yml"), *APPLE_PAY_CI_MARKERS)
     strip_marked_block(Path(".env.example"), *APPLE_PAY_ENV_MARKERS)
     strip_marked_block(Path("pyproject.toml"), *APPLE_PAY_PYPROJECT_EXTRA_MARKERS)
     strip_marked_block(Path("pyproject.toml"), *APPLE_PAY_MYPY_OVERRIDE_MARKERS)
