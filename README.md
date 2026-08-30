@@ -120,11 +120,50 @@ You'll be prompted for a project name, description, author name/email, GitHub us
 This repo itself stays fully runnable the whole time — the template mechanics live entirely in `copier.yml` and `scripts/generate/post_gen.py`, which run *after* copying and edit the same real files you already build, test, and run directly. There are no separate `.jinja` template files to keep in sync.
 <!-- TEMPLATE_SECTION_END -->
 
+## 🤖 Claude Code Skill
+
+This repo ships a [Claude Code](https://claude.com/claude-code) skill at
+[`.claude/skills/fastapi-template-architect/`](.claude/skills/fastapi-template-architect/)
+that packages this whole architecture — layering rules, SQLAlchemy patterns, auth/
+security conventions, testing gotchas, CI/tooling config, and the Copier generation
+mechanics above — as something Claude can actually use, not just read about. It has two
+jobs:
+
+- **Scaffold a brand-new project** with this architecture by driving the real Copier
+  template (not re-typing boilerplate from memory, so it can't drift from what's
+  actually here).
+- **Extend or review** an existing instance of this architecture — this repo, or any
+  project generated from it — adding new endpoints/services/models consistently with
+  what's already there, or auditing a diff/codebase against the documented rules and
+  anti-patterns catalog before you merge it. Reviews always list what's wrong and why,
+  and what's suggested instead, and leave applying any fix up to you.
+
+**Working in this repo, or in a project generated from it?** Nothing to do — Claude Code
+auto-discovers it from `.claude/skills/`.
+
+**Want it available in your own other projects too?** Copy (or symlink, so it stays
+current when you pull this repo again) the skill directory into your personal skills
+folder:
+
+```bash
+# macOS/Linux
+cp -r .claude/skills/fastapi-template-architect ~/.claude/skills/
+```
+
+```powershell
+# Windows (PowerShell) - a junction instead of a copy keeps it in sync automatically
+New-Item -ItemType Junction -Path "$env:USERPROFILE\.claude\skills\fastapi-template-architect" -Target "$PWD\.claude\skills\fastapi-template-architect"
+```
+
+See the skill's own [SKILL.md](.claude/skills/fastapi-template-architect/SKILL.md) for
+the full detail on both modes.
+
 ## 📖 Documentation
 
 Detailed documentation is available in the [docs/](docs/) folder:
 
 - **[LLM Index](docs/llms.txt)** - Canonical documentation entrypoint for AI and quick doc navigation
+- **[Claude Code Skill](.claude/skills/fastapi-template-architect/SKILL.md)** - Scaffold or extend/review projects with this architecture directly from Claude
 - **[Features](docs/features.md)** - Full list of integrations and services, with setup notes
 - **[Architecture Overview](docs/architecture/overview.md)** - Current system design and versioned routing model
 - **[Backend Architecture Guide](docs/backend-architecture.md)** - Layered architecture deep dive

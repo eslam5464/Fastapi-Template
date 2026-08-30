@@ -1,0 +1,23 @@
+{
+  "skill_name": "fastapi-template-architect",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "I want to start a brand new FastAPI backend project. Please actually scaffold it now (don't just explain the steps) using the eslam5464/Fastapi-Template architecture as the foundation: project name Acme Orders, slug acme-orders, description 'Order management backend', author Jane Doe <jane@example.com>, GitHub username janedoe, Python 3.14, skip Apple Pay, want email sending and Redis caching support usable in this project. A local checkout of the source template lives at C:\\Users\\Eslam\\Documents\\VS\\Fastapi-Template. Generate the new project into a target directory I give you, then tell me concisely what you did, confirm the project looks right by listing its top-level files, and give the exact follow-up commands to get it installed and runnable.",
+      "expected_output": "A fully generated, correctly identity-substituted project (name=acme-orders in pyproject.toml) with Apple Pay code excluded, generator tooling self-removed, and an accurate, complete post-gen checklist (uv sync incl. chosen extras, pre-commit install, .env setup, createdb + alembic upgrade head) - with email/cache correctly explained as extras to install, not generation-time toggles.",
+      "files": []
+    },
+    {
+      "id": 1,
+      "prompt": "I'm working in the FastAPI backend checked out at a given repo path. I want to add a new 'products' feature: a Product model (name: str, price: float, sku: str unique), a repository, a service, and a versioned v1 API endpoint (GET /v1/products/{id} and POST /v1/products) - following this codebase's existing architecture and conventions exactly (look at how User/UserRepo/AuthService/the v1 auth and user endpoints are already structured, and match that). Implement it fully: model, repository, service (TypedDict service types if that's the existing convention), Pydantic schemas, and the API endpoint with proper exception handling and response_model. No database migration needed.",
+      "expected_output": "New model/repo/service/endpoint files that match this repo's real layering rules: service takes injected repos (not a session), raises domain exceptions (not HTTPException), endpoint does try/except translation with no function docstring, and everything is wired through the existing deps factory pattern.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "I just wrote a new order_service.py for our FastAPI backend before opening a PR. Can you review it against our established architecture conventions and tell me everything wrong with it, and why each thing is a problem?",
+      "expected_output": "Identifies the service holding a raw session, constructing its own repos internally, exceeding the 5-repository threshold (7 repos), raising HTTPException directly from the service layer, and the auto_commit=False silent-data-loss bug (two calls, no matching commit) - with an explanation of why each matters, not just a bare list.",
+      "files": ["order_service.py (deliberately flawed fixture, provided by the eval harness)"]
+    }
+  ]
+}

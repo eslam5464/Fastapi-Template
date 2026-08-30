@@ -1,0 +1,98 @@
+# --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
+# Verbatim copy of .pre-commit-config.yaml from eslam5464/Fastapi-Template, taken 2026-08-30.
+# The real repo is the source of truth; this is a fallback/reference copy
+# for offline scaffolding and Extend/Audit-mode pattern-matching. It can drift
+# from the live repo over time - prefer driving the real Copier template
+# (see references/copier-template-mechanics.md) whenever that's available.
+# --- END SNAPSHOT NOTICE ---
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: [--maxkb=10240]
+      - id: check-toml
+      - id: detect-private-key
+      - id: check-merge-conflict
+      - id: name-tests-test
+        exclude: ^tests/(conftest|schemas|utils)\.py$
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.22
+    hooks:
+      # Replaces autoflake (unused imports/variables) + pyflakes + isort.
+      - id: ruff
+        args: [--fix]
+        exclude: ^app/alembic/versions/
+      # Replaces black. Ruff's formatter is black-compatible; expect a one-time
+      # reformat diff the first time this runs.
+      - id: ruff-format
+        exclude: ^app/alembic/versions/
+
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        # Runs via the project's own uv-managed venv instead of a pre-commit-managed
+        # isolated environment: this project has 25+ runtime dependencies, and
+        # mirroring them all in `additional_dependencies` would drift from
+        # pyproject.toml over time. Requires `uv sync` to have been run locally.
+        entry: uv run mypy app --config-file=pyproject.toml
+        language: system
+        pass_filenames: false
+        files: ^app/
+
+      - id: tach
+        name: tach (module boundary check)
+        # Enforces the layering declared in tach.toml (core -> models/schemas ->
+        # repos -> services -> middleware/api). Needs the project's own venv to
+        # resolve `app.*` imports, same reasoning as the mypy hook above.
+        entry: uv run tach check
+        language: system
+        pass_filenames: false
+        files: ^app/
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: "1.9.4"
+    hooks:
+      - id: bandit
+        args: [-c, pyproject.toml]
+        additional_dependencies: ["bandit[toml]"]
+        files: ^app/
+
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: [--baseline, .secrets.baseline]
+        exclude: ^(uv\.lock|htmlcov/|\.venv/|docs/architecture/.*\.html)$
+
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.37.4
+    hooks:
+      - id: check-github-workflows
+      - id: check-dependabot
+
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.16.5
+    hooks:
+      # Lints the commit message being authored against Conventional Commits.
+      # Only runs at the commit-msg stage, not against arbitrary files - see
+      # docs/guides/contributing.md for the one-time `pre-commit install
+      # --hook-type commit-msg` setup this requires.
+      - id: commitizen
+        stages: [commit-msg]
+
+ci:
+  autofix_prs: true
+  autofix_commit_msg: "style: auto-fixes from pre-commit.ci"
+  autoupdate_schedule: weekly
+  # pre-commit.ci runs hooks in its own sandbox with no access to this project's
+  # uv-managed venv, so `language: system` hooks (mypy, tach) can't run there.
+  # Both are still enforced locally via pre-commit and as a required check in
+  # .github/workflows/ci.yml.
+  skip: [mypy, tach]

@@ -1,0 +1,159 @@
+# --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
+# Verbatim copy of .github/workflows/ci.yml from eslam5464/Fastapi-Template, taken 2026-08-30.
+# The real repo is the source of truth; this is a fallback/reference copy
+# for offline scaffolding and Extend/Audit-mode pattern-matching. It can drift
+# from the live repo over time - prefer driving the real Copier template
+# (see references/copier-template-mechanics.md) whenever that's available.
+# --- END SNAPSHOT NOTICE ---
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  UV_CACHE_DIR: /tmp/.uv-cache
+
+jobs:
+  lint:
+    name: Lint, types, security (pre-commit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install "$(cat .python-version)"
+
+      - name: Install dependencies
+        run: uv sync --all-groups --all-extras --frozen
+
+      # Runs the exact same hooks defined in .pre-commit-config.yaml (ruff, tach,
+      # mypy, bandit, detect-secrets, check-jsonschema) as a required status check -
+      # so a contributor who never installed pre-commit locally still gets blocked,
+      # and this stays a single source of truth alongside pre-commit.ci. The
+      # commitizen hook is commit-msg-staged only and doesn't run in --all-files.
+      - name: Cache pre-commit environments
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Run pre-commit
+        run: uv run pre-commit run --all-files --show-diff-on-failure
+
+  test:
+    name: Tests + coverage
+    runs-on: ubuntu-latest
+    # Needed by python-coverage-comment-action to post/update the PR comment and
+    # store badge data on an orphan branch. Note: GITHUB_TOKEN is read-only for
+    # pull_request events from forks regardless of this block - the coverage
+    # comment step will just no-op for external-contributor PRs until this repo
+    # adopts the action's two-workflow (workflow_run) pattern for forks.
+    permissions:
+      contents: write
+      pull-requests: write
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: "postgres"
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:8-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      # postgresql+psycopg (used for the sync engine / Celery) needs libpq at import
+      # time, not just at connection time - matches the Dockerfile's `apk add
+      # postgresql-dev` / `postgresql-libs` for the same reason.
+      - name: Install libpq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends libpq-dev
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install "$(cat .python-version)"
+
+      - name: Install dependencies
+        run: uv sync --all-groups --all-extras --frozen
+
+      - name: Configure environment
+        run: |
+          cp .env.example .env
+          # BaseRedisClient.redis_client always returns None when
+          # current_environment == LOCAL (a deliberate safety guard for local dev
+          # without Redis running) - which breaks the rate-limiter/token-blacklist
+          # tests that rely on a real (mocked) client. "dev" keeps CORS/docs/CSRF
+          # behavior sane while allowing Redis to actually be used, matching what
+          # local dev already runs with.
+          sed -i 's/^CURRENT_ENVIRONMENT=.*/CURRENT_ENVIRONMENT=dev/' .env
+          # Match the postgres service container's credentials above.
+          sed -i 's/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=postgres/' .env
+          # .env.example's Redis defaults assume auth; our service container runs
+          # without a password, so clear both to avoid an unwanted AUTH attempt.
+          sed -i 's/^REDIS_PASS=.*/REDIS_PASS=/' .env
+          sed -i 's/^REDIS_USER=.*/REDIS_USER=/' .env
+
+      # `app/services/payments/apple_pay.py` constructs a module-level ApplePay()
+      # singleton at import time, which eagerly PEM-parses the private key. Real
+      # API calls are always mocked in tests, but the key still has to be a
+      # syntactically valid PEM or importing the module (and therefore collecting
+      # any apple_pay test file) crashes before a single test runs. .env.example's
+      # values are intentionally empty/placeholder (real credentials, not runnable
+      # as-is) — `tests/conftest.py`'s `_ensure_apple_pay_test_credentials()`
+      # generates throwaway ones automatically (locally and here in CI) before any
+      # app module is imported, so no separate CI step is needed for this anymore.
+
+      - name: Create test database
+        run: >
+          uv run python -c "import psycopg; conn = psycopg.connect('host=localhost port=5432
+          user=postgres password=postgres dbname=postgres', autocommit=True);
+          conn.execute('CREATE DATABASE postgres_test'); conn.close()"
+
+      - name: Run migrations
+        run: uv run alembic upgrade head
+
+      - name: Run tests
+        run: uv run pytest
+
+      - name: Post coverage comment
+        uses: py-cov-action/python-coverage-comment-action@v3
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Badge color thresholds: green >=90%, orange >=70%, red below.
+          MINIMUM_GREEN: "90"
+          MINIMUM_ORANGE: "70"
