@@ -9,7 +9,7 @@
 | app/api/routes.py                              |        6 |        0 |    100% |           |
 | app/api/v1/\_\_init\_\_.py                     |        0 |        0 |    100% |           |
 | app/api/v1/deps/\_\_init\_\_.py                |        0 |        0 |    100% |           |
-| app/api/v1/deps/auth.py                        |       42 |        0 |    100% |           |
+| app/api/v1/deps/auth.py                        |       36 |        0 |    100% |           |
 | app/api/v1/deps/rate\_limit.py                 |       69 |        0 |    100% |           |
 | app/api/v1/endpoints/\_\_init\_\_.py           |        0 |        0 |    100% |           |
 | app/api/v1/endpoints/auth.py                   |       35 |        1 |     97% |       128 |
@@ -32,7 +32,7 @@
 | app/core/logger.py                             |      157 |       55 |     65% |118-124, 129-132, 136-164, 168-192, 214, 286-287, 378-425 |
 | app/core/responses.py                          |       21 |        0 |    100% |           |
 | app/core/types.py                              |        2 |        0 |    100% |           |
-| app/core/utils.py                              |       67 |        0 |    100% |           |
+| app/core/utils.py                              |       54 |        0 |    100% |           |
 | app/main.py                                    |       68 |        0 |    100% |           |
 | app/middleware/\_\_init\_\_.py                 |        0 |        0 |    100% |           |
 | app/middleware/csrf.py                         |       47 |        0 |    100% |           |
@@ -56,11 +56,11 @@
 | app/services/auth\_service.py                  |      140 |       13 |     91% |67-71, 92, 186, 195-198, 381-382, 430-431 |
 | app/services/back\_blaze\_b2.py                |      229 |        4 |     98% |282, 325, 512-513 |
 | app/services/cache/\_\_init\_\_.py             |        6 |        0 |    100% |           |
-| app/services/cache/base.py                     |       45 |        0 |    100% |           |
+| app/services/cache/base.py                     |       56 |        0 |    100% |           |
 | app/services/cache/decorators.py               |       17 |        0 |    100% |           |
-| app/services/cache/manager.py                  |       60 |        0 |    100% |           |
-| app/services/cache/rate\_limiter.py            |       67 |        0 |    100% |           |
-| app/services/cache/token\_blacklist.py         |       62 |        0 |    100% |           |
+| app/services/cache/manager.py                  |       33 |        0 |    100% |           |
+| app/services/cache/rate\_limiter.py            |       62 |        0 |    100% |           |
+| app/services/cache/token\_blacklist.py         |       42 |        0 |    100% |           |
 | app/services/email/\_\_init\_\_.py             |        0 |        0 |    100% |           |
 | app/services/email/base.py                     |       25 |        0 |    100% |           |
 | app/services/email/brevo.py                    |       72 |        6 |     92% |40, 74, 96, 100, 106, 130 |
@@ -77,7 +77,7 @@
 | app/services/types/auth.py                     |        5 |        0 |    100% |           |
 | app/services/types/email.py                    |       77 |        4 |     95% |78, 92, 95-96 |
 | app/web.py                                     |       13 |        0 |    100% |           |
-| **TOTAL**                                      | **2844** |  **228** | **92%** |           |
+| **TOTAL**                                      | **2784** |  **228** | **92%** |           |
 
 
 ## Setup coverage badge
