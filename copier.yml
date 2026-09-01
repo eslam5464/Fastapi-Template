@@ -44,7 +44,18 @@ include_apple_pay:
   default: true
 
 _exclude:
+  # Copier's built-in defaults (https://copier.readthedocs.io/en/stable/configuring/#exclude) -
+  # defining _exclude replaces them entirely rather than extending them, so they must be
+  # restored explicitly or every generated project ships this template's own .git history,
+  # __pycache__ dirs, etc.
+  - "copier.yaml"
   - "copier.yml"
+  - "~*"
+  - "*.py[co]"
+  - "__pycache__"
+  - ".git"
+  - ".DS_Store"
+  - ".svn"
   - ".github/workflows/template-ci.yml"
 
 _tasks:

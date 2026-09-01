@@ -145,9 +145,9 @@ def apply_identity_substitutions(args: argparse.Namespace) -> None:
 
     replace_required(Path(".github/CODEOWNERS"), "@Eslam5464", f"@{args.github_username}")
 
-    copilot = Path(".github/copilot-instructions.md")
-    replace_required(copilot, "is FastAPI Template,", f"is {args.project_name},")
-    replace_required(copilot, "@Eslam5464", f"@{args.github_username}")
+    # .github/copilot-instructions.md is generic (no project name or
+    # @Eslam5464 reference) — it applies verbatim to every generated
+    # project, so there is nothing to substitute here.
 
     readme = Path("README.md")
     replace_required(readme, "# FastAPI Template", f"# {args.project_name}")
