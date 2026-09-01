@@ -39,6 +39,26 @@ Or run everything at once (matches the CI `lint` job exactly):
 uv run pre-commit run --all-files
 ```
 
+## Managing Detected Secrets
+
+`.secrets.baseline` records every secret-shaped string the `detect-secrets` pre-commit hook (and CI) has already seen and reviewed — anything it finds that *isn't* in there fails the check.
+
+Pull new or changed findings into the baseline for review:
+
+```bash
+uv run detect-secrets scan --baseline .secrets.baseline
+```
+
+Then step through the unaudited findings interactively, marking each one `y` (real secret) or `n` (false positive):
+
+```bash
+uv run detect-secrets audit .secrets.baseline
+```
+
+Commit `.secrets.baseline` afterward — it only protects anyone else once it's pushed.
+
+**Note:** for a one-off false positive you can instead add an inline `# pragma: allowlist secret` comment on that line, and for a whole machine-generated file (whose "secret" is really just something like an embedded commit hash that changes every time it's regenerated) prefer extending the `exclude` regex on the `detect-secrets` hook in `.pre-commit-config.yaml` instead of re-auditing a moving target on every regeneration.
+
 ## Layering Rules
 
 - Endpoints stay thin.

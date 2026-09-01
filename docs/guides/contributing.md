@@ -20,7 +20,7 @@
 - [ ] Scope is focused and documented
 - [ ] Tests added or updated
 - [ ] uv run pytest passes
-- [ ] uv run pre-commit run --all-files passes (ruff, tach, mypy, bandit, detect-secrets, check-jsonschema)
+- [ ] uv run pre-commit run --all-files passes (ruff, tach, mypy, bandit, [detect-secrets](development.md#managing-detected-secrets), check-jsonschema)
 - [ ] Docs updated (including docs/llms.txt when relevant)
 - [ ] Breaking API changes called out clearly
 - [ ] Commit messages follow Conventional Commits (enforced by the commitizen hook — see below)
