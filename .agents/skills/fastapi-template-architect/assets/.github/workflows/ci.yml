@@ -1,3 +1,11 @@
+# --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
+# Verbatim copy of .github/workflows/ci.yml from eslam5464/Fastapi-Template, taken 2026-08-30.
+# The real repo is the source of truth; this is a fallback/reference copy
+# for offline scaffolding and Extend/Audit-mode pattern-matching. It can drift
+# from the live repo over time - prefer driving the real Copier template
+# (see references/copier-template-mechanics.md) whenever that's available.
+# --- END SNAPSHOT NOTICE ---
+
 name: CI
 
 on:
@@ -18,7 +26,7 @@ jobs:
     name: Lint, types, security (pre-commit)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       - name: Install uv
         uses: astral-sh/setup-uv@v7
@@ -81,7 +89,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       # postgresql+psycopg (used for the sync engine / Celery) needs libpq at import
       # time, not just at connection time - matches the Dockerfile's `apk add

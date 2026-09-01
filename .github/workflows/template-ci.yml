@@ -37,7 +37,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install libpq
         run: |
@@ -56,13 +56,21 @@ jobs:
       - name: Install template tooling
         run: uv sync --group template
 
+      - name: Configure git identity for template generation
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
       - name: Bake template
         run: |
           uv run copier copy . /tmp/baked --data include_apple_pay=${{ matrix.include_apple_pay }} --defaults --trust --quiet
 
       - name: Assert no leftover Jinja syntax
         run: |
-          ! grep -R --include='*' -l -E '\{\{ ?(project_name|project_slug|project_description|author_name|author_email|github_username|python_version)|\{% ?if include_apple_pay' /tmp/baked --exclude-dir=.git
+          # .claude/ and .agents/ are excluded: they carry the fastapi-template-architect
+          # skill (for Claude Code / Codex), whose reference docs legitimately quote the
+          # real `_tasks` Jinja block above as documentation, not unprocessed template code.
+          ! grep -R --include='*' -l -E '\{\{ ?(project_name|project_slug|project_description|author_name|author_email|github_username|python_version)|\{% ?if include_apple_pay' /tmp/baked --exclude-dir=.git --exclude-dir=.claude --exclude-dir=.agents
 
       - name: Install generated project's dependencies
         working-directory: /tmp/baked

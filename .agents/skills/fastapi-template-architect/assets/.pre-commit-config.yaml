@@ -1,3 +1,11 @@
+# --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
+# Verbatim copy of .pre-commit-config.yaml from eslam5464/Fastapi-Template, taken 2026-08-30.
+# The real repo is the source of truth; this is a fallback/reference copy
+# for offline scaffolding and Extend/Audit-mode pattern-matching. It can drift
+# from the live repo over time - prefer driving the real Copier template
+# (see references/copier-template-mechanics.md) whenever that's available.
+# --- END SNAPSHOT NOTICE ---
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -48,16 +56,6 @@ repos:
         pass_filenames: false
         files: ^app/
 
-      - id: sync-skill-mirrors
-        name: sync-skill-mirrors (Codex CLI skill mirror check)
-        # .agents/skills/fastapi-template-architect/ is a generated mirror of
-        # .claude/skills/fastapi-template-architect/ (see scripts/sync_skill_mirrors.py) -
-        # this fails the commit if the mirror is stale instead of silently drifting.
-        entry: uv run python scripts/sync_skill_mirrors.py --check
-        language: system
-        pass_filenames: false
-        files: ^\.claude/skills/fastapi-template-architect/|^\.agents/skills/fastapi-template-architect/
-
   - repo: https://github.com/PyCQA/bandit
     rev: "1.9.4"
     hooks:
@@ -94,7 +92,7 @@ ci:
   autofix_commit_msg: "style: auto-fixes from pre-commit.ci"
   autoupdate_schedule: weekly
   # pre-commit.ci runs hooks in its own sandbox with no access to this project's
-  # uv-managed venv, so `language: system` hooks (mypy, tach, sync-skill-mirrors)
-  # can't run there. All three are still enforced locally via pre-commit and as a
-  # required check in .github/workflows/ci.yml.
-  skip: [mypy, tach, sync-skill-mirrors]
+  # uv-managed venv, so `language: system` hooks (mypy, tach) can't run there.
+  # Both are still enforced locally via pre-commit and as a required check in
+  # .github/workflows/ci.yml.
+  skip: [mypy, tach]

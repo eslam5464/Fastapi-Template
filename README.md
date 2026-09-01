@@ -120,14 +120,12 @@ You'll be prompted for a project name, description, author name/email, GitHub us
 This repo itself stays fully runnable the whole time — the template mechanics live entirely in `copier.yml` and `scripts/generate/post_gen.py`, which run *after* copying and edit the same real files you already build, test, and run directly. There are no separate `.jinja` template files to keep in sync.
 <!-- TEMPLATE_SECTION_END -->
 
-## 🤖 Claude Code Skill
+## 🤖 AI Coding Assistant Support
 
-This repo ships a [Claude Code](https://claude.com/claude-code) skill at
-[`.claude/skills/fastapi-template-architect/`](.claude/skills/fastapi-template-architect/)
-that packages this whole architecture — layering rules, SQLAlchemy patterns, auth/
+This repo packages its whole architecture — layering rules, SQLAlchemy patterns, auth/
 security conventions, testing gotchas, CI/tooling config, and the Copier generation
-mechanics above — as something Claude can actually use, not just read about. It has two
-jobs:
+mechanics above — as something an AI coding assistant can actually use, not just read
+about. It has two jobs, for whichever assistant you use:
 
 - **Scaffold a brand-new project** with this architecture by driving the real Copier
   template (not re-typing boilerplate from memory, so it can't drift from what's
@@ -138,12 +136,49 @@ jobs:
   anti-patterns catalog before you merge it. Reviews always list what's wrong and why,
   and what's suggested instead, and leave applying any fix up to you.
 
-**Working in this repo, or in a project generated from it?** Nothing to do — Claude Code
-auto-discovers it from `.claude/skills/`.
+### Install it in another project — one command, any of 76+ agents
 
-**Want it available in your own other projects too?** Copy (or symlink, so it stays
-current when you pull this repo again) the skill directory into your personal skills
-folder:
+The canonical source lives at
+[`.claude/skills/fastapi-template-architect/`](.claude/skills/fastapi-template-architect/)
+in [Agent Skills](https://code.claude.com/docs/en/skills) format (portable — not
+Claude-specific). To pull it into an unrelated project for **Claude Code, Codex CLI,
+GitHub Copilot, Cursor, Windsurf**, or any other agent supported by
+[`skills` (vercel-labs/skills)](https://github.com/vercel-labs/skills), run this from
+that project:
+
+```bash
+npx skills add eslam5464/Fastapi-Template --skill fastapi-template-architect
+```
+
+Add `-g` to install it once to your personal/global skills folder instead of just this
+project, or `-a claude-code` / `-a codex` to target one agent specifically. This is a
+real, general-purpose skill installer, not something built for this repo — it works
+the same way for anyone else's skills too.
+
+> GitHub Copilot support in that CLI is unverified as of this writing — Copilot's own
+> docs don't describe a native skills-folder mechanism yet. If `-a github-copilot`
+> doesn't do anything for you, use the Copilot-specific files below instead.
+
+### Working in this repo, or in a project generated from it? Nothing to do
+
+Each of these is auto-discovered with zero install step, for the same reason: every
+project generated from this template inherits them automatically, just like the rest
+of the architecture.
+
+- **Claude Code** scans [`.claude/skills/`](.claude/skills/fastapi-template-architect/).
+- **Codex CLI** scans [`.agents/skills/`](.agents/skills/fastapi-template-architect/) —
+  a mirror of the Claude Code skill (same `SKILL.md` format), regenerated from it by
+  [`scripts/sync_skill_mirrors.py`](scripts/sync_skill_mirrors.py) and kept in sync by
+  a pre-commit hook.
+- **GitHub Copilot** reads
+  [`.github/copilot-instructions.md`](.github/copilot-instructions.md) automatically,
+  plus two reusable Copilot Chat prompts once `chat.promptFiles: true` is set in VS
+  Code: [`/fastapi-scaffold`](.github/prompts/fastapi-scaffold.prompt.md) and
+  [`/fastapi-review`](.github/prompts/fastapi-review.prompt.md). Reusing these in
+  another repo today means copying those files there — Copilot has no cross-project
+  installer of its own yet.
+
+### Fallback: manual copy/symlink (if you'd rather not run `npx`)
 
 ```bash
 # macOS/Linux
@@ -163,7 +198,7 @@ the full detail on both modes.
 Detailed documentation is available in the [docs/](docs/) folder:
 
 - **[LLM Index](docs/llms.txt)** - Canonical documentation entrypoint for AI and quick doc navigation
-- **[Claude Code Skill](.claude/skills/fastapi-template-architect/SKILL.md)** - Scaffold or extend/review projects with this architecture directly from Claude
+- **[AI Coding Assistant Skill](.claude/skills/fastapi-template-architect/SKILL.md)** - Scaffold or extend/review projects with this architecture from Claude Code, Codex CLI, or GitHub Copilot
 - **[Features](docs/features.md)** - Full list of integrations and services, with setup notes
 - **[Architecture Overview](docs/architecture/overview.md)** - Current system design and versioned routing model
 - **[Backend Architecture Guide](docs/backend-architecture.md)** - Layered architecture deep dive

@@ -1,0 +1,57 @@
+# --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
+# Verbatim copy of tach.toml from eslam5464/Fastapi-Template, taken 2026-08-30.
+# The real repo is the source of truth; this is a fallback/reference copy
+# for offline scaffolding and Extend/Audit-mode pattern-matching. It can drift
+# from the live repo over time - prefer driving the real Copier template
+# (see references/copier-template-mechanics.md) whenever that's available.
+# --- END SNAPSHOT NOTICE ---
+
+source_roots = ["."]
+
+# Module boundaries mirror the project's layered architecture:
+# core (foundation) -> models/schemas -> repos -> services -> middleware/api.
+# app.main, app.web, and app.alembic are intentionally left undeclared - they're
+# the composition root and legitimately touch every layer.
+
+[[modules]]
+path = "app.core"
+depends_on = []
+
+[[modules]]
+path = "app.models"
+depends_on = [{ path = "app.core" }]
+
+[[modules]]
+path = "app.schemas"
+depends_on = [{ path = "app.core" }]
+
+[[modules]]
+path = "app.repos"
+depends_on = [
+    { path = "app.core" },
+    { path = "app.models" },
+    { path = "app.schemas" },
+]
+
+[[modules]]
+path = "app.services"
+depends_on = [
+    { path = "app.core" },
+    { path = "app.models" },
+    { path = "app.schemas" },
+    { path = "app.repos" },
+]
+
+[[modules]]
+path = "app.middleware"
+depends_on = [{ path = "app.core" }]
+
+[[modules]]
+path = "app.api"
+depends_on = [
+    { path = "app.core" },
+    { path = "app.models" },
+    { path = "app.schemas" },
+    { path = "app.repos" },
+    { path = "app.services" },
+]
