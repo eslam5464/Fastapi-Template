@@ -6,6 +6,13 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-09-01
+
+### Fixed
+
+- `scripts/generate/post_gen.py` no longer tries to substitute project-name/`@Eslam5464` text into `.github/copilot-instructions.md`; that file was rewritten to be generic and no longer contains either, so every `copier copy` bake was failing with `expected content not found`.
+- `copier.yml`'s `_exclude` list now restores Copier's built-in default excludes (`.git`, `__pycache__`, `.DS_Store`, etc.) alongside the template's own entries. Defining `_exclude` replaces Copier's defaults rather than extending them, so generated projects were silently shipping this template's entire git history.
+
 ## [1.1.1] - 2026-07-24
 
 ### Changed

@@ -1,6 +1,6 @@
 [project]
 name = "FastApi-Template"
-version = "1.1.1"
+version = "1.2.0"
 description = "A FastAPI project template"
 authors = [{ name = "Eslam", email = "eslam5464@users.noreply.github.com" }]
 readme = "README.md"
@@ -165,7 +165,7 @@ exclude_dirs = ["tests", ".venv", "alembic/versions"]
 
 [tool.commitizen]
 name = "cz_conventional_commits"
-version = "1.1.1"
+version = "1.2.0"
 version_files = ["pyproject.toml:version"]
 tag_format = "$version"
 update_changelog_on_bump = true

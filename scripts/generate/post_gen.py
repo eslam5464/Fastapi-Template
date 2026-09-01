@@ -128,7 +128,7 @@ def apply_identity_substitutions(args: argparse.Namespace) -> None:
 
     pyproject = Path("pyproject.toml")
     replace_required(pyproject, 'name = "FastApi-Template"', f'name = "{args.project_slug}"')
-    replace_required(pyproject, 'version = "1.1.1"', 'version = "0.1.0"')
+    replace_required(pyproject, 'version = "1.2.0"', 'version = "0.1.0"')
     replace_required(
         pyproject,
         'description = "A FastAPI project template"',

@@ -837,7 +837,7 @@ wheels = [
 
 [[package]]
 name = "fastapi-template"
-version = "1.1.1"
+version = "1.2.0"
 source = { virtual = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -1834,7 +1834,7 @@ wheels = [
 
 [package.optional-dependencies]
 binary = [
-    { name = "psycopg-binary", marker = "implementation_name != 'pypy'" },
+    { name = "psycopg-binary", marker = "implementation_name != 'pypy' and sys_platform == 'win32'" },
 ]
 
 [[package]]
