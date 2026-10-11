@@ -9,7 +9,6 @@
 services:
   backend:
     image: fastapi_template_backend
-    restart: unless-stopped
     container_name: fastapi_template_backend
     build:
       context: .
@@ -92,7 +91,10 @@ services:
       - fastapi_template_network
   db:
     image: postgres:18-alpine
-    restart: unless-stopped
+    # Capped so a misconfigured service stops and shows as failed instead of
+    # crash-looping forever (it does not come back after a host reboot - use
+    # `unless-stopped` in a deployment that needs that).
+    restart: on-failure:5
     container_name: fastapi_template_db
     environment:
       - POSTGRES_USER
@@ -101,17 +103,17 @@ services:
       - POSTGRES_DB_SCHEMA
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
-      interval: 30s
-      timeout: 60s
+      interval: 5s
+      timeout: 5s
       retries: 5
-      start_period: 80s
+      start_period: 10s
     volumes:
       - fastapi_template_db_data:/var/lib/postgresql/data
     networks:
       - fastapi_template_network
   redis:
     image: redis:8-alpine
-    restart: unless-stopped
+    restart: on-failure:5
     container_name: fastapi_template_redis
     # The redis image ignores env vars for auth, so configure it on the command
     # line: --requirepass sets the default user's password, and the ACL `user`
@@ -126,10 +128,10 @@ services:
       - REDIS_PASS
     healthcheck:
       test: ["CMD-SHELL", 'redis-cli --no-auth-warning --user "$${REDIS_USER}" --pass "$${REDIS_PASS}" ping | grep PONG']
-      interval: 30s
-      timeout: 30s
+      interval: 5s
+      timeout: 5s
       retries: 5
-      start_period: 30s
+      start_period: 10s
     networks:
       - fastapi_template_network
 

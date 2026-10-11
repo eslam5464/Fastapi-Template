@@ -23,6 +23,8 @@ The format is based on Keep a Changelog.
 - `docker-compose.yml`: Redis ran without authentication (`REDIS_PASSWORD` is ignored by the redis image) and published port 6379 to the host; Redis now enforces auth matching what the app sends (`--requirepass` plus an ACL user from `REDIS_USER`/`REDIS_PASS`, verified via `redis_url` in `app/core/config.py`) and keeps port 6379 inside the compose network
 - `app/main.py` parsed `ALLOWED_HOSTS` into `settings.allowed_hosts_list` but never enforced it; Starlette's `TrustedHostMiddleware` now runs with that list (no `"*"`), `127.0.0.1` was added to `ALLOWED_HOSTS` in `.env.example` so the container HEALTHCHECK passes, and the test client in `tests/conftest.py` targets `http://localhost` (covered by new allowed/disallowed host tests in `tests/main_test.py`)
 - CI: new `docker` job in `.github/workflows/ci.yml` runs the clean-checkout compose smoke test (`cp .env.example .env.docker-test`, `up --build -d`, bounded wait loop, `curl -f /health`, healthy-status check, `down -v`) and prints `docker compose logs` on failure
+- `docker-compose.yml`: `db` and `redis` restarted forever on failure (`restart: unless-stopped`) and their health checks ran every 30s after a 30-80s start period, so a misconfigured service crash-looped for minutes before showing as unhealthy; restarts are now capped (`on-failure:5`, the backend keeps its existing `deploy.restart_policy` cap) and health checks run every 5s after a 10s start period
+- `scripts/generate/bake_smoke_test.py`: the leftover-Jinja scan flagged the bundled skill's documentation, which quotes `copier.yml` verbatim; the scan now skips `.claude/skills` and `.agents/skills` in the generated project
 
 ## [1.2.0] - 2026-09-01
 
