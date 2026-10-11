@@ -73,13 +73,16 @@ USER uvicorn
 
 EXPOSE 8799
 
-# Healthcheck to monitor application status
+# Healthcheck to monitor application status. TrustedHostMiddleware rejects any Host
+# header outside ALLOWED_HOSTS, so the probe presents the first configured host
+# instead of relying on 127.0.0.1 being allow-listed.
 HEALTHCHECK \
     --interval=10s \
     --timeout=10s \
     --start-period=5s \
     --retries=3 \
-    CMD wget --quiet --output-document=/dev/null --timeout=8 http://127.0.0.1:8799/health || exit 1
+    CMD wget --quiet --output-document=/dev/null --timeout=8 \
+        --header="Host: ${ALLOWED_HOSTS%%,*}" http://127.0.0.1:8799/health || exit 1
 
 # Use exec form for better signal handling
 CMD ["/bin/sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8799 --forwarded-allow-ips '*' --proxy-headers --workers ${WORKERS_COUNT}"]

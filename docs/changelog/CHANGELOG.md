@@ -25,6 +25,7 @@ The format is based on Keep a Changelog.
 - CI: new `docker` job in `.github/workflows/ci.yml` runs the clean-checkout compose smoke test (`cp .env.example .env.docker-test`, `up --build -d`, bounded wait loop, `curl -f /health`, healthy-status check, `down -v`) and prints `docker compose logs` on failure
 - `docker-compose.yml`: `db` and `redis` restarted forever on failure (`restart: unless-stopped`) and their health checks ran every 30s after a 30-80s start period, so a misconfigured service crash-looped for minutes before showing as unhealthy; restarts are now capped (`on-failure:5`, the backend keeps its existing `deploy.restart_policy` cap) and health checks run every 5s after a 10s start period
 - `scripts/generate/bake_smoke_test.py`: the leftover-Jinja scan flagged the bundled skill's documentation, which quotes `copier.yml` verbatim; the scan now skips `.claude/skills` and `.agents/skills` in the generated project
+- Dockerfile: the HEALTHCHECK probed `127.0.0.1` with that address as its Host header, so any `ALLOWED_HOSTS` without `127.0.0.1` (for example a production hostname) left the container permanently unhealthy; the probe now sends the first configured allowed host as its Host header
 
 ## [1.2.0] - 2026-09-01
 
