@@ -16,7 +16,7 @@ dependencies = [
     "gunicorn>=26.2.0",
     "httptools>=0.6.4 ; sys_platform == 'linux'",
     "loguru>=0.7.3",
-    "psycopg[binary]>=3.3.4 ; sys_platform == 'win32'",
+    "psycopg[binary]>=3.3.6 ; sys_platform == 'win32'",
     "psycopg>=3.3.2 ; sys_platform != 'win32'",
     "pwdlib[argon2]>=0.3.0",
     "pydantic>=2.11.9",
