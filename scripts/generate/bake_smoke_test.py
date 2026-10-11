@@ -40,9 +40,20 @@ _LEFTOVER_TOKENS = (
 )
 
 
+# The fastapi-template-architect skill ships into generated projects and its
+# references quote copier.yml's `_tasks` verbatim (e.g. "{{ project_name }}") as
+# documentation - that's intentional text, not an unrendered template.
+_SKILL_DIRS = (
+    Path(".claude") / "skills",
+    Path(".agents") / "skills",
+)
+
+
 def _assert_no_leftover_jinja(root: Path) -> None:
     for path in root.rglob("*"):
         if not path.is_file() or ".git" in path.parts:
+            continue
+        if any(path.relative_to(root).is_relative_to(skill_dir) for skill_dir in _SKILL_DIRS):
             continue
         try:
             content = path.read_text(encoding="utf-8")
