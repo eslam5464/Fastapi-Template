@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from loguru import logger
 
 from app.api.routes import api_router
@@ -142,6 +143,11 @@ app.add_middleware(RateLimitHeaderMiddleware)
 
 # Set logging middleware
 app.add_middleware(LoggingMiddleware)
+
+# Set trusted host middleware (added last so it runs outermost): reject requests
+# whose Host header is not in ALLOWED_HOSTS before any other middleware runs.
+# Never falls back to "*" - the allowlist comes straight from configuration.
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts_list)
 
 # Include API router
 app.include_router(api_router)

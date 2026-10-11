@@ -1,5 +1,5 @@
 # --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
-# Verbatim copy of app/main.py from eslam5464/Fastapi-Template, taken 2026-08-30.
+# Verbatim copy of app/main.py from eslam5464/Fastapi-Template, taken 2026-10-11.
 # The real repo is the source of truth; this is a fallback/reference copy
 # for offline scaffolding and Extend/Audit-mode pattern-matching. It can drift
 # from the live repo over time - prefer driving the real Copier template
@@ -9,6 +9,7 @@
 from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from loguru import logger
 
 from app.api.routes import api_router
@@ -150,6 +151,11 @@ app.add_middleware(RateLimitHeaderMiddleware)
 
 # Set logging middleware
 app.add_middleware(LoggingMiddleware)
+
+# Set trusted host middleware (added last so it runs outermost): reject requests
+# whose Host header is not in ALLOWED_HOSTS before any other middleware runs.
+# Never falls back to "*" - the allowlist comes straight from configuration.
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.allowed_hosts_list)
 
 # Include API router
 app.include_router(api_router)

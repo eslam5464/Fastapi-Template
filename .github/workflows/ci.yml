@@ -149,3 +149,50 @@ jobs:
           # Badge color thresholds: green >=90%, orange >=70%, red below.
           MINIMUM_GREEN: "90"
           MINIMUM_ORANGE: "70"
+
+  docker:
+    name: Docker compose smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # Runs the same five-step sequence a user runs from a clean checkout:
+      # cp .env.example .env.docker-test, up --build -d, curl /health, ps, down -v.
+      - name: Create env file
+        run: cp .env.example .env.docker-test
+
+      - name: Build and start the stack
+        run: docker compose --env-file .env.docker-test up --build -d
+
+      - name: Wait for the health endpoint (bounded retry loop)
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:8799/health; then
+              exit 0
+            fi
+            echo "Attempt ${attempt}/30: not ready yet, retrying in 5s..."
+            sleep 5
+          done
+          echo "Health endpoint did not return HTTP 200 within 150s"
+          exit 1
+
+      - name: Verify all services are healthy
+        run: |
+          docker compose --env-file .env.docker-test ps
+          for name in fastapi_template_backend fastapi_template_db fastapi_template_redis; do
+            status=$(docker inspect --format '{{.State.Health.Status}}' "$name")
+            echo "${name}: ${status}"
+            if [ "$status" != "healthy" ]; then
+              exit 1
+            fi
+          done
+
+      - name: Print compose logs on failure
+        if: failure()
+        run: docker compose --env-file .env.docker-test logs
+
+      - name: Tear down
+        if: always()
+        run: |
+          docker compose --env-file .env.docker-test down -v
+          rm -f .env.docker-test

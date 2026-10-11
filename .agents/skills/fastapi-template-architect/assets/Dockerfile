@@ -1,5 +1,5 @@
 # --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
-# Verbatim copy of Dockerfile from eslam5464/Fastapi-Template, taken 2026-08-30.
+# Verbatim copy of Dockerfile from eslam5464/Fastapi-Template, taken 2026-10-11.
 # The real repo is the source of truth; this is a fallback/reference copy
 # for offline scaffolding and Extend/Audit-mode pattern-matching. It can drift
 # from the live repo over time - prefer driving the real Copier template
@@ -29,15 +29,22 @@ WORKDIR /app
 COPY pyproject.toml uv.lock* ./
 
 # Create virtual environment at /app/.venv and install dependencies
-RUN uv sync --frozen --no-dev
+# The `cache` extra provides the `redis` package, which app/services/cache/*
+# imports unconditionally at startup (it is not in the main dependencies).
+RUN uv sync --frozen --no-dev --extra cache
 
 # Production stage
 FROM python:3.14-alpine AS production
 
 # Install runtime dependencies only
+# binutils (ld/objdump) + the libpq.so symlink let ctypes.util.find_library("pq")
+# locate libpq on musl, which psycopg's pure-Python wrapper requires at import
+# time (postgresql-dev would pull ~500 MB of toolchain instead of ~25 MB).
 RUN apk add --no-cache \
     postgresql-libs \
-    wget
+    binutils \
+    wget \
+    && ln -sf libpq.so.5 /usr/lib/libpq.so
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \
@@ -59,8 +66,12 @@ RUN addgroup -g 1001 -S uvicorn \
 # Copy virtual environment from builder stage
 COPY --from=builder --chown=uvicorn:uvicorn /app/.venv /app/.venv
 
-# Copy application code
-COPY --chown=uvicorn:uvicorn ./app ./
+# Copy application code as the `app` package (uvicorn app.main:app imports it by name)
+COPY --chown=uvicorn:uvicorn ./app ./app
+
+# Alembic config/migrations entry point (CMD runs `alembic upgrade head`) and
+# pyproject.toml (app/core/config.py reads it for app name/version/description)
+COPY --chown=uvicorn:uvicorn alembic.ini pyproject.toml ./
 
 # Copy uv from builder stage (after changing ownership for efficiency)
 COPY --from=builder /usr/local/bin/uv /usr/local/bin/uv
@@ -76,7 +87,7 @@ HEALTHCHECK \
     --timeout=10s \
     --start-period=5s \
     --retries=3 \
-    CMD wget --quiet --output-document=/dev/null --timeout=8 http://127.0.0.1:8080/ || exit 1
+    CMD wget --quiet --output-document=/dev/null --timeout=8 http://127.0.0.1:8799/health || exit 1
 
 # Use exec form for better signal handling
 CMD ["/bin/sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8799 --forwarded-allow-ips '*' --proxy-headers --workers ${WORKERS_COUNT}"]

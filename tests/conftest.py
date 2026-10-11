@@ -132,7 +132,9 @@ async def test_app() -> AsyncGenerator[FastAPI, None]:
 @pytest.fixture
 async def client(test_app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
     """Create an async HTTP client for testing."""
-    async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+    # base_url's host must be in ALLOWED_HOSTS (see .env.example) so the
+    # TrustedHostMiddleware on the app lets test requests through.
+    async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://localhost") as ac:
         yield ac
 
 

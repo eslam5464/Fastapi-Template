@@ -355,3 +355,21 @@ class TestAppEndpoints:
         for path in docs_paths:
             response = await client.get(path)
             assert response.status_code == 200
+
+
+@pytest.mark.anyio
+class TestTrustedHostMiddleware:
+    """Integration tests for the TrustedHostMiddleware host allowlist."""
+
+    async def test_allowed_host_gets_through(self, client):
+        """A request whose Host header is in ALLOWED_HOSTS reaches the app."""
+        response = await client.get("/health")
+
+        assert response.status_code == 200
+        assert response.json() == {"status": "healthy"}
+
+    async def test_disallowed_host_gets_400(self, client):
+        """A request whose Host header is not in ALLOWED_HOSTS is rejected with HTTP 400."""
+        response = await client.get("/health", headers={"Host": "evil.example.com"})
+
+        assert response.status_code == 400
