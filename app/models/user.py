@@ -1,5 +1,3 @@
-from typing import Optional
-
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -25,11 +23,11 @@ class User(Base):
         String(FieldSizes.PASSWORD_HASH),
         nullable=False,
     )
-    first_name: Mapped[Optional[str]] = mapped_column(
+    first_name: Mapped[str] = mapped_column(
         String(FieldSizes.FIRST_NAME),
         nullable=False,
     )
-    last_name: Mapped[Optional[str]] = mapped_column(
+    last_name: Mapped[str] = mapped_column(
         String(FieldSizes.LAST_NAME),
         nullable=False,
     )
