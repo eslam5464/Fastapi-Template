@@ -18,7 +18,7 @@
 | app/api/v2/\_\_init\_\_.py                     |       11 |        1 |     91% |        42 |
 | app/api/v2/router.py                           |        2 |        0 |    100% |           |
 | app/core/\_\_init\_\_.py                       |        0 |        0 |    100% |           |
-| app/core/config.py                             |      111 |       14 |     87% |169, 177-180, 235-239, 293-296, 308-311 |
+| app/core/config.py                             |      111 |       13 |     88% |177-180, 235-239, 293-296, 308-311 |
 | app/core/constants.py                          |       29 |        3 |     90% | 50, 71-72 |
 | app/core/credentials.py                        |       23 |        1 |     96% |        68 |
 | app/core/db.py                                 |       17 |        0 |    100% |           |
@@ -33,7 +33,7 @@
 | app/core/responses.py                          |       21 |        0 |    100% |           |
 | app/core/types.py                              |        2 |        0 |    100% |           |
 | app/core/utils.py                              |       54 |        0 |    100% |           |
-| app/main.py                                    |       68 |        0 |    100% |           |
+| app/main.py                                    |       70 |        0 |    100% |           |
 | app/middleware/\_\_init\_\_.py                 |        0 |        0 |    100% |           |
 | app/middleware/csrf.py                         |       47 |        0 |    100% |           |
 | app/middleware/logging.py                      |       45 |        4 |     91% |39, 45, 47, 49 |
@@ -77,7 +77,7 @@
 | app/services/types/auth.py                     |        5 |        0 |    100% |           |
 | app/services/types/email.py                    |       77 |        4 |     95% |78, 92, 95-96 |
 | app/web.py                                     |       13 |        0 |    100% |           |
-| **TOTAL**                                      | **2782** |  **228** | **92%** |           |
+| **TOTAL**                                      | **2784** |  **227** | **92%** |           |
 
 
 ## Setup coverage badge
