@@ -16,7 +16,6 @@ dependencies = [
     "gunicorn>=26.2.0",
     "httptools>=0.6.4 ; sys_platform == 'linux'",
     "loguru>=0.7.3",
-    "pre-commit>=4.3.0",
     "psycopg[binary]>=3.3.4 ; sys_platform == 'win32'",
     "psycopg>=3.3.2 ; sys_platform != 'win32'",
     "pwdlib[argon2]>=0.3.0",
@@ -72,6 +71,7 @@ dev = [
     # --- TEMPLATE_TOOLING_DEV_DEP_END ---
     "detect-secrets>=1.5.0",
     "mypy>=1.13.0",
+    "pre-commit>=4.3.0",
     "ruff>=0.14.0",
     "tach>=0.29.0",
     "types-aiofiles>=25.1.0",

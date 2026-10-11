@@ -117,7 +117,6 @@ class Settings(BaseSettings):
     )
     access_token_expire_seconds: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_SECONDS", timedelta(hours=1).seconds))
     refresh_token_expire_seconds: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_SECONDS", timedelta(hours=24).seconds))
-    security_bcrypt_rounds: int = 12
     jwt_algorithm: str = "HS256"
 
     # OpenObserve

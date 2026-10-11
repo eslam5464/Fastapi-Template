@@ -14,7 +14,7 @@ description: >-
   a repository pattern, "best practices" FastAPI structure, or asks "does this
   follow the architecture" / "is this a god service" / "where should this code go."
 metadata:
-  version: "1.0.0"
+  version: "1.0.1"
   author: eslam5464
   source_repo: eslam5464/Fastapi-Template
 ---
@@ -101,7 +101,7 @@ hand-building (see "Offline fallback" below) when Copier genuinely isn't usable.
      entering credentials.
    - `createdb <db_name>` then `alembic upgrade head`.
    - Optionally `docker compose up` if they want the containerized path instead.
-   - Smoke-test: `GET /v1/health` (or start the app and hit it) to confirm the generated
+   - Smoke-test: `GET /health` (or start the app and hit it) to confirm the generated
      project actually runs before declaring success.
 
 6. **Offline fallback** (no network, no Copier, no local checkout): use

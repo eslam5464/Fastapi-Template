@@ -102,7 +102,7 @@ All in `app/middleware/`:
 - **Module:** `app/services/email/brevo.py`, `resend.py`, sharing a common interface (`base.py`)
 - **Brevo** and **Resend** provider adapters.
 - **Install:** `uv sync --extra email`
-- **Configure:** `brevo_api_key`, `resend_api_key` in `.env`
+- **Configure:** `BREVO_API_KEY`, `RESEND_API_KEY` in `.env`
 
 ## 🧪 Testing & quality tooling
 

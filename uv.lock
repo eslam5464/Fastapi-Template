@@ -850,7 +850,6 @@ dependencies = [
     { name = "gunicorn" },
     { name = "httptools", marker = "sys_platform == 'linux'" },
     { name = "loguru" },
-    { name = "pre-commit" },
     { name = "psycopg" },
     { name = "psycopg", extra = ["binary"], marker = "sys_platform == 'win32'" },
     { name = "pwdlib", extra = ["argon2"] },
@@ -892,6 +891,7 @@ dev = [
     { name = "commitizen" },
     { name = "detect-secrets" },
     { name = "mypy" },
+    { name = "pre-commit" },
     { name = "ruff" },
     { name = "tach" },
     { name = "types-aiofiles" },
@@ -924,7 +924,6 @@ requires-dist = [
     { name = "gunicorn", specifier = ">=26.2.0" },
     { name = "httptools", marker = "sys_platform == 'linux'", specifier = ">=0.6.4" },
     { name = "loguru", specifier = ">=0.7.3" },
-    { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "psycopg", marker = "sys_platform != 'win32'", specifier = ">=3.3.2" },
     { name = "psycopg", extras = ["binary"], marker = "sys_platform == 'win32'", specifier = ">=3.3.4" },
     { name = "pwdlib", extras = ["argon2"], specifier = ">=0.3.0" },
@@ -950,6 +949,7 @@ dev = [
     { name = "commitizen", specifier = ">=4.16.5" },
     { name = "detect-secrets", specifier = ">=1.5.0" },
     { name = "mypy", specifier = ">=1.13.0" },
+    { name = "pre-commit", specifier = ">=4.3.0" },
     { name = "ruff", specifier = ">=0.14.0" },
     { name = "tach", specifier = ">=0.29.0" },
     { name = "types-aiofiles", specifier = ">=25.1.0" },
@@ -1831,7 +1831,7 @@ wheels = [
 
 [package.optional-dependencies]
 binary = [
-    { name = "psycopg-binary", marker = "implementation_name != 'pypy'" },
+    { name = "psycopg-binary", marker = "implementation_name != 'pypy' and sys_platform == 'win32'" },
 ]
 
 [[package]]

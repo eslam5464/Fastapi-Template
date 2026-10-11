@@ -395,7 +395,7 @@ POSTGRES_DB_SCHEMA=fastapi_template
 
 # Security
 SECRET_KEY=your-secret-key
-ACCESS_TOKEN_EXPIRE_SECONDS=2582000
+ACCESS_TOKEN_EXPIRE_SECONDS=3600
 REFRESH_TOKEN_EXPIRE_SECONDS=2592000
 
 # Server
@@ -418,8 +418,8 @@ ENABLE_DATA_SEEDING=false
 SEEDING_USER_COUNT=100
 
 # Email Providers
-resend_api_key=your_resend_api_key_here
-brevo_api_key=your_brevo_api_key_here
+RESEND_API_KEY=your_resend_api_key_here
+BREVO_API_KEY=your_brevo_api_key_here
 ```
 
 ## 📦 Dependencies

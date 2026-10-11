@@ -113,3 +113,6 @@ bandit_results.json
 
 # graphify (generated knowledge-graph output, see ~/.claude/skills/graphify)
 graphify-out/
+
+# Temporary agent worktrees
+.claude/worktrees/

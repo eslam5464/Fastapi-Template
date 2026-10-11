@@ -6,6 +6,14 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+### Fixed
+
+- Added missing Celery worker/beat scripts (`scripts/celery_worker.sh`, `scripts/celery_worker.bat`, `scripts/celery_beat.sh`, `scripts/celery_beat.bat`) referenced in README and docs
+- Moved `pre-commit` from runtime dependencies to the `dev` dependency group in `pyproject.toml`
+- Removed unused `security_bcrypt_rounds` setting from `app/core/config.py` (passwords use Argon2 via pwdlib)
+- Changed `ACCESS_TOKEN_EXPIRE_SECONDS` default from 2582000 to 3600 (1 hour) in `.env.example`; renamed `resend_api_key` / `brevo_api_key` to `RESEND_API_KEY` / `BREVO_API_KEY` for consistent `UPPER_SNAKE_CASE` across `.env.example`, `README.md`, and docs
+- Fixed smoke-test health endpoint URL from `/v1/health` to `/health` in skill documentation and prompts; updated skill version to 1.0.1
+
 ## [1.2.0] - 2026-09-01
 
 ### Fixed

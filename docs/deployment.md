@@ -301,8 +301,8 @@ services:
       - B2_APPLICATION_KEY_ID=${B2_APPLICATION_KEY_ID}
       - B2_APPLICATION_KEY=${B2_APPLICATION_KEY}
       - B2_BUCKET_NAME=${B2_BUCKET_NAME}
-      - resend_api_key=${resend_api_key}
-      - brevo_api_key=${brevo_api_key}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - BREVO_API_KEY=${BREVO_API_KEY}
     env_file:
       - .env.prod
     volumes:
@@ -789,8 +789,8 @@ If your application sends emails via the service layer:
 3. Configure environment variables:
 
     ```env
-    resend_api_key=your_resend_api_key_here
-    brevo_api_key=your_brevo_api_key_here
+    RESEND_API_KEY=your_resend_api_key_here
+    BREVO_API_KEY=your_brevo_api_key_here
     ```
 
 4. Ensure the optional email dependencies are installed in your build image (`uv sync --extra email`).

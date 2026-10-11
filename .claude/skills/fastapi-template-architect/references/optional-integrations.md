@@ -35,9 +35,8 @@ sync) and `brevo.py`. This is the one service in this repo that genuinely uses t
 **abstract-base-with-multiple-implementations** pattern from
 [schema-and-service-patterns.md](schema-and-service-patterns.md) — appropriate here
 specifically because there are two real interchangeable providers. Config: `.env.example`
-has `resend_api_key` / `brevo_api_key` — note these are **lowercase**, inconsistent with
-the rest of the file's `UPPER_SNAKE_CASE` convention; that's a known quirk, not something
-to "fix" silently as a side effect of an unrelated change.
+has `RESEND_API_KEY` / `BREVO_API_KEY` — note these are now **uppercase**, consistent with
+the rest of the file's `UPPER_SNAKE_CASE` convention.
 
 ## Cache / rate limiting / token blacklist (`cache` extra, Redis-backed)
 

@@ -36,6 +36,6 @@ what the template actually generates.
    --all-groups` plus `--extra <name>` for each chosen integration, `pre-commit
    install` (and `--hook-type commit-msg`), have the user fill in `.env` themselves
    (never fill in secrets on their behalf), `createdb` + `alembic upgrade head`, and
-   smoke-test `GET /v1/health` before declaring success.
+   smoke-test `GET /health` before declaring success.
 
 Target: `${input:project_name:What should the new project be called?}`

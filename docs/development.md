@@ -78,7 +78,7 @@ POSTGRES_DB_SCHEMA=fastapi_template
 
 # Security Settings
 SECRET_KEY=your-super-secret-key-here
-ACCESS_TOKEN_EXPIRE_SECONDS=2582000
+ACCESS_TOKEN_EXPIRE_SECONDS=3600
 REFRESH_TOKEN_EXPIRE_SECONDS=2592000
 
 # Server Configuration
@@ -93,8 +93,8 @@ CORS_ORIGINS=localhost,0.0.0.0
 LOG_LEVEL=DEBUG
 
 # Email Providers
-resend_api_key=your_resend_api_key_here
-brevo_api_key=your_brevo_api_key_here
+RESEND_API_KEY=your_resend_api_key_here
+BREVO_API_KEY=your_brevo_api_key_here
 ```
 
 ### 4. Database Setup
