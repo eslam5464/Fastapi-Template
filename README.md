@@ -41,7 +41,7 @@
 | app/middleware/security\_headers.py            |       31 |        1 |     97% |        65 |
 | app/models/\_\_init\_\_.py                     |        3 |        0 |    100% |           |
 | app/models/base.py                             |       37 |        4 |     89% |58, 72, 82, 92 |
-| app/models/user.py                             |       11 |        0 |    100% |           |
+| app/models/user.py                             |       10 |        0 |    100% |           |
 | app/repos/\_\_init\_\_.py                      |        3 |        0 |    100% |           |
 | app/repos/base.py                              |      110 |       13 |     88% |49-50, 252-256, 260-262, 320-321, 397 |
 | app/repos/user.py                              |       16 |        0 |    100% |           |
@@ -77,7 +77,7 @@
 | app/services/types/auth.py                     |        5 |        0 |    100% |           |
 | app/services/types/email.py                    |       77 |        4 |     95% |78, 92, 95-96 |
 | app/web.py                                     |       13 |        0 |    100% |           |
-| **TOTAL**                                      | **2784** |  **228** | **92%** |           |
+| **TOTAL**                                      | **2783** |  **228** | **92%** |           |
 
 
 ## Setup coverage badge
