@@ -3,8 +3,8 @@ revision = 3
 requires-python = ">=3.14"
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
-    "python_full_version < '3.15' and sys_platform == 'win32'",
     "python_full_version >= '3.15' and sys_platform != 'win32'",
+    "python_full_version < '3.15' and sys_platform == 'win32'",
     "python_full_version < '3.15' and sys_platform != 'win32'",
 ]
 
@@ -356,7 +356,7 @@ wheels = [
 
 [[package]]
 name = "brevo-python"
-version = "4.0.7"
+version = "5.0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
@@ -364,9 +364,9 @@ dependencies = [
     { name = "pydantic-core" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ae/40/980301e403738d8d7d3405f38c13d67551620e065541a538a2e6c25c9838/brevo_python-4.0.7.tar.gz", hash = "sha256:bb545fee783a0c2ef08c9fa1fefc6557ecf736fec5edc41f80bdd451926fbf26", size = 423160, upload-time = "2026-03-12T13:00:03.928Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/4d/8abc86995ddf4a171e750dd83d8e088fb96e39ca62dfbe156bf25f8fd9a8/brevo_python-5.0.2.tar.gz", hash = "sha256:e317dd78bba01210123dc46d94efb1faf3635f9d58e88fec350c8e33caa75279", size = 505202, upload-time = "2026-08-10T15:46:51.214Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/6d/a4/a0d5f62f1ae2c7eb842c0c86a6105610d245b76000da804344c2c995c10f/brevo_python-4.0.7-py3-none-any.whl", hash = "sha256:22112a6a69540854588af44507f9bd8aff73a84abaa49fb4e6fc2641099325e4", size = 865813, upload-time = "2026-03-12T13:00:02.614Z" },
+    { url = "https://files.pythonhosted.org/packages/c5/66/0ba00fd43ca4ae929b43f0a74de445f49aa9dcbb64f7b669ed9cb2a8bc4d/brevo_python-5.0.2-py3-none-any.whl", hash = "sha256:4addd8cfb8e685c9a339643c5d1c79cd420407c85f1b925b3b539f20b0836d67", size = 986988, upload-time = "2026-08-10T15:46:49.603Z" },
 ]
 
 [[package]]
@@ -915,7 +915,7 @@ requires-dist = [
     { name = "app-store-server-library", extras = ["async"], marker = "extra == 'apple-services'", specifier = ">=2.0.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "b2sdk", specifier = ">=2.10.1" },
-    { name = "brevo-python", marker = "extra == 'email'", specifier = ">=4.0.7" },
+    { name = "brevo-python", marker = "extra == 'email'", specifier = ">=5.0.2" },
     { name = "celery", extras = ["redis"], marker = "extra == 'task-queue'", specifier = ">=5.3.1" },
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "fastapi", specifier = ">=0.116.2" },
@@ -1834,7 +1834,7 @@ wheels = [
 
 [package.optional-dependencies]
 binary = [
-    { name = "psycopg-binary", marker = "implementation_name != 'pypy' and sys_platform == 'win32'" },
+    { name = "psycopg-binary", marker = "implementation_name != 'pypy'" },
 ]
 
 [[package]]
