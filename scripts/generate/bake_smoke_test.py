@@ -16,6 +16,9 @@ def _bake(dst: Path, **data) -> None:
     copier.run_copy(
         str(TEMPLATE_ROOT),
         str(dst),
+        # Without this Copier bakes the latest release tag, so the test would
+        # check the previous release instead of the code being changed.
+        vcs_ref="HEAD",
         data=data,
         defaults=True,
         unsafe=True,

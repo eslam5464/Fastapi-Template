@@ -90,7 +90,7 @@ uv run copier copy <local-path> <new-project-dir> --trust
 ## `post_gen.py` — what actually happens after the copy, in order
 
 1. **`bump_python_version`** — regex-substitutes the pinned Python version across
-   `Dockerfile`, `docker-compose.yml`, `pyproject.toml`, three docs files,
+   `Dockerfile`, `pyproject.toml`, three docs files,
    `.python-version`, and Ruff's `target-version`.
 2. **`apply_identity_substitutions`** — literal replace across `pyproject.toml`,
    `docker-compose.yml`, `.env.example`, `.github/CODEOWNERS`,

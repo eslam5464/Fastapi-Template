@@ -26,6 +26,9 @@ The format is based on Keep a Changelog.
 - `docker-compose.yml`: `db` and `redis` restarted forever on failure (`restart: unless-stopped`) and their health checks ran every 30s after a 30-80s start period, so a misconfigured service crash-looped for minutes before showing as unhealthy; restarts are now capped (`on-failure:5`, the backend keeps its existing `deploy.restart_policy` cap) and health checks run every 5s after a 10s start period
 - `scripts/generate/bake_smoke_test.py`: the leftover-Jinja scan flagged the bundled skill's documentation, which quotes `copier.yml` verbatim; the scan now skips `.claude/skills` and `.agents/skills` in the generated project
 - Dockerfile: the HEALTHCHECK probed `127.0.0.1` with that address as its Host header, so any `ALLOWED_HOSTS` without `127.0.0.1` (for example a production hostname) left the container permanently unhealthy; the probe now sends the first configured allowed host as its Host header
+- `docker-compose.yml`: the `db` volume was mounted at `/var/lib/postgresql/data`, which current `postgres:18` images reject at startup (they store data under `/var/lib/postgresql/<major>/`); the volume is now mounted at `/var/lib/postgresql`
+- `scripts/generate/post_gen.py` still expected a pinned Python version in `docker-compose.yml` after the backend image was renamed, failing every `copier copy`; the file was dropped from the version-bump list
+- `scripts/generate/bake_smoke_test.py` and the Template CI workflow now bake `--vcs-ref HEAD`; without it Copier bakes the latest release tag, so local bake tests were checking the previous release instead of the working tree
 
 ## [1.2.0] - 2026-09-01
 

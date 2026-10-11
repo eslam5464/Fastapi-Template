@@ -100,7 +100,9 @@ services:
       retries: 5
       start_period: 10s
     volumes:
-      - fastapi_template_db_data:/var/lib/postgresql/data
+      # postgres 18+ images store data under /var/lib/postgresql/<major>/ and refuse
+      # to start with a volume mounted at the pre-18 /var/lib/postgresql/data path.
+      - fastapi_template_db_data:/var/lib/postgresql
     networks:
       - fastapi_template_network
   redis:

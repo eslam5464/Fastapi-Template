@@ -39,7 +39,6 @@ TEMPLATE_SECTION_MARKERS = ("<!-- TEMPLATE_SECTION_START -->", "<!-- TEMPLATE_SE
 
 PY_VERSION_FILES = [
     Path("Dockerfile"),
-    Path("docker-compose.yml"),
     Path("pyproject.toml"),
     Path("docs/deployment.md"),
     Path("docs/development.md"),

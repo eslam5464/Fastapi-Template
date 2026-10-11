@@ -63,7 +63,7 @@ jobs:
 
       - name: Bake template
         run: |
-          uv run copier copy . /tmp/baked --data include_apple_pay=${{ matrix.include_apple_pay }} --defaults --trust --quiet
+          uv run copier copy --vcs-ref HEAD . /tmp/baked --data include_apple_pay=${{ matrix.include_apple_pay }} --defaults --trust --quiet
 
       - name: Assert no leftover Jinja syntax
         run: |
