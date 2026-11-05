@@ -60,7 +60,7 @@ def _assert_no_leftover_jinja(root: Path) -> None:
             continue
         try:
             content = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError, ValueError:
+        except (UnicodeDecodeError, ValueError):
             continue
         for token in _LEFTOVER_TOKENS:
             assert token not in content, f"leftover Jinja syntax ({token!r}) in {path}"
@@ -87,7 +87,10 @@ def test_bake_without_apple_pay(tmp_path: Path):
     assert not (dst / "app" / "services" / "payments" / "apple_pay.py").exists()
     assert "ApplePayStoreCredentials" not in (dst / "app" / "core" / "credentials.py").read_text()
     assert "apple-services" not in (dst / "pyproject.toml").read_text()
-    assert "Generate dummy Apple Pay test credentials" not in (dst / ".github" / "workflows" / "ci.yml").read_text()
+    assert not (dst / "app" / "core" / "exceptions" / "apple_pay.py").exists()
+    assert not (dst / "tests" / "services" / "payments").exists()
+    assert "apple_pay" not in (dst / "app" / "core" / "config.py").read_text()
+    assert "APPLE_PAY" not in (dst / ".env.example").read_text()
     _assert_no_leftover_jinja(dst)
 
 

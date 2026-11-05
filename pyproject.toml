@@ -86,6 +86,7 @@ template = [
 line-length = 120
 target-version = "py314"
 extend-exclude = ["app/alembic/versions"]
+per-file-target-version = { "scripts/generate/*.py" = "py39" }
 
 [tool.ruff.lint]
 # E/W (pycodestyle) + F (pyflakes, replaces autoflake's unused import/variable

@@ -6,6 +6,7 @@ copied — there are no `.jinja`-suffixed twin files to keep in sync.
 """
 
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -45,18 +46,33 @@ PY_VERSION_FILES = [
     Path("docs/guides/getting-started.md"),
 ]
 
-LICENSE_RE = re.compile(r"Copyright \(c\) (\d{4}) (.+)")
+LICENSE_RE = re.compile(r"Copyright \(c\) (\d{4}) ([^\r\n]+)")
+
+
+def _read(path: Path) -> str:
+    with open(path, encoding="utf-8", newline="") as f:
+        return f.read()
+
+
+def _write(path: Path, text: str) -> None:
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        f.write(text)
 
 
 def replace_required(path: Path, old: str, new: str) -> None:
-    content = path.read_text(encoding="utf-8")
-    if old not in content:
+    content = _read(path)
+    match_old = old
+    match_new = new
+    if "\r\n" in content and "\n" in old and "\r" not in old:
+        match_old = old.replace("\n", "\r\n")
+        match_new = new.replace("\n", "\r\n")
+    if match_old not in content:
         raise SystemExit(f"post_gen.py: expected content not found in {path}: {old!r}")
-    path.write_text(content.replace(old, new), encoding="utf-8")
+    _write(path, content.replace(match_old, match_new))
 
 
 def strip_marked_block(path: Path, start_marker: str, end_marker: str) -> None:
-    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
+    lines = _read(path).splitlines(keepends=True)
     start = next((i for i, line in enumerate(lines) if start_marker in line), None)
     end = next((i for i, line in enumerate(lines) if end_marker in line), None)
     if start is None or end is None:
@@ -78,15 +94,15 @@ def strip_marked_block(path: Path, start_marker: str, end_marker: str) -> None:
             blank_run = 0
         collapsed.append(line)
 
-    path.write_text("".join(collapsed), encoding="utf-8")
+    _write(path, "".join(collapsed))
 
 
 def capture_source_python_version() -> str:
-    return Path(".python-version").read_text(encoding="utf-8").strip()
+    return _read(Path(".python-version")).strip()
 
 
 def capture_license_year_and_author() -> tuple[str, str]:
-    content = Path("LICENSE").read_text(encoding="utf-8")
+    content = _read(Path("LICENSE"))
     match = LICENSE_RE.search(content)
     if match is None:
         raise SystemExit("post_gen.py: could not find 'Copyright (c) YYYY Name' line in LICENSE")
@@ -96,11 +112,11 @@ def capture_license_year_and_author() -> tuple[str, str]:
 def bump_python_version(old_version: str, new_version: str) -> None:
     pattern = re.compile(rf"(?<![\d.]){re.escape(old_version)}(?![\d.])")
     for path in PY_VERSION_FILES:
-        content = path.read_text(encoding="utf-8")
+        content = _read(path)
         new_content, count = pattern.subn(new_version, content)
         if count == 0:
             raise SystemExit(f"post_gen.py: expected Python version {old_version!r} not found in {path}")
-        path.write_text(new_content, encoding="utf-8")
+        _write(path, new_content)
 
     old_ruff_target = "py" + old_version.replace(".", "")
     new_ruff_target = "py" + new_version.replace(".", "")
@@ -110,7 +126,7 @@ def bump_python_version(old_version: str, new_version: str) -> None:
         f'target-version = "{new_ruff_target}"',
     )
 
-    Path(".python-version").write_text(f"{new_version}\n", encoding="utf-8")
+    _write(Path(".python-version"), f"{new_version}\n")
 
 
 def rewrite_license(old_year: str, old_author: str, new_author: str) -> None:
@@ -199,20 +215,18 @@ def remove_apple_pay() -> None:
 
     credentials_path = Path("app/core/credentials.py")
     strip_marked_block(credentials_path, *APPLE_PAY_MARKERS)
-    content = credentials_path.read_text(encoding="utf-8")
-    content = content.replace(
+    replace_required(
+        credentials_path,
         "from pydantic import BaseModel, ConfigDict, Field, model_validator",
         "from pydantic import BaseModel, ConfigDict, model_validator",
     )
-    credentials_path.write_text(content, encoding="utf-8")
 
     config_path = Path("app/core/config.py")
-    content = config_path.read_text(encoding="utf-8")
-    content = content.replace(
+    replace_required(
+        config_path,
         "from app.core.credentials import ApplePayStoreCredentials, FirebaseServiceAccount",
         "from app.core.credentials import FirebaseServiceAccount",
     )
-    config_path.write_text(content, encoding="utf-8")
     strip_marked_block(config_path, *APPLE_PAY_SETTINGS_MARKERS)
     strip_marked_block(config_path, *APPLE_PAY_PROPERTY_MARKERS)
 
@@ -239,16 +253,21 @@ def run_quiet(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
 def regenerate_lockfile(python_version: str) -> None:
     try:
         run_quiet(["uv", "python", "install", python_version], timeout=120)
-    except OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired:
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
         pass
 
     try:
         run_quiet(["uv", "lock"])
-    except OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired:
-        print(
-            f"Warning: could not regenerate uv.lock automatically (Python {python_version} "
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        message = (
+            f"could not regenerate uv.lock automatically (Python {python_version} "
             f"may not be installed). Run 'uv python install {python_version}' then 'uv sync' yourself."
         )
+        if os.environ.get("FASTAPI_TEMPLATE_STRICT") == "1":
+            stderr = getattr(exc, "stderr", None)
+            detail = f"\n{stderr}" if stderr else ""
+            raise SystemExit(f"post_gen.py: {message}{detail}") from exc
+        print(f"Warning: {message}")
 
 
 def remove_generate_tooling() -> None:

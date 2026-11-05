@@ -131,10 +131,21 @@ jobs:
       # app module is imported, so no separate CI step is needed for this anymore.
 
       - name: Create test database
-        run: >
-          uv run python -c "import psycopg; conn = psycopg.connect('host=localhost port=5432
-          user=postgres password=postgres dbname=postgres', autocommit=True);
-          conn.execute('CREATE DATABASE postgres_test'); conn.close()"
+        run: |
+          uv run python - <<'EOF'
+          import asyncio
+
+          import asyncpg
+
+
+          async def main() -> None:
+              conn = await asyncpg.connect(host="localhost", port=5432, user="postgres", password="postgres", database="postgres")
+              await conn.execute("CREATE DATABASE postgres_test")
+              await conn.close()
+
+
+          asyncio.run(main())
+          EOF
 
       - name: Run migrations
         run: uv run alembic upgrade head
@@ -179,8 +190,14 @@ jobs:
       - name: Verify all services are healthy
         run: |
           docker compose --env-file .env.docker-test ps
-          for name in fastapi_template_backend fastapi_template_db fastapi_template_redis; do
-            status=$(docker inspect --format '{{.State.Health.Status}}' "$name")
+          ids=$(docker compose --env-file .env.docker-test ps -q)
+          if [ -z "$ids" ]; then
+            echo "No containers found via docker compose ps -q"
+            exit 1
+          fi
+          for id in $ids; do
+            name=$(docker inspect --format '{{.Name}}' "$id" | sed 's|^/||')
+            status=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$id")
             echo "${name}: ${status}"
             if [ "$status" != "healthy" ]; then
               exit 1

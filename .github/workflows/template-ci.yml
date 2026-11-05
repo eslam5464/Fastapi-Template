@@ -62,6 +62,8 @@ jobs:
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Bake template
+        env:
+          FASTAPI_TEMPLATE_STRICT: "1"
         run: |
           uv run copier copy --vcs-ref HEAD . /tmp/baked --data include_apple_pay=${{ matrix.include_apple_pay }} --defaults --trust --quiet
 
@@ -93,10 +95,21 @@ jobs:
 
       - name: Create test database
         working-directory: /tmp/baked
-        run: >
-          uv run python -c "import psycopg; conn = psycopg.connect('host=localhost port=5432
-          user=postgres password=postgres dbname=postgres', autocommit=True);
-          conn.execute('CREATE DATABASE postgres_test'); conn.close()"
+        run: |
+          uv run python - <<'EOF'
+          import asyncio
+
+          import asyncpg
+
+
+          async def main() -> None:
+              conn = await asyncpg.connect(host="localhost", port=5432, user="postgres", password="postgres", database="postgres")
+              await conn.execute("CREATE DATABASE postgres_test")
+              await conn.close()
+
+
+          asyncio.run(main())
+          EOF
 
       - name: Run migrations
         working-directory: /tmp/baked
