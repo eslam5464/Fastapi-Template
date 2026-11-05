@@ -253,9 +253,14 @@ def _scan_near_miss(text: str, rel: str, unsupported: bool) -> None:
         _raise_near_miss(rel, i + 1, _body(line), unsupported=unsupported)
 
 
-def apply(root: Path, feature_flags: dict[str, bool]) -> None:
-    """Apply marker stripping and PATHS deletion to a generated project tree."""
+def apply(root: Path, feature_flags: dict[str, bool]) -> list[Path]:
+    """Apply marker stripping and PATHS deletion to a generated project tree.
+
+    Returns the files whose content the marker pass rewrote, so the caller can
+    re-normalise them (e.g. import sorting) afterwards.
+    """
     root = Path(root)
+    changed: list[Path] = []
     for rel in features.PATHS:
         if not (root / rel).exists():
             raise MarkerError(rel, 0, "PATHS entry does not exist under root")
@@ -278,6 +283,7 @@ def apply(root: Path, feature_flags: dict[str, bool]) -> None:
         if stripped != text:
             with open(path, "w", encoding="utf-8", newline="") as f:
                 f.write(stripped)
+            changed.append(path)
     for path, rel in _iter_files(root):
         text = _read_text(path)
         if text is None:
@@ -287,6 +293,7 @@ def apply(root: Path, feature_flags: dict[str, bool]) -> None:
             continue
         for i, line in enumerate(text.splitlines(keepends=True)):
             assert _MARKER_RE[style].fullmatch(_body(line)) is None, f"{rel}:{i + 1}: marker line survived processing"
+    return changed
 
 
 def used_features(root: Path) -> set[str]:

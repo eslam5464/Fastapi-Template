@@ -1,9 +1,9 @@
-# --- APPLE_PAY_TEST_CREDENTIALS_START ---
+# --- FEATURE[apple_pay] START ---
 from tests.apple_pay_credentials import ensure_apple_pay_test_credentials
 
 ensure_apple_pay_test_credentials()
 
-# --- APPLE_PAY_TEST_CREDENTIALS_END ---
+# --- FEATURE[apple_pay] END ---
 from typing import AsyncGenerator  # noqa: E402
 
 import pytest  # noqa: E402

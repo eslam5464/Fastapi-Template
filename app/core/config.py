@@ -9,10 +9,10 @@ from pydantic import Field, SecretStr, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
-# --- APPLE_PAY_IMPORT_START ---
+# --- FEATURE[apple_pay] START ---
 from app.core.credentials.apple_pay import ApplePayStoreCredentials
 
-# --- APPLE_PAY_IMPORT_END ---
+# --- FEATURE[apple_pay] END ---
 from app.core.credentials.firebase import FirebaseServiceAccount
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
@@ -132,7 +132,7 @@ class Settings(BaseSettings):
     openobserve_batch_size: int = 10
     openobserve_flush_interval: float = 5.0
 
-    # --- APPLE_PAY_SETTINGS_START ---
+    # --- FEATURE[apple_pay] START ---
     # App Store Connect API credentials
     apple_pay_store_private_key_id: str
     apple_pay_store_private_key: str
@@ -140,7 +140,7 @@ class Settings(BaseSettings):
     apple_pay_store_issuer_id: str
     apple_pay_store_bundle_id: str
     apple_pay_store_root_certificate_path: Path
-    # --- APPLE_PAY_SETTINGS_END ---
+    # --- FEATURE[apple_pay] END ---
 
     # Celery settings
     enable_data_seeding: bool
@@ -268,7 +268,7 @@ class Settings(BaseSettings):
             path=path,
         )
 
-    # --- APPLE_PAY_PROPERTY_START ---
+    # --- FEATURE[apple_pay] START ---
     @computed_field
     @property
     def apple_pay_store_credentials(self) -> ApplePayStoreCredentials:
@@ -288,7 +288,7 @@ class Settings(BaseSettings):
             bundle_id=self.apple_pay_store_bundle_id,
         )
 
-    # --- APPLE_PAY_PROPERTY_END ---
+    # --- FEATURE[apple_pay] END ---
 
     @computed_field
     @property

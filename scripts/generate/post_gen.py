@@ -3,44 +3,28 @@
 Every value that needs to differ between this repo (run directly) and a
 generated project is substituted here, directly on the real files copier just
 copied — there are no `.jinja`-suffixed twin files to keep in sync.
+
+Optional-feature stripping (Apple Pay etc.) and template-only sections are
+handled by the marker engine in markers.py, driven by the feature manifest in
+features.py and the resolved feature flags passed via --features-json.
 """
 
 import argparse
+import json
 import os
 import re
 import shutil
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 
-APPLE_PAY_IMPORT_MARKERS = ("# --- APPLE_PAY_IMPORT_START ---", "# --- APPLE_PAY_IMPORT_END ---")
-APPLE_PAY_SETTINGS_MARKERS = (
-    "# --- APPLE_PAY_SETTINGS_START ---",
-    "# --- APPLE_PAY_SETTINGS_END ---",
-)
-APPLE_PAY_PROPERTY_MARKERS = (
-    "# --- APPLE_PAY_PROPERTY_START ---",
-    "# --- APPLE_PAY_PROPERTY_END ---",
-)
-APPLE_PAY_ENV_MARKERS = ("# --- APPLE_PAY_ENV_START ---", "# --- APPLE_PAY_ENV_END ---")
-APPLE_PAY_PYPROJECT_EXTRA_MARKERS = (
-    "# --- APPLE_PAY_PYPROJECT_EXTRA_START ---",
-    "# --- APPLE_PAY_PYPROJECT_EXTRA_END ---",
-)
-APPLE_PAY_MYPY_OVERRIDE_MARKERS = (
-    "# --- APPLE_PAY_MYPY_OVERRIDE_START ---",
-    "# --- APPLE_PAY_MYPY_OVERRIDE_END ---",
-)
-APPLE_PAY_TEST_CREDENTIALS_MARKERS = (
-    "# --- APPLE_PAY_TEST_CREDENTIALS_START ---",
-    "# --- APPLE_PAY_TEST_CREDENTIALS_END ---",
-)
-TEMPLATE_TOOLING_MARKERS = ("# --- TEMPLATE_TOOLING_START ---", "# --- TEMPLATE_TOOLING_END ---")
-TEMPLATE_TOOLING_DEV_DEP_MARKERS = (
-    "# --- TEMPLATE_TOOLING_DEV_DEP_START ---",
-    "# --- TEMPLATE_TOOLING_DEV_DEP_END ---",
-)
-TEMPLATE_SECTION_MARKERS = ("<!-- TEMPLATE_SECTION_START -->", "<!-- TEMPLATE_SECTION_END -->")
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+import features  # noqa: E402
+import markers  # noqa: E402
 
 PY_VERSION_FILES = [
     Path("Dockerfile"),
@@ -75,30 +59,56 @@ def replace_required(path: Path, old: str, new: str) -> None:
     _write(path, content.replace(match_old, match_new))
 
 
-def strip_marked_block(path: Path, start_marker: str, end_marker: str) -> None:
-    lines = _read(path).splitlines(keepends=True)
-    start = next((i for i, line in enumerate(lines) if start_marker in line), None)
-    end = next((i for i, line in enumerate(lines) if end_marker in line), None)
-    if start is None or end is None:
-        raise SystemExit(f"post_gen.py: markers {start_marker!r}/{end_marker!r} not found in {path}")
-    del lines[start : end + 1]
+def resolve(raw: dict) -> dict[str, bool]:
+    """Turn the raw answers dict into a feature name -> on/off flag map.
 
-    # Deleting the block can leave 3+ consecutive blank lines behind (blank
-    # lines from both sides of the removed block collapsing together), which
-    # trips ruff's isort/formatting checks. Collapse runs down to at most 2,
-    # matching standard top-level class/def spacing.
-    collapsed: list[str] = []
-    blank_run = 0
-    for line in lines:
-        if line.strip() == "":
-            blank_run += 1
-            if blank_run > 2:
-                continue
+    ``raw`` keys must be exactly ``{"services"}`` plus every ``Feature.question``
+    in ``features.FEATURES``. ``services`` selects the minimal base (no optional
+    features) or per-service answers; every ``include_*`` value must be a bool.
+    """
+    questions = {feature.question for feature in features.FEATURES if feature.question}
+    expected = {"services"} | questions
+
+    unknown = sorted(set(raw) - expected)
+    if unknown:
+        raise SystemExit(f"post_gen.py: unknown feature answer(s): {', '.join(unknown)}")
+    missing = sorted(expected - set(raw))
+    if missing:
+        raise SystemExit(f"post_gen.py: missing feature answer(s): {', '.join(missing)}")
+
+    services = raw["services"]
+    if services not in ("minimal", "custom"):
+        raise SystemExit(f"post_gen.py: services must be 'minimal' or 'custom', got {services!r}")
+
+    answers: dict[str, bool] = {}
+    for question in sorted(questions):
+        value = raw[question]
+        if not isinstance(value, bool):
+            raise SystemExit(f"post_gen.py: {question} must be a bool, got {value!r}")
+        answers[question] = value
+
+    if services == "minimal":
+        enabled = [question for question in sorted(answers) if answers[question]]
+        if enabled:
+            raise SystemExit(
+                "post_gen.py: " + "; ".join(f"{question}=true requires services=custom" for question in enabled)
+            )
+
+    flags: dict[str, bool] = {}
+    for feature in features.FEATURES:
+        if feature.name == "_template":
+            flags[feature.name] = False
+        elif feature.computed_from:
+            flags[feature.name] = any(flags[source] for source in feature.computed_from)
         else:
-            blank_run = 0
-        collapsed.append(line)
-
-    _write(path, "".join(collapsed))
+            value = answers[feature.question]
+            if feature.parent is not None and value and not flags[feature.parent]:
+                raise SystemExit(
+                    f"post_gen.py: {feature.question}=true requires its parent feature "
+                    f"'{feature.parent}' to be enabled too"
+                )
+            flags[feature.name] = value
+    return flags
 
 
 def capture_source_python_version() -> str:
@@ -201,52 +211,6 @@ def apply_identity_substitutions(args: argparse.Namespace) -> None:
     replace_required(Path("docs/guides/getting-started.md"), "cd Fastapi-Template", f"cd {args.project_slug}")
 
 
-def remove_apple_pay() -> None:
-    apple_pay_module = Path("app/services/payments/apple_pay.py")
-    if apple_pay_module.exists():
-        apple_pay_module.unlink()
-        payments_dir = apple_pay_module.parent
-        if payments_dir.exists() and not any(payments_dir.iterdir()):
-            payments_dir.rmdir()
-
-    apple_pay_exceptions = Path("app/core/exceptions/apple_pay.py")
-    if apple_pay_exceptions.exists():
-        apple_pay_exceptions.unlink()
-
-    payments_tests_dir = Path("tests/services/payments")
-    if payments_tests_dir.exists():
-        shutil.rmtree(payments_tests_dir)
-
-    strip_marked_block(Path("tests/conftest.py"), *APPLE_PAY_TEST_CREDENTIALS_MARKERS)
-    apple_pay_credentials = Path("tests/apple_pay_credentials.py")
-    if apple_pay_credentials.exists():
-        apple_pay_credentials.unlink()
-
-    apple_pay_credentials_module = Path("app/core/credentials/apple_pay.py")
-    if apple_pay_credentials_module.exists():
-        apple_pay_credentials_module.unlink()
-
-    config_path = Path("app/core/config.py")
-    strip_marked_block(config_path, *APPLE_PAY_IMPORT_MARKERS)
-    strip_marked_block(config_path, *APPLE_PAY_SETTINGS_MARKERS)
-    strip_marked_block(config_path, *APPLE_PAY_PROPERTY_MARKERS)
-
-    strip_marked_block(Path(".env.example"), *APPLE_PAY_ENV_MARKERS)
-    strip_marked_block(Path("pyproject.toml"), *APPLE_PAY_PYPROJECT_EXTRA_MARKERS)
-    strip_marked_block(Path("pyproject.toml"), *APPLE_PAY_MYPY_OVERRIDE_MARKERS)
-
-    readme = Path("README.md")
-    replace_required(readme, ", Apple Pay", "")
-    replace_required(readme, "uv sync --extra apple-services\n", "")
-
-
-def strip_template_only_sections() -> None:
-    pyproject = Path("pyproject.toml")
-    strip_marked_block(pyproject, *TEMPLATE_TOOLING_MARKERS)
-    strip_marked_block(pyproject, *TEMPLATE_TOOLING_DEV_DEP_MARKERS)
-    strip_marked_block(Path("README.md"), *TEMPLATE_SECTION_MARKERS)
-
-
 def run_quiet(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, check=True, capture_output=True, text=True, **kwargs)
 
@@ -267,6 +231,46 @@ def regenerate_lockfile(python_version: str) -> None:
         if os.environ.get("FASTAPI_TEMPLATE_STRICT") == "1":
             stderr = getattr(exc, "stderr", None)
             detail = f"\n{stderr}" if stderr else ""
+            raise SystemExit(f"post_gen.py: {message}{detail}") from exc
+        print(f"Warning: {message}")
+
+
+RUFF_REV_RE = re.compile(r"astral-sh/ruff-pre-commit\s*\n\s*rev:\s*v?(\S+)")
+
+
+def ruff_version() -> str:
+    match = RUFF_REV_RE.search(_read(Path(".pre-commit-config.yaml")))
+    if match is None:
+        raise SystemExit("post_gen.py: could not find the ruff-pre-commit rev in .pre-commit-config.yaml")
+    return match.group(1)
+
+
+def normalize_python(files: list[Path]) -> None:
+    """Re-sort imports and re-format the Python files the marker pass rewrote.
+
+    ruff always keeps a blank line between an import and a comment that follows
+    it, so a FEATURE marker sitting between two imports leaves that blank line
+    behind once the marker line is removed, splitting one import block in two.
+    Running ruff's import sorter and formatter (the version the generated
+    project's pre-commit config pins) on the touched files restores the layout
+    the project's own lint hooks expect.
+    """
+    py_files = [str(path) for path in files if path.suffix == ".py"]
+    if not py_files:
+        return
+    ruff = ["uvx", f"ruff@{ruff_version()}"]
+    try:
+        run_quiet([*ruff, "check", "--select", "I", "--fix", "--quiet", *py_files])
+        run_quiet([*ruff, "format", "--quiet", *py_files])
+    except (OSError, subprocess.CalledProcessError) as exc:
+        message = (
+            "could not normalise imports in the generated files with ruff. "
+            "Run 'uv run ruff check --fix' and 'uv run ruff format' yourself."
+        )
+        if os.environ.get("FASTAPI_TEMPLATE_STRICT") == "1":
+            output = getattr(exc, "stdout", None) or ""
+            stderr = getattr(exc, "stderr", None) or ""
+            detail = f"\n{output}{stderr}" if (output or stderr) else ""
             raise SystemExit(f"post_gen.py: {message}{detail}") from exc
         print(f"Warning: {message}")
 
@@ -295,13 +299,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--author-email", required=True)
     parser.add_argument("--github-username", required=True)
     parser.add_argument("--python-version", required=True)
-    parser.add_argument("--include-apple-pay", required=True)
+    parser.add_argument("--features-json", required=True)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    include_apple_pay = args.include_apple_pay.strip().lower() == "true"
+    flags = resolve(json.loads(args.features_json))
 
     old_python_version = capture_source_python_version()
     old_license_year, old_license_author = capture_license_year_and_author()
@@ -310,9 +314,11 @@ def main() -> None:
     apply_identity_substitutions(args)
     rewrite_license(old_license_year, old_license_author, args.author_name)
 
-    if not include_apple_pay:
-        remove_apple_pay()
-    strip_template_only_sections()
+    try:
+        changed = markers.apply(Path("."), flags)
+    except markers.MarkerError as exc:
+        raise SystemExit(f"post_gen.py: {exc}") from exc
+    normalize_python(changed)
 
     regenerate_lockfile(args.python_version)
     remove_generate_tooling()

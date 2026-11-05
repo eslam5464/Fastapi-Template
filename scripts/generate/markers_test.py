@@ -337,6 +337,13 @@ class TestApply:
         assert r(tmp_path / "plain.md") == "no markers\n"
         assert r(tmp_path / "data.json") == '{"a": 1}\n'
 
+    def test_returns_only_rewritten_files(self, tmp_path, monkeypatch):
+        fake_manifest(monkeypatch)
+        w(tmp_path / "on.py", "head\n# --- FEATURE[a] START ---\nkeep\n# --- FEATURE[a] END ---\ntail\n")
+        w(tmp_path / "plain.py", "x = 1\n")
+        changed = markers.apply(tmp_path, FLAGS)
+        assert changed == [tmp_path / "on.py"]
+
     def test_paths_deletion_of_file_and_directory(self, tmp_path, monkeypatch):
         fake_manifest(monkeypatch, paths={"extras/": "b", "extra.txt": "b", "keeper.py": "a"})
         extras = tmp_path / "extras"

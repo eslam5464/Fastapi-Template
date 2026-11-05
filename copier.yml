@@ -1,3 +1,5 @@
+_min_copier_version: "9.4.0"
+
 project_name:
   type: str
   help: "Human-readable project name"
@@ -38,10 +40,19 @@ python_version:
     Python version must be 3.14 or higher (this template's application code requires it).
     {% endif %}
 
+services:
+  type: str
+  help: "Optional services: keep the minimal base, or choose services one by one?"
+  choices:
+    "Minimal base (no optional services)": minimal
+    "Choose services one by one": custom
+  default: minimal
+
 include_apple_pay:
   type: bool
   help: "Include the Apple Pay in-app purchase verification module?"
-  default: true
+  default: false
+  when: "{{ services == 'custom' }}"
 
 _exclude:
   # Copier's built-in defaults (https://copier.readthedocs.io/en/stable/configuring/#exclude) -
@@ -67,4 +78,4 @@ _tasks:
      "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--include-apple-pay", "{{ include_apple_pay }}"]
+     "--features-json", "{{ {'services': services, 'include_apple_pay': include_apple_pay} | tojson }}"]

@@ -47,11 +47,11 @@ task-queue = [
     "faker>=40.36.0",
     "redis>=7.1.0",
 ]
-# --- APPLE_PAY_PYPROJECT_EXTRA_START ---
+# --- FEATURE[apple_pay] START ---
 apple-services = [
     "app-store-server-library[async]>=2.0.0",
 ]
-# --- APPLE_PAY_PYPROJECT_EXTRA_END ---
+# --- FEATURE[apple_pay] END ---
 
 [dependency-groups]
 test = [
@@ -65,9 +65,9 @@ test = [
 ]
 dev = [
     "bandit[toml]>=1.9.4",
-    # --- TEMPLATE_TOOLING_DEV_DEP_START ---
+    # --- FEATURE[_template] START ---
     "commitizen>=4.16.5",
-    # --- TEMPLATE_TOOLING_DEV_DEP_END ---
+    # --- FEATURE[_template] END ---
     "detect-secrets>=1.5.0",
     "mypy>=1.13.0",
     "pre-commit>=4.3.0",
@@ -75,11 +75,11 @@ dev = [
     "tach>=0.29.0",
     "types-aiofiles>=25.1.0",
 ]
-# --- TEMPLATE_TOOLING_START ---
+# --- FEATURE[_template] START ---
 template = [
     "copier>=9.15.0",
 ]
-# --- TEMPLATE_TOOLING_END ---
+# --- FEATURE[_template] END ---
 
 [tool.ruff]
 line-length = 120
@@ -132,9 +132,9 @@ module = [
     "app.services.firestore",
     "app.services.gcs",
     "app.services.back_blaze_b2",
-    # --- APPLE_PAY_MYPY_OVERRIDE_START ---
+    # --- FEATURE[apple_pay] START ---
     "app.services.payments.apple_pay",
-    # --- APPLE_PAY_MYPY_OVERRIDE_END ---
+    # --- FEATURE[apple_pay] END ---
 ]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
