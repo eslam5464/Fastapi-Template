@@ -5,7 +5,7 @@ from faker import Faker
 from firebase_admin import App
 from google.cloud.exceptions import NotFound
 
-from app.core.credentials import FirebaseServiceAccount
+from app.core.credentials.firebase import FirebaseServiceAccount
 from app.core.exceptions.firebase_exceptions import FirebaseDocumentNotFoundError
 from app.services.firestore import Firestore
 

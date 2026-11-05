@@ -85,14 +85,14 @@ All in `app/middleware/`:
 
 - **Firebase Admin** — `app/services/firebase.py` — authentication and push notifications.
 - **Firestore** — `app/services/firestore.py` — Firestore database access.
-- **Credentials:** modeled by `FirebaseServiceAccount` in `app/core/credentials.py`.
+- **Credentials:** modeled by `FirebaseServiceAccount` in `app/core/credentials/firebase.py`.
 - **Install:** `uv sync --extra cloud-service`
 
 ## 💳 Apple Pay
 
 - **Module:** `app/services/payments/apple_pay.py`
 - **App Store Server API integration** — in-app purchase and subscription verification.
-- **Credentials:** modeled by `ApplePayStoreCredentials` in `app/core/credentials.py`.
+- **Credentials:** modeled by `ApplePayStoreCredentials` in `app/core/credentials/apple_pay.py`.
 - **Install:** `uv sync --extra apple-services`
 - **Configure:** `APPLE_PAY_STORE_PRIVATE_KEY_PATH`, `APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH`, plus key/issuer/bundle IDs in `.env`
 - **Note:** this is the one feature generated projects can opt out of entirely — see [Using This as a Template](../README.md#-using-this-as-a-template) in the main README.

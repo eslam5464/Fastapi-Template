@@ -13,7 +13,7 @@ import subprocess
 from datetime import datetime
 from pathlib import Path
 
-APPLE_PAY_MARKERS = ("# --- APPLE_PAY_START ---", "# --- APPLE_PAY_END ---")
+APPLE_PAY_IMPORT_MARKERS = ("# --- APPLE_PAY_IMPORT_START ---", "# --- APPLE_PAY_IMPORT_END ---")
 APPLE_PAY_SETTINGS_MARKERS = (
     "# --- APPLE_PAY_SETTINGS_START ---",
     "# --- APPLE_PAY_SETTINGS_END ---",
@@ -222,20 +222,12 @@ def remove_apple_pay() -> None:
     if apple_pay_credentials.exists():
         apple_pay_credentials.unlink()
 
-    credentials_path = Path("app/core/credentials.py")
-    strip_marked_block(credentials_path, *APPLE_PAY_MARKERS)
-    replace_required(
-        credentials_path,
-        "from pydantic import BaseModel, ConfigDict, Field, model_validator",
-        "from pydantic import BaseModel, ConfigDict, model_validator",
-    )
+    apple_pay_credentials_module = Path("app/core/credentials/apple_pay.py")
+    if apple_pay_credentials_module.exists():
+        apple_pay_credentials_module.unlink()
 
     config_path = Path("app/core/config.py")
-    replace_required(
-        config_path,
-        "from app.core.credentials import ApplePayStoreCredentials, FirebaseServiceAccount",
-        "from app.core.credentials import FirebaseServiceAccount",
-    )
+    strip_marked_block(config_path, *APPLE_PAY_IMPORT_MARKERS)
     strip_marked_block(config_path, *APPLE_PAY_SETTINGS_MARKERS)
     strip_marked_block(config_path, *APPLE_PAY_PROPERTY_MARKERS)
 

@@ -55,6 +55,7 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 PATHS: dict[str, str] = {
     "app/services/payments/": "apple_pay",
     "app/core/exceptions/apple_pay.py": "apple_pay",
+    "app/core/credentials/apple_pay.py": "apple_pay",
     "tests/services/payments/": "apple_pay",
     "tests/apple_pay_credentials.py": "apple_pay",
 }

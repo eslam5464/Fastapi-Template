@@ -12,7 +12,7 @@ from firebase_admin.auth import (
 from firebase_admin.exceptions import FirebaseError
 from firebase_admin.messaging import BatchResponse, SendResponse
 
-from app.core.credentials import FirebaseServiceAccount
+from app.core.credentials.firebase import FirebaseServiceAccount
 from app.schemas.firebase import DecodedFirebaseTokenResponse
 from app.services.firebase import Firebase
 

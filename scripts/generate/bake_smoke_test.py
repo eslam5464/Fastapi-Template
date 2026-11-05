@@ -94,6 +94,7 @@ def test_bake_with_defaults(tmp_path: Path):
     assert (dst / "app" / "main.py").is_file()
     assert (dst / "Dockerfile").is_file()
     assert (dst / "app" / "services" / "payments" / "apple_pay.py").is_file()
+    assert (dst / "app" / "core" / "credentials" / "apple_pay.py").is_file()
     assert (dst / "tests" / "apple_pay_credentials.py").is_file()
     assert "apple-services" in (dst / "pyproject.toml").read_text()
     _assert_no_leftover_jinja(dst)
@@ -105,7 +106,8 @@ def test_bake_without_apple_pay(tmp_path: Path):
     _bake(dst, include_apple_pay=False)
 
     assert not (dst / "app" / "services" / "payments" / "apple_pay.py").exists()
-    assert "ApplePayStoreCredentials" not in (dst / "app" / "core" / "credentials.py").read_text()
+    assert not (dst / "app" / "core" / "credentials" / "apple_pay.py").exists()
+    assert (dst / "app" / "core" / "credentials" / "firebase.py").is_file()
     assert "apple-services" not in (dst / "pyproject.toml").read_text()
     assert not (dst / "app" / "core" / "exceptions" / "apple_pay.py").exists()
     assert not (dst / "tests" / "services" / "payments").exists()

@@ -21,7 +21,7 @@ from appstoreserverlibrary.api_client import APIException
 from appstoreserverlibrary.models.Environment import Environment
 
 from app.core.config import Environment as AppEnvironment
-from app.core.credentials import ApplePayStoreCredentials
+from app.core.credentials.apple_pay import ApplePayStoreCredentials
 from app.core.exceptions.apple_pay import (
     AppStoreException,
     AppStoreInvalidCredentialsException,

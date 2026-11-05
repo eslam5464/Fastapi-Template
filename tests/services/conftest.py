@@ -18,7 +18,7 @@ from google.cloud.firestore import AsyncClient
 from redis.asyncio import ConnectionPool, Redis
 
 from app.core.config import Environment
-from app.core.credentials import FirebaseServiceAccount
+from app.core.credentials.firebase import FirebaseServiceAccount
 from app.schemas import (
     ApplicationData,
     BucketFile,

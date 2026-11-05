@@ -6,7 +6,7 @@ from appstoreserverlibrary.models.Environment import Environment
 from appstoreserverlibrary.models.ExtendReasonCode import ExtendReasonCode
 from faker import Faker
 
-from app.core.credentials import ApplePayStoreCredentials
+from app.core.credentials.apple_pay import ApplePayStoreCredentials
 
 
 @pytest.fixture

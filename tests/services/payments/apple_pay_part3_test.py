@@ -10,7 +10,7 @@ import pytest
 from appstoreserverlibrary.api_client import APIException
 from faker import Faker
 
-from app.core.credentials import ApplePayStoreCredentials
+from app.core.credentials.apple_pay import ApplePayStoreCredentials
 from app.core.exceptions.apple_pay import (
     AppStoreConnectionAbortedException,
     AppStoreConnectionErrorException,
