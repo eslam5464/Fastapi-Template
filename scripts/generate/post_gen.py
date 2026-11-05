@@ -235,6 +235,15 @@ def regenerate_lockfile(python_version: str) -> None:
         print(f"Warning: {message}")
 
 
+def offline_mode() -> bool:
+    """FASTAPI_TEMPLATE_OFFLINE=1: the offline variant checker (check_variants.py).
+
+    Skips the steps that need the network or a real project checkout (uv lock,
+    git init) and runs ruff from the current interpreter instead of uvx.
+    """
+    return os.environ.get("FASTAPI_TEMPLATE_OFFLINE") == "1"
+
+
 RUFF_REV_RE = re.compile(r"astral-sh/ruff-pre-commit\s*\n\s*rev:\s*v?(\S+)")
 
 
@@ -258,7 +267,7 @@ def normalize_python(files: list[Path]) -> None:
     py_files = [str(path) for path in files if path.suffix == ".py"]
     if not py_files:
         return
-    ruff = ["uvx", f"ruff@{ruff_version()}"]
+    ruff = [sys.executable, "-m", "ruff"] if offline_mode() else ["uvx", f"ruff@{ruff_version()}"]
     try:
         # --no-cache: don't leave a .ruff_cache/ directory in the generated project.
         run_quiet([*ruff, "check", "--select", "I", "--fix", "--no-cache", "--quiet", *py_files])
@@ -321,9 +330,11 @@ def main() -> None:
         raise SystemExit(f"post_gen.py: {exc}") from exc
     normalize_python(changed)
 
-    regenerate_lockfile(args.python_version)
+    if not offline_mode():
+        regenerate_lockfile(args.python_version)
     remove_generate_tooling()
-    git_init_and_commit()
+    if not offline_mode():
+        git_init_and_commit()
 
 
 if __name__ == "__main__":

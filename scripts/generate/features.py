@@ -60,6 +60,39 @@ PATHS: dict[str, str] = {
     "tests/apple_pay_credentials.py": "apple_pay",
 }
 
+# Third-party top-level modules every generated project may import (checked by
+# check_variants.py). Services that are not toggleable features yet still live
+# here; making a service a Feature moves its modules into that Feature.imports.
+BASE_IMPORTS: tuple[str, ...] = (
+    "aiofiles",
+    "alembic",
+    "anyio",
+    "b2sdk",
+    "brevo",
+    "celery",
+    "faker",
+    "fastapi",
+    "firebase_admin",
+    "gcloud",
+    "google",
+    "gunicorn",
+    "httpx",
+    "jose",
+    "loguru",
+    "pwdlib",
+    "pydantic",
+    "pydantic_settings",
+    "redis",
+    "resend",
+    "sqlalchemy",
+    "starlette",
+    "uvicorn",
+    "yarl",
+)
+
+# Extra third-party modules allowed only under tests/ (the test dependency group).
+TEST_IMPORTS: tuple[str, ...] = ("anyio", "faker", "httpx", "pytest")
+
 # Repo-relative prefixes (forward slashes) that are never scanned for markers.
 SCAN_EXCLUDE: tuple[str, ...] = (
     ".git/",
