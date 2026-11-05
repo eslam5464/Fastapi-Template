@@ -7,7 +7,6 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "aiofiles>=25.1.0",
-    "aiohttp>=3.13.2",
     "alembic>=1.16.5",
     "asyncpg>=0.30.0",
     "b2sdk>=2.10.1",
@@ -15,13 +14,13 @@ dependencies = [
     "fastapi>=0.116.2",
     "gunicorn>=26.2.0",
     "httptools>=0.6.4 ; sys_platform == 'linux'",
+    "httpx>=0.28.1",
     "loguru>=0.7.3",
     "psycopg[binary]>=3.3.4 ; sys_platform == 'win32'",
     "psycopg>=3.3.2 ; sys_platform != 'win32'",
     "pwdlib[argon2]>=0.3.0",
     "pydantic>=2.11.9",
     "pydantic-settings>=2.10.1",
-    "pyjwt>=2.10.1",
     "python-jose>=3.5.0",
     "python-multipart>=0.0.20",
     "sqlalchemy[asyncio]>=2.0.51",
@@ -45,6 +44,7 @@ cache = [
 ]
 task-queue = [
     "celery[redis]>=5.3.1",
+    "faker>=40.36.0",
     "redis>=7.1.0",
 ]
 # --- APPLE_PAY_PYPROJECT_EXTRA_START ---
@@ -60,7 +60,6 @@ test = [
     # httpx/fastapi, made explicit since tests rely on it directly.
     "anyio>=4.11.0",
     "faker>=40.36.0",
-    "httpx>=0.28.1",
     "pytest>=9.1.1",
     "pytest-cov>=7.0.0",
 ]

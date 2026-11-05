@@ -8,7 +8,7 @@ from app.core.constants import RateLimitPrefix
 from app.core.exceptions.http_exceptions import TooManyRequestsException
 from app.core.utils import get_client_ip
 from app.models.user import User
-from app.services.cache import rate_limiter
+from app.services.cache.rate_limiter import rate_limiter
 
 
 async def rate_limit_auth(request: Request) -> None:

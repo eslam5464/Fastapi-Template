@@ -1,5 +1,3 @@
-from google.api_core.exceptions import NotFound
-
 from app.core.exceptions.base import AppException
 
 
@@ -17,7 +15,7 @@ class GCSBucketNotFoundError(GCSError):
     Bucket does not exist in Google cloud service
     """
 
-    def __init__(self, message, exception: NotFound | None = None):
+    def __init__(self, message, exception: Exception | None = None):
         super().__init__(message, exception)
 
 

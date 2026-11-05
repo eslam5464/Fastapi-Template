@@ -31,6 +31,10 @@ APPLE_PAY_MYPY_OVERRIDE_MARKERS = (
     "# --- APPLE_PAY_MYPY_OVERRIDE_START ---",
     "# --- APPLE_PAY_MYPY_OVERRIDE_END ---",
 )
+APPLE_PAY_TEST_CREDENTIALS_MARKERS = (
+    "# --- APPLE_PAY_TEST_CREDENTIALS_START ---",
+    "# --- APPLE_PAY_TEST_CREDENTIALS_END ---",
+)
 TEMPLATE_TOOLING_MARKERS = ("# --- TEMPLATE_TOOLING_START ---", "# --- TEMPLATE_TOOLING_END ---")
 TEMPLATE_TOOLING_DEV_DEP_MARKERS = (
     "# --- TEMPLATE_TOOLING_DEV_DEP_START ---",
@@ -212,6 +216,11 @@ def remove_apple_pay() -> None:
     payments_tests_dir = Path("tests/services/payments")
     if payments_tests_dir.exists():
         shutil.rmtree(payments_tests_dir)
+
+    strip_marked_block(Path("tests/conftest.py"), *APPLE_PAY_TEST_CREDENTIALS_MARKERS)
+    apple_pay_credentials = Path("tests/apple_pay_credentials.py")
+    if apple_pay_credentials.exists():
+        apple_pay_credentials.unlink()
 
     credentials_path = Path("app/core/credentials.py")
     strip_marked_block(credentials_path, *APPLE_PAY_MARKERS)

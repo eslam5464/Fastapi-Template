@@ -4,6 +4,8 @@
     uv run pytest scripts/generate/bake_smoke_test.py
 """
 
+import subprocess
+import sys
 from pathlib import Path
 
 import copier
@@ -66,6 +68,23 @@ def _assert_no_leftover_jinja(root: Path) -> None:
             assert token not in content, f"leftover Jinja syntax ({token!r}) in {path}"
 
 
+def _assert_conftest_ruff_clean(root: Path) -> None:
+    """The baked tests/conftest.py (Apple Pay block stripped) must satisfy the
+    baked project's own ruff config, run via the same interpreter that runs this
+    test so the tooling is guaranteed present."""
+    conftest = root / "tests" / "conftest.py"
+    for args in (["check", str(conftest)], ["format", "--check", str(conftest)]):
+        result = subprocess.run(
+            [sys.executable, "-m", "ruff", *args],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, (
+            f"ruff {' '.join(args)} failed for baked tests/conftest.py:\n{result.stdout}\n{result.stderr}"
+        )
+
+
 @pytest.mark.slow
 def test_bake_with_defaults(tmp_path: Path):
     dst = tmp_path / "generated"
@@ -75,6 +94,7 @@ def test_bake_with_defaults(tmp_path: Path):
     assert (dst / "app" / "main.py").is_file()
     assert (dst / "Dockerfile").is_file()
     assert (dst / "app" / "services" / "payments" / "apple_pay.py").is_file()
+    assert (dst / "tests" / "apple_pay_credentials.py").is_file()
     assert "apple-services" in (dst / "pyproject.toml").read_text()
     _assert_no_leftover_jinja(dst)
 
@@ -91,7 +111,10 @@ def test_bake_without_apple_pay(tmp_path: Path):
     assert not (dst / "tests" / "services" / "payments").exists()
     assert "apple_pay" not in (dst / "app" / "core" / "config.py").read_text()
     assert "APPLE_PAY" not in (dst / ".env.example").read_text()
+    assert not (dst / "tests" / "apple_pay_credentials.py").exists()
+    assert "apple_pay" not in (dst / "tests" / "conftest.py").read_text().lower()
     _assert_no_leftover_jinja(dst)
+    _assert_conftest_ruff_clean(dst)
 
 
 @pytest.mark.slow

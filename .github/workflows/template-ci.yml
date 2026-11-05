@@ -88,8 +88,8 @@ jobs:
           sed -i 's/^REDIS_USER=.*/REDIS_USER=/' .env
 
       # Dummy Apple Pay test credentials no longer need a dedicated CI step —
-      # `tests/conftest.py`'s `_ensure_apple_pay_test_credentials()` generates them
-      # automatically before any app module is imported, for both variants alike
+      # `tests/apple_pay_credentials.py`'s `ensure_apple_pay_test_credentials()`
+      # generates them automatically before any app module is imported, for both variants alike
       # (a no-op when include_apple_pay=false, since that baked project has neither
       # the apple_pay module nor its settings fields to consume them).
 

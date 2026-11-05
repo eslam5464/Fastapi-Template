@@ -126,7 +126,7 @@ jobs:
       # syntactically valid PEM or importing the module (and therefore collecting
       # any apple_pay test file) crashes before a single test runs. .env.example's
       # values are intentionally empty/placeholder (real credentials, not runnable
-      # as-is) — `tests/conftest.py`'s `_ensure_apple_pay_test_credentials()`
+      # as-is) — `tests/apple_pay_credentials.py`'s `ensure_apple_pay_test_credentials()`
       # generates throwaway ones automatically (locally and here in CI) before any
       # app module is imported, so no separate CI step is needed for this anymore.
 

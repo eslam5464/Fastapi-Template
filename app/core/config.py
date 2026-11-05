@@ -120,7 +120,7 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
 
     # OpenObserve
-    log_to_openobserve: bool = True
+    log_to_openobserve: bool = False
     openobserve_url: str
     openobserve_org_id: str
     openobserve_stream_name: str
