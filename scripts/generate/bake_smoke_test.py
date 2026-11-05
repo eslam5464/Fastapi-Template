@@ -85,6 +85,12 @@ def _assert_no_feature_markers(root: Path) -> None:
         assert "FEATURE[" not in content, f"leftover feature marker in {path}"
 
 
+def _assert_no_tool_caches(root: Path) -> None:
+    """Generation must not leave tool caches (e.g. from post_gen's ruff pass) behind."""
+    leftovers = [name for name in (".ruff_cache", ".pytest_cache", ".mypy_cache") if (root / name).exists()]
+    assert not leftovers, f"tool caches left in the generated project: {leftovers}"
+
+
 def _assert_ruff_clean(root: Path) -> None:
     """The whole baked project must satisfy its own ruff config (lint + format),
     run via the same interpreter that runs this test so the tooling is
@@ -125,6 +131,7 @@ def test_bake_with_defaults(tmp_path: Path):
     _assert_minimal_base(dst)
     _assert_no_leftover_jinja(dst)
     _assert_no_feature_markers(dst)
+    _assert_no_tool_caches(dst)
     _assert_ruff_clean(dst)
 
 
@@ -140,6 +147,7 @@ def test_bake_with_apple_pay(tmp_path: Path):
     assert "apple-services" in (dst / "pyproject.toml").read_text()
     _assert_no_leftover_jinja(dst)
     _assert_no_feature_markers(dst)
+    _assert_no_tool_caches(dst)
     _assert_ruff_clean(dst)
 
 

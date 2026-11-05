@@ -260,8 +260,9 @@ def normalize_python(files: list[Path]) -> None:
         return
     ruff = ["uvx", f"ruff@{ruff_version()}"]
     try:
-        run_quiet([*ruff, "check", "--select", "I", "--fix", "--quiet", *py_files])
-        run_quiet([*ruff, "format", "--quiet", *py_files])
+        # --no-cache: don't leave a .ruff_cache/ directory in the generated project.
+        run_quiet([*ruff, "check", "--select", "I", "--fix", "--no-cache", "--quiet", *py_files])
+        run_quiet([*ruff, "format", "--no-cache", "--quiet", *py_files])
     except (OSError, subprocess.CalledProcessError) as exc:
         message = (
             "could not normalise imports in the generated files with ruff. "

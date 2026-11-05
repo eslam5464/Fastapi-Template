@@ -96,6 +96,6 @@ class TestNormalizePython:
         config = Path("app/core/config.py")
         post_gen.normalize_python([config, Path("README.md")])
         assert calls == [
-            ["uvx", "ruff@0.15.22", "check", "--select", "I", "--fix", "--quiet", str(config)],
-            ["uvx", "ruff@0.15.22", "format", "--quiet", str(config)],
+            ["uvx", "ruff@0.15.22", "check", "--select", "I", "--fix", "--no-cache", "--quiet", str(config)],
+            ["uvx", "ruff@0.15.22", "format", "--no-cache", "--quiet", str(config)],
         ]
