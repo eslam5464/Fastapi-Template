@@ -846,6 +846,8 @@ dependencies = [
     { name = "b2sdk" },
     { name = "email-validator" },
     { name = "fastapi" },
+    { name = "firebase-admin" },
+    { name = "gcloud-aio-storage" },
     { name = "gunicorn" },
     { name = "httptools", marker = "sys_platform == 'linux'" },
     { name = "httpx" },
@@ -870,10 +872,6 @@ apple-services = [
 ]
 cache = [
     { name = "redis" },
-]
-cloud-service = [
-    { name = "firebase-admin" },
-    { name = "gcloud-aio-storage" },
 ]
 email = [
     { name = "brevo-python" },
@@ -918,8 +916,8 @@ requires-dist = [
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "faker", marker = "extra == 'task-queue'", specifier = ">=40.36.0" },
     { name = "fastapi", specifier = ">=0.116.2" },
-    { name = "firebase-admin", marker = "extra == 'cloud-service'", specifier = ">=7.1.0" },
-    { name = "gcloud-aio-storage", marker = "extra == 'cloud-service'", specifier = ">=9.6.1" },
+    { name = "firebase-admin", specifier = ">=7.1.0" },
+    { name = "gcloud-aio-storage", specifier = ">=9.6.1" },
     { name = "gunicorn", specifier = ">=26.2.0" },
     { name = "httptools", marker = "sys_platform == 'linux'", specifier = ">=0.6.4" },
     { name = "httpx", specifier = ">=0.28.1" },
@@ -940,7 +938,7 @@ requires-dist = [
     { name = "uvloop", marker = "sys_platform == 'linux'", specifier = ">=0.21.0" },
     { name = "yarl", specifier = ">=1.20.1" },
 ]
-provides-extras = ["email", "cloud-service", "cache", "task-queue", "apple-services"]
+provides-extras = ["email", "cache", "task-queue", "apple-services"]
 
 [package.metadata.requires-dev]
 dev = [

@@ -40,6 +40,25 @@ FEATURES: tuple[Feature, ...] = (
     # when generating a project.
     Feature("_template"),
     Feature(
+        "firebase",
+        question="include_firebase",
+        imports=("firebase_admin",),
+        forbidden=(r"(?i)firebase",),
+    ),
+    Feature(
+        "firestore",
+        question="include_firestore",
+        parent="firebase",
+        imports=("google",),
+        forbidden=(r"(?i)firestore",),
+    ),
+    Feature(
+        "gcs",
+        question="include_gcs",
+        imports=("gcloud", "aiofiles"),
+        forbidden=(r"gcloud", r"aiofiles", r"google_bucket", r"gcs_exceptions", r"\b[Gg][Cc][Ss]\b"),
+    ),
+    Feature(
         "backblaze",
         question="include_backblaze",
         imports=("b2sdk",),
@@ -59,6 +78,20 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 # A key ending in "/" is a directory (deleted with its whole tree when the
 # expression is false). Every key must exist in the template repository.
 PATHS: dict[str, str] = {
+    "app/services/firebase.py": "firebase",
+    "app/core/credentials/firebase.py": "firebase",
+    "app/core/exceptions/firebase_exceptions.py": "firebase",
+    "app/schemas/firebase.py": "firebase",
+    "tests/services/firebase/": "firebase",
+    "docs/integrations/firebase.md": "firebase",
+    "app/services/firestore.py": "firestore",
+    "tests/services/firebase/firestore_test.py": "firestore",
+    "docs/integrations/firestore.md": "firestore",
+    "app/services/gcs.py": "gcs",
+    "app/core/exceptions/gcs_exceptions.py": "gcs",
+    "app/schemas/google_bucket.py": "gcs",
+    "tests/services/gcs/": "gcs",
+    "docs/integrations/gcs.md": "gcs",
     "app/services/back_blaze_b2.py": "backblaze",
     "app/core/exceptions/back_blaze_exceptions.py": "backblaze",
     "app/schemas/back_blaze_bucket.py": "backblaze",
@@ -75,16 +108,12 @@ PATHS: dict[str, str] = {
 # check_variants.py). Services that are not toggleable features yet still live
 # here; making a service a Feature moves its modules into that Feature.imports.
 BASE_IMPORTS: tuple[str, ...] = (
-    "aiofiles",
     "alembic",
     "anyio",
     "brevo",
     "celery",
     "faker",
     "fastapi",
-    "firebase_admin",
-    "gcloud",
-    "google",
     "gunicorn",
     "httpx",
     "jose",

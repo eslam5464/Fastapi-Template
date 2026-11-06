@@ -11,8 +11,8 @@ Full reference for what's built into this template: what each integration does, 
 | 🔒 Security middleware (CSRF, headers, rate limiting) | `cache` for rate limiting | [Security middleware](#-security-middleware) |
 | ⚡ Caching | `cache` | [Caching](#-caching) |
 | ⚙️ Background jobs (Celery) | `task-queue` | [Background jobs](#-background-jobs--task-queue) |
-| ☁️ Cloud storage (BackBlaze B2, GCS) | `cloud-service` | [Cloud storage](#-cloud-storage) |
-| 🔥 Firebase (Auth, Firestore) | `cloud-service` | [Firebase](#-firebase) |
+| ☁️ Cloud storage (BackBlaze B2, GCS) | chosen at generation (`include_backblaze`, `include_gcs`) | [Cloud storage](#-cloud-storage) |
+| 🔥 Firebase (Auth, Firestore) | chosen at generation (`include_firebase`, `include_firestore`) | [Firebase](#-firebase) |
 | 💳 Apple Pay | `apple-services` | [Apple Pay](#-apple-pay) |
 | 📧 Email (Brevo, Resend) | `email` | [Email](#-email) |
 | 🧪 Testing & quality tooling | dev/test groups | [Testing & quality tooling](#-testing--quality-tooling) |
@@ -22,7 +22,6 @@ Install optional extras individually as needed:
 
 ```bash
 uv sync --extra email
-uv sync --extra cloud-service
 uv sync --extra cache
 uv sync --extra task-queue
 uv sync --extra apple-services
@@ -75,20 +74,28 @@ All in `app/middleware/`:
 - **Start a worker:** `./scripts/celery_worker.sh` (or `.bat`) — or directly: `celery -A app.services.task_queue worker --loglevel=info --pool=solo`
 - **Start the scheduler:** `./scripts/celery_beat.sh` (or `.bat`) — or directly: `celery -A app.services.task_queue beat --loglevel=info`
 
+<!-- --- FEATURE[backblaze|gcs] START --- -->
 ## ☁️ Cloud storage
 
 <!-- --- FEATURE[backblaze] START --- -->
-- **BackBlaze B2** — `app/services/back_blaze_b2.py`, schemas in `app/schemas/back_blaze_bucket.py`.
+- **BackBlaze B2** — `app/services/back_blaze_b2.py`, schemas in `app/schemas/back_blaze_bucket.py`. Guide: [integrations/backblaze.md](integrations/backblaze.md).
 <!-- --- FEATURE[backblaze] END --- -->
-- **Google Cloud Storage** — `app/services/gcs.py`, schemas in `app/schemas/google_bucket.py`.
-- **Install:** `uv sync --extra cloud-service`
+<!-- --- FEATURE[gcs] START --- -->
+- **Google Cloud Storage** — `app/services/gcs.py`, schemas in `app/schemas/google_bucket.py`. Guide: [integrations/gcs.md](integrations/gcs.md).
+<!-- --- FEATURE[gcs] END --- -->
+- **Included** when the project is generated with them (`include_backblaze`, `include_gcs`); their SDKs are then regular dependencies.
+<!-- --- FEATURE[backblaze|gcs] END --- -->
 
+<!-- --- FEATURE[firebase] START --- -->
 ## 🔥 Firebase
 
-- **Firebase Admin** — `app/services/firebase.py` — authentication and push notifications.
-- **Firestore** — `app/services/firestore.py` — Firestore database access.
-- **Credentials:** modeled by `FirebaseServiceAccount` in `app/core/credentials/firebase.py`.
-- **Install:** `uv sync --extra cloud-service`
+- **Firebase Admin** — `app/services/firebase.py` — authentication and push notifications. Guide: [integrations/firebase.md](integrations/firebase.md).
+<!-- --- FEATURE[firestore] START --- -->
+- **Firestore** — `app/services/firestore.py` — Firestore database access. Guide: [integrations/firestore.md](integrations/firestore.md).
+<!-- --- FEATURE[firestore] END --- -->
+- **Credentials:** modeled by `FirebaseServiceAccount` in `app/core/credentials/firebase.py`, from the `FIREBASE_*` settings.
+- **Included** when the project is generated with `include_firebase` (and `include_firestore`); `firebase-admin` is then a regular dependency.
+<!-- --- FEATURE[firebase] END --- -->
 
 ## 💳 Apple Pay
 

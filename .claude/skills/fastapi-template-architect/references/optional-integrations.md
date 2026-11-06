@@ -10,7 +10,8 @@ substitute for the real source.
 ## The rule that governs this whole file
 
 **The extras below are not Copier generation-time toggles** — only the services with an
-`include_*` question are (today `include_backblaze` and `include_apple_pay`, see
+`include_*` question are (today `include_firebase`, `include_firestore`, `include_gcs`,
+`include_backblaze` and `include_apple_pay`, see
 [copier-template-mechanics.md](copier-template-mechanics.md)). Their code ships in every
 generated project regardless. "Enabling" one of these for a project means: install its
 `uv sync --extra <name>`, and fill in its `.env` config block. Don't present installing
@@ -20,7 +21,7 @@ an extra as equivalent to "generating the project with/without" that feature.
 |---|---|---|---|
 | Email | `email` | `app/services/email/{base,resend,brevo}.py` | Not usable until an API key is set; no silent fallback |
 | Cache (Redis) | `cache` | `app/services/cache/{base,manager,decorators,rate_limiter,token_blacklist}.py` | Fails open / no-op in `LOCAL` |
-| Cloud storage | `cloud-service` | `app/services/{gcs,back_blaze_b2,firebase,firestore}.py` | Not usable until credentials are set |
+| Firebase, Firestore, GCS, BackBlaze | — (Copier toggles, below) | `app/services/{firebase,firestore,gcs,back_blaze_b2}.py` | Not usable until credentials are set |
 | Task queue | `task-queue` | `app/services/task_queue/{celery_config.py, tasks/user_tasks.py}` | Inert unless a worker/beat process is actually started |
 | Apple Pay | `apple-services` | `app/services/payments/apple_pay.py` | **Removable at generation time** — the one real toggle |
 
@@ -54,18 +55,24 @@ singletons, health-checked in `main.py`'s lifespan (see
 [observability-and-performance.md](observability-and-performance.md)) and explicitly
 closed on shutdown.
 
-## Cloud storage & Firebase (`cloud-service` extra)
+## Cloud storage & Firebase (Copier toggles, not extras)
 
 - `app/services/gcs.py` — Google Cloud Storage via `gcloud-aio-storage`, schema in
-  `app/schemas/google_bucket.py`.
+  `app/schemas/google_bucket.py`. Not an extra: it is the `include_gcs` Copier toggle,
+  and a project that includes it gets `gcloud-aio-storage` and `aiofiles` as core
+  dependencies (guide: `docs/integrations/gcs.md`).
 - `app/services/back_blaze_b2.py` — Backblaze B2 SDK, schema in
   `app/schemas/back_blaze_bucket.py`. Not an extra: it is the `include_backblaze`
   Copier toggle, and a project that includes it gets `b2sdk` as a core dependency
   (guide: `docs/integrations/backblaze.md`).
 - `app/services/firebase.py` (Admin SDK auth) and `firestore.py` (Firestore DB) —
-  credentials modeled by `FirebaseServiceAccount` in `app/core/credentials.py`, which
-  supports either a raw key string or a file-path-based key and auto-escapes `\n` →
-  `\\n` for a PEM key embedded directly in an env var.
+  the `include_firebase` and `include_firestore` Copier toggles (Firestore only with
+  Firebase). A project that includes Firebase gets `firebase-admin` as a core
+  dependency and the `FIREBASE_*` settings (`settings.firebase_credentials`, modeled by
+  `FirebaseServiceAccount` in `app/core/credentials/firebase.py`, which supports either a
+  raw key string or a file-path-based key and auto-escapes `\n` → `\\n` for a PEM key
+  embedded directly in an env var). Guides: `docs/integrations/firebase.md` and
+  `docs/integrations/firestore.md`.
 - Each has its own exception module under `app/core/exceptions/` (`gcs_exceptions.py`,
   `back_blaze_exceptions.py`, `firebase_exceptions.py`) — note these live in `app/core/`
   rather than `app/services/exceptions/`, a documented deviation from the strict-profile

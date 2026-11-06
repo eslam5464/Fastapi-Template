@@ -47,8 +47,17 @@ class TestResolve:
         assert post_gen.resolve(answers(include_backblaze=True)) == flags("backblaze")
 
     def test_each_question_switches_only_its_feature(self):
+        # A child feature (e.g. firestore) needs its parent switched on too.
         for question, name in QUESTIONS.items():
-            assert post_gen.resolve(answers(**{question: True})) == flags(name)
+            chain = [name]
+            while features.FEATURES_BY_NAME[chain[-1]].parent:
+                chain.append(features.FEATURES_BY_NAME[chain[-1]].parent)
+            enabled = {features.FEATURES_BY_NAME[n].question: True for n in chain}
+            assert post_gen.resolve(answers(**enabled)) == flags(*chain)
+
+    def test_child_without_parent_is_rejected(self):
+        with pytest.raises(SystemExit, match="requires its parent feature 'firebase'"):
+            post_gen.resolve(answers(include_firestore=True))
 
     def test_template_always_off(self):
         # _template is never a question; it must come back False even when

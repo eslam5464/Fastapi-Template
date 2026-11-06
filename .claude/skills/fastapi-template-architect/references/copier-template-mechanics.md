@@ -36,6 +36,9 @@ author_email:        # str, default "eslam5464@users.noreply.github.com"
 github_username:     # str, default "eslam5464"
 python_version:      # str, default "3.14"; validator enforces >= 3.14 (PEP 758 syntax requirement)
 services:            # choice: "minimal" (default) or "custom"
+include_firebase:    # bool, default false, asked only when services == custom
+include_firestore:   # bool, default false, asked only when include_firebase is true
+include_gcs:         # bool, default false, asked only when services == custom
 include_backblaze:   # bool, default false, asked only when services == custom
 include_apple_pay:   # bool, default false, asked only when services == custom
 
@@ -50,7 +53,7 @@ _tasks:
      "--author-name", "{{ author_name }}", "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_backblaze': include_backblaze, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_apple_pay': include_apple_pay} | tojson }}"]
 ```
 
 Invocation (from `README.md`):
@@ -145,7 +148,7 @@ work.
 ## ⚠️ The distinction that matters most: toggle vs. extra
 
 **Services with an `include_*` question remove their code at generation time** when
-declined (today: BackBlaze B2 and Apple Pay). Email, cache/Redis, GCS, Firebase and
+declined (today: Firebase, Firestore, Google Cloud Storage, BackBlaze B2 and Apple Pay). Email, cache/Redis and
 task-queue/Celery are still `pyproject.toml` optional-dependency extras (`uv sync --extra
 email`, `--extra cache`, etc., see [optional-integrations.md](optional-integrations.md))
 whose source code ships in **every** generated project; "selecting" one of those means

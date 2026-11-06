@@ -12,6 +12,10 @@ import copier
 import pytest
 
 TEMPLATE_ROOT = Path(__file__).resolve().parents[2]
+if str(TEMPLATE_ROOT / "scripts" / "generate") not in sys.path:
+    sys.path.insert(0, str(TEMPLATE_ROOT / "scripts" / "generate"))
+
+import features  # noqa: E402
 
 
 def _bake(dst: Path, **data) -> None:
@@ -113,7 +117,12 @@ def _assert_minimal_base(dst: Path) -> None:
     assert not (dst / "app" / "core" / "credentials" / "apple_pay.py").exists()
     assert not (dst / "tests" / "services" / "payments").exists()
     assert not (dst / "tests" / "apple_pay_credentials.py").exists()
-    assert (dst / "app" / "core" / "credentials" / "firebase.py").is_file()
+    # Every file or folder an optional feature owns is gone; the shared packages stay.
+    for rel in features.PATHS:
+        assert not (dst / rel).exists(), f"{rel} should not be in the minimal base"
+    assert (dst / "app" / "core" / "credentials" / "__init__.py").is_file()
+    assert "FIREBASE_" not in (dst / ".env.example").read_text()
+    assert "firebase" not in (dst / "app" / "core" / "config.py").read_text().lower()
     assert "apple-services" not in (dst / "pyproject.toml").read_text()
     assert "APPLE_PAY" not in (dst / ".env.example").read_text()
     assert "apple_pay" not in (dst / "app" / "core" / "config.py").read_text()

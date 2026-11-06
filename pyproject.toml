@@ -6,7 +6,9 @@ authors = [{ name = "Eslam", email = "eslam5464@users.noreply.github.com" }]
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    # --- FEATURE[gcs] START ---
     "aiofiles>=25.1.0",
+    # --- FEATURE[gcs] END ---
     "alembic>=1.16.5",
     "asyncpg>=0.30.0",
     # --- FEATURE[backblaze] START ---
@@ -14,6 +16,12 @@ dependencies = [
     # --- FEATURE[backblaze] END ---
     "email-validator>=2.3.0",
     "fastapi>=0.116.2",
+    # --- FEATURE[firebase] START ---
+    "firebase-admin>=7.1.0",
+    # --- FEATURE[firebase] END ---
+    # --- FEATURE[gcs] START ---
+    "gcloud-aio-storage>=9.6.1",
+    # --- FEATURE[gcs] END ---
     "gunicorn>=26.2.0",
     "httptools>=0.6.4 ; sys_platform == 'linux'",
     "httpx>=0.28.1",
@@ -36,10 +44,6 @@ dependencies = [
 email = [
     "brevo-python>=5.0.2",
     "resend>=2.23.0",
-]
-cloud-service = [
-    "firebase-admin>=7.1.0",
-    "gcloud-aio-storage>=9.6.1",
 ]
 cache = [
     "redis>=7.1.0",
@@ -75,7 +79,9 @@ dev = [
     "pre-commit>=4.3.0",
     "ruff>=0.14.0",
     "tach>=0.29.0",
+    # --- FEATURE[gcs] START ---
     "types-aiofiles>=25.1.0",
+    # --- FEATURE[gcs] END ---
 ]
 # --- FEATURE[_template] START ---
 template = [
@@ -124,13 +130,20 @@ module = ["app.repos.*", "app.models.*", "app.services.*"]
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 
+# --- FEATURE[firebase|gcs|backblaze|apple_pay] START ---
 # Carve-out: third-party-SDK-heavy wrappers with weak/no upstream stubs.
 # Revisit once these SDKs ship better types upstream.
 [[tool.mypy.overrides]]
 module = [
+    # --- FEATURE[firebase] START ---
     "app.services.firebase",
+    # --- FEATURE[firebase] END ---
+    # --- FEATURE[firestore] START ---
     "app.services.firestore",
+    # --- FEATURE[firestore] END ---
+    # --- FEATURE[gcs] START ---
     "app.services.gcs",
+    # --- FEATURE[gcs] END ---
     # --- FEATURE[backblaze] START ---
     "app.services.back_blaze_b2",
     # --- FEATURE[backblaze] END ---
@@ -140,6 +153,7 @@ module = [
 ]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false
+# --- FEATURE[firebase|gcs|backblaze|apple_pay] END ---
 
 # Third-party packages with missing/incomplete type stubs.
 [[tool.mypy.overrides]]
@@ -147,9 +161,15 @@ module = [
     # --- FEATURE[backblaze] START ---
     "b2sdk.*",
     # --- FEATURE[backblaze] END ---
+    # --- FEATURE[firebase] START ---
     "firebase_admin.*",
+    # --- FEATURE[firebase] END ---
+    # --- FEATURE[gcs] START ---
     "gcloud.*",
+    # --- FEATURE[gcs] END ---
+    # --- FEATURE[firestore] START ---
     "google.cloud.firestore.*",
+    # --- FEATURE[firestore] END ---
     "jose.*",
     "celery.*",
     "gunicorn.*",
