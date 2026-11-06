@@ -846,6 +846,7 @@ dependencies = [
     { name = "b2sdk" },
     { name = "email-validator" },
     { name = "fastapi" },
+    { name = "gcloud-aio-storage" },
     { name = "gunicorn" },
     { name = "httptools", marker = "sys_platform == 'linux'" },
     { name = "httpx" },
@@ -873,7 +874,6 @@ cache = [
 ]
 cloud-service = [
     { name = "firebase-admin" },
-    { name = "gcloud-aio-storage" },
 ]
 email = [
     { name = "brevo-python" },
@@ -919,7 +919,7 @@ requires-dist = [
     { name = "faker", marker = "extra == 'task-queue'", specifier = ">=40.36.0" },
     { name = "fastapi", specifier = ">=0.116.2" },
     { name = "firebase-admin", marker = "extra == 'cloud-service'", specifier = ">=7.1.0" },
-    { name = "gcloud-aio-storage", marker = "extra == 'cloud-service'", specifier = ">=9.6.1" },
+    { name = "gcloud-aio-storage", specifier = ">=9.6.1" },
     { name = "gunicorn", specifier = ">=26.2.0" },
     { name = "httptools", marker = "sys_platform == 'linux'", specifier = ">=0.6.4" },
     { name = "httpx", specifier = ">=0.28.1" },
