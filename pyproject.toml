@@ -9,7 +9,9 @@ dependencies = [
     "aiofiles>=25.1.0",
     "alembic>=1.16.5",
     "asyncpg>=0.30.0",
+    # --- FEATURE[backblaze] START ---
     "b2sdk>=2.10.1",
+    # --- FEATURE[backblaze] END ---
     "email-validator>=2.3.0",
     "fastapi>=0.116.2",
     "gunicorn>=26.2.0",
@@ -123,13 +125,15 @@ disallow_untyped_defs = true
 disallow_incomplete_defs = true
 
 # Carve-out: third-party-SDK-heavy wrappers with weak/no upstream stubs.
-# Revisit once b2sdk / firebase_admin / gcloud-aio-storage ship better types upstream.
+# Revisit once these SDKs ship better types upstream.
 [[tool.mypy.overrides]]
 module = [
     "app.services.firebase",
     "app.services.firestore",
     "app.services.gcs",
+    # --- FEATURE[backblaze] START ---
     "app.services.back_blaze_b2",
+    # --- FEATURE[backblaze] END ---
     # --- FEATURE[apple_pay] START ---
     "app.services.payments.apple_pay",
     # --- FEATURE[apple_pay] END ---
@@ -140,7 +144,9 @@ disallow_incomplete_defs = false
 # Third-party packages with missing/incomplete type stubs.
 [[tool.mypy.overrides]]
 module = [
+    # --- FEATURE[backblaze] START ---
     "b2sdk.*",
+    # --- FEATURE[backblaze] END ---
     "firebase_admin.*",
     "gcloud.*",
     "google.cloud.firestore.*",

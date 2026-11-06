@@ -77,7 +77,9 @@ All in `app/middleware/`:
 
 ## ☁️ Cloud storage
 
+<!-- --- FEATURE[backblaze] START --- -->
 - **BackBlaze B2** — `app/services/back_blaze_b2.py`, schemas in `app/schemas/back_blaze_bucket.py`.
+<!-- --- FEATURE[backblaze] END --- -->
 - **Google Cloud Storage** — `app/services/gcs.py`, schemas in `app/schemas/google_bucket.py`.
 - **Install:** `uv sync --extra cloud-service`
 

@@ -230,6 +230,7 @@ class UserRepository(BaseRepository[User]):
 - **Business Logic Services**: Complex operations spanning multiple repositories
 - **Cloud Services**: Cloud storage, messaging, etc.
 
+<!-- --- FEATURE[backblaze] START --- -->
 ```python
 # BackBlaze B2 service example
 class BackBlaze:
@@ -255,9 +256,11 @@ class BackBlaze:
             file_info=file_info.model_dump(),
         )
 ```
+<!-- --- FEATURE[backblaze] END --- -->
 
 **Available Services**:
 
+<!-- --- FEATURE[backblaze] START --- -->
 #### BackBlaze B2 Cloud Storage
 
 Cloud storage integration for file management:
@@ -269,6 +272,8 @@ Cloud storage integration for file management:
 - **Method Chaining**: Fluent interface for bucket operations
 - **Error Handling**: Comprehensive exception handling with logging
 - **Type Safety**: Full type hints and Pydantic schema validation
+
+<!-- --- FEATURE[backblaze] END --- -->
 
 #### Firebase Authentication & Messaging
 

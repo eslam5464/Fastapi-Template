@@ -35,7 +35,9 @@ author_name:        # str, default "Eslam"
 author_email:        # str, default "eslam5464@users.noreply.github.com"
 github_username:     # str, default "eslam5464"
 python_version:      # str, default "3.14"; validator enforces >= 3.14 (PEP 758 syntax requirement)
-include_apple_pay:   # bool, default true — the ONLY real code-stripping toggle today
+services:            # choice: "minimal" (default) or "custom"
+include_backblaze:   # bool, default false, asked only when services == custom
+include_apple_pay:   # bool, default false, asked only when services == custom
 
 _exclude:
   - "copier.yml"
@@ -48,7 +50,7 @@ _tasks:
      "--author-name", "{{ author_name }}", "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--include-apple-pay", "{{ include_apple_pay }}"]
+     "--features-json", "{{ {'services': services, 'include_backblaze': include_backblaze, 'include_apple_pay': include_apple_pay} | tojson }}"]
 ```
 
 Invocation (from `README.md`):
@@ -99,33 +101,41 @@ uv run copier copy <local-path> <new-project-dir> --trust
    description, author name/email, GitHub username all land here.
 3. **`rewrite_license`** — regex-extracts the old year/author from `LICENSE` and
    replaces them.
-4. **`remove_apple_pay()`** (only if `include_apple_pay` was declined) — deletes
-   `app/services/payments/apple_pay.py`, its exception module, and its test directory,
-   then calls `strip_marked_block()` to cut every `# --- APPLE_PAY_*_START/END ---`
-   region out of `config.py`, `credentials.py`, `.env.example`, `pyproject.toml` (extras
-   list + mypy overrides). This is the **only** integration with real generation-time
-   code removal — see the callout below.
-5. **`strip_template_only_sections()`** — removes `TEMPLATE_TOOLING_*`-marked blocks
-   (the `template` dependency-group, i.e. `copier` itself, and any commitizen-dev-only
-   marked section) and the `<!-- TEMPLATE_SECTION_START/END -->`-marked "Using This as a
-   Template" block from the generated project's `README.md` — a generated project's
-   README doesn't tell its own users how to re-template it from itself.
+4. **`resolve()`** — validates the `--features-json` answers against
+   `scripts/generate/features.py` (the feature manifest): with `services=minimal` every
+   `include_*` must be false (a stray `--data include_x=true` is an error, not silently
+   ignored).
+5. **`markers.apply()`** — the marker engine (`scripts/generate/markers.py`) deletes the
+   files and directories the manifest's `PATHS` maps to a disabled feature, cuts every
+   `FEATURE[...]` block whose expression is false (including the `_template` blocks:
+   the `template` dependency group and the README's "Using This as a Template" section),
+   then `normalize_python()` re-sorts imports and re-formats the Python files it changed.
 6. **`regenerate_lockfile()`** — `uv python install <version>` + `uv lock`, tolerant of
    failure (doesn't hard-fail generation if the network/toolchain isn't available at
-   generation time).
+   generation time; `FASTAPI_TEMPLATE_STRICT=1` makes it fatal).
 7. **`remove_generate_tooling()`** — the script deletes its own containing directory
    (`scripts/generate/`) as its last act — a generated project doesn't ship the
    generator that built it.
-8. **`git_init_and_commit()`** — `git init && git add -A && git commit -m "chore:
-   initial commit from copier template"` in the generated project.
+8. **`git_init_and_commit()`** — `git init && git add -A`, then
+   `refresh_secrets_baseline()` (re-runs the pinned detect-secrets hook so
+   `.secrets.baseline` line numbers match the stripped files), then
+   `git commit -m "chore: initial commit from copier template"`.
 
 ## The marker-comment convention
 
-A lightweight, purely textual, greppable alternative to Jinja `{% if %}` blocks, used for
-conditional inclusion instead of real templating:
+A purely textual, greppable alternative to Jinja `{% if %}` blocks, processed by
+`scripts/generate/markers.py`. Markers are whole lines; the END line repeats the START
+expression:
 
-- Python: `# --- <FEATURE>_START ---` / `# --- <FEATURE>_END ---`
-- Markdown: `<!-- TEMPLATE_SECTION_START -->` / `<!-- TEMPLATE_SECTION_END -->`
+- `#`-comment files (Python, TOML, YAML, `.env.example`, Dockerfile, shell):
+  `# --- FEATURE[backblaze] START ---` / `# --- FEATURE[backblaze] END ---`
+- Markdown/HTML: `<!-- --- FEATURE[backblaze] START --- -->` / `<!-- --- FEATURE[backblaze] END --- -->`
+- Expressions: a feature name, `a|b`, `a&b`; `!a` only in Markdown/HTML. Blocks nest.
+
+Every feature name must exist in `scripts/generate/features.py`, which also lists the
+files each feature owns (`PATHS`), its allowed third-party imports and the tokens that
+must not survive when it is off. Never put markers inside docstrings, Markdown tables or
+code fences.
 
 If you're extending this template with a new generation-time toggle, follow this same
 convention rather than introducing Jinja templating into the source tree — that would
@@ -134,16 +144,15 @@ work.
 
 ## ⚠️ The distinction that matters most: toggle vs. extra
 
-**Only `include_apple_pay` removes code at generation time.** Email, cache/Redis, cloud
-storage (GCS/Backblaze/Firebase), and task-queue/Celery are **not** Copier questions —
-they are `pyproject.toml` optional-dependency extras (`uv sync --extra email`, `--extra
-cache`, etc., see [optional-integrations.md](optional-integrations.md)). Their source
-code ships in **every** generated project regardless of what the user says they want;
-"selecting" them really means choosing which extras to install and which `.env` block to
-fill in, not code removal. Never tell a user "I'll generate the project without email
-support" as if that were a Copier-level choice — the honest framing is "I won't install
-the `email` extra or set up its config, but the code will still be present in the
-generated project if you want it later."
+**Services with an `include_*` question remove their code at generation time** when
+declined (today: BackBlaze B2 and Apple Pay). Email, cache/Redis, GCS, Firebase and
+task-queue/Celery are still `pyproject.toml` optional-dependency extras (`uv sync --extra
+email`, `--extra cache`, etc., see [optional-integrations.md](optional-integrations.md))
+whose source code ships in **every** generated project; "selecting" one of those means
+choosing which extras to install and which `.env` block to fill in, not code removal.
+Never tell a user "I'll generate the project without email support" as if that were a
+Copier-level choice for an extra — say "I won't install the `email` extra or set up its
+config, but the code will still be present if you want it later."
 
 ## `template-ci.yml` — the self-verification loop
 

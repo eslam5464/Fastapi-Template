@@ -11,32 +11,50 @@ TEST_DIR = Path(__file__).resolve().parent
 if str(TEST_DIR) not in sys.path:
     sys.path.insert(0, str(TEST_DIR))
 
+import features  # noqa: E402
 import post_gen  # noqa: E402
 import pytest  # noqa: E402
 
+QUESTIONS = {feature.question: feature.name for feature in features.FEATURES if feature.question}
 
-def answers(services="custom", include_apple_pay=False):
-    return {"services": services, "include_apple_pay": include_apple_pay}
+
+def answers(services="custom", **enabled):
+    """Copier answers with every question False except the ones passed as True."""
+    raw = {"services": services}
+    raw.update({question: False for question in QUESTIONS})
+    raw.update(enabled)
+    return raw
+
+
+def flags(*on):
+    """Expected resolve() result: every feature False except `on`."""
+    result = {feature.name: False for feature in features.FEATURES}
+    result.update({name: True for name in on})
+    return result
 
 
 class TestResolve:
     def test_minimal_all_off(self):
-        flags = post_gen.resolve(answers(services="minimal"))
-        assert flags == {"_template": False, "apple_pay": False}
+        assert post_gen.resolve(answers(services="minimal")) == flags()
+
+    def test_custom_with_nothing_chosen_is_all_off(self):
+        assert post_gen.resolve(answers()) == flags()
 
     def test_custom_apple_pay_on(self):
-        flags = post_gen.resolve(answers(include_apple_pay=True))
-        assert flags == {"_template": False, "apple_pay": True}
+        assert post_gen.resolve(answers(include_apple_pay=True)) == flags("apple_pay")
 
-    def test_custom_apple_pay_off(self):
-        flags = post_gen.resolve(answers(include_apple_pay=False))
-        assert flags == {"_template": False, "apple_pay": False}
+    def test_custom_backblaze_on(self):
+        assert post_gen.resolve(answers(include_backblaze=True)) == flags("backblaze")
+
+    def test_each_question_switches_only_its_feature(self):
+        for question, name in QUESTIONS.items():
+            assert post_gen.resolve(answers(**{question: True})) == flags(name)
 
     def test_template_always_off(self):
         # _template is never a question; it must come back False even when
         # every real question is on.
-        flags = post_gen.resolve(answers(include_apple_pay=True))
-        assert flags["_template"] is False
+        everything = answers(**{question: True for question in QUESTIONS})
+        assert post_gen.resolve(everything)["_template"] is False
 
     def test_minimal_rejects_enabled_feature(self):
         with pytest.raises(SystemExit, match="include_apple_pay=true requires services=custom"):
@@ -44,7 +62,7 @@ class TestResolve:
 
     def test_unknown_key(self):
         with pytest.raises(SystemExit, match="unknown feature answer"):
-            post_gen.resolve({"services": "minimal", "include_apple_pay": False, "surprise": True})
+            post_gen.resolve({**answers(services="minimal"), "surprise": True})
 
     def test_missing_key(self):
         with pytest.raises(SystemExit, match="missing feature answer"):

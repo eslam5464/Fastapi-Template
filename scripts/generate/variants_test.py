@@ -85,8 +85,13 @@ def test_matrix_shape(fake_manifest):
 
 
 def test_real_manifest_variants():
-    # With only apple_pay switchable, full == only-apple_pay and without-apple_pay == minimal.
-    assert list(variants.all_variants()) == ["minimal", "full"]
+    names = list(variants.all_variants())
+    assert names[:2] == ["minimal", "full"]
+    for feature in variants.question_features():
+        # Every switchable feature gets a bake with it alone (plus its parents).
+        assert f"only-{feature.name}" in names
+    for name, raw in variants.all_variants().items():
+        assert variants.enabled_features(raw) or name == "minimal"
 
 
 def test_bake_command_for_known_variant(tmp_path):

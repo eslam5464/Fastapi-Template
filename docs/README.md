@@ -39,7 +39,10 @@ Complete guide for local development environment setup and daily development tas
 - Testing strategies and execution
 - Debugging techniques
 - Rate limiting configuration
-- BackBlaze B2, Firebase, Firestore integration guides
+<!-- --- FEATURE[backblaze] START --- -->
+- BackBlaze B2 integration guide ([integrations/backblaze.md](integrations/backblaze.md))
+<!-- --- FEATURE[backblaze] END --- -->
+- Firebase, Firestore integration guides
 - Google Cloud Storage (GCS) integration
 - Apple Pay (App Store Server API) integration
 - Security middleware (CSRF, security headers)
@@ -132,7 +135,9 @@ This template is built with:
 - **Redis** - Caching and rate limiting
 - **Celery** - Background task processing
 - **uvicorn/gunicorn** - ASGI server
+<!-- --- FEATURE[backblaze] START --- -->
 - **B2SDK** - BackBlaze B2 cloud storage integration
+<!-- --- FEATURE[backblaze] END --- -->
 - **Firebase Admin** - Firebase authentication, FCM, and Firestore
 - **Google Cloud Storage** - GCS bucket integration
 - **App Store Server API** - Apple Pay in-app purchase verification

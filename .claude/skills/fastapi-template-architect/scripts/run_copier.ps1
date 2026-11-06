@@ -16,7 +16,12 @@
     -ProjectDescription "Order management backend" `
     -AuthorName "Jane Doe" -AuthorEmail "jane@example.com" `
     -GithubUsername "janedoe" -PythonVersion "3.14" `
-    -IncludeApplePay $false -Extras "email,cache"
+    -Features "backblaze,apple_pay" -Extras "email,cache"
+
+.NOTES
+  -Features lists the Copier service toggles to switch on (each name maps to
+  `--data include_<name>=true`, plus `--data services=custom`). Leave it out for the
+  minimal base. -IncludeApplePay $true is kept as an alias for -Features apple_pay.
 #>
 
 param(
@@ -29,6 +34,7 @@ param(
     [string]$AuthorEmail = "",
     [string]$GithubUsername = "",
     [string]$PythonVersion = "3.14",
+    [string]$Features = "",
     [bool]$IncludeApplePay = $false,
     [string]$Extras = ""
 )
@@ -40,13 +46,17 @@ $copierArgs = @(
     "--data", "author_name=$AuthorName",
     "--data", "author_email=$AuthorEmail",
     "--data", "github_username=$GithubUsername",
-    "--data", "python_version=$PythonVersion",
-    "--data", "include_apple_pay=$($IncludeApplePay.ToString().ToLower())"
+    "--data", "python_version=$PythonVersion"
 )
-# include_apple_pay=true only takes effect with services=custom; the minimal
-# base (services=minimal) rejects any include_* that is switched on.
-if ($IncludeApplePay) {
+# Service toggles only take effect with services=custom; the minimal base
+# (services=minimal, the default) rejects any include_* that is switched on.
+$featureList = @($Features -split "," | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+if ($IncludeApplePay -and ($featureList -notcontains "apple_pay")) { $featureList += "apple_pay" }
+if ($featureList.Count -gt 0) {
     $copierArgs += @("--data", "services=custom")
+    foreach ($f in $featureList) {
+        $copierArgs += @("--data", "include_$f=true")
+    }
 }
 if ($ProjectDescription) {
     $copierArgs += @("--data", "project_description=$ProjectDescription")
