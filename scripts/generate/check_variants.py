@@ -17,6 +17,7 @@ pytest, Docker). Run it after editing markers:
 
     uv run python scripts/generate/check_variants.py            # all variants
     uv run python scripts/generate/check_variants.py minimal    # some variants
+    uv run python scripts/generate/check_variants.py --tree ../baked minimal   # a real bake
 """
 
 from __future__ import annotations
@@ -138,7 +139,7 @@ def check_tree(root: Path, raw: dict) -> list[str]:
     ]
 
     for path in sorted(root.rglob("*")):
-        if not path.is_file() or ".git" in path.parts:
+        if not path.is_file() or ".git" in path.parts or ".venv" in path.parts:
             continue
         rel = path.relative_to(root).as_posix()
         if path.suffix == ".py":
@@ -199,9 +200,22 @@ def check_variant(name: str, raw: dict, files: list[str] | None = None) -> list[
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("variants", nargs="*", help="variant names (default: all; see variants.py)")
+    parser.add_argument(
+        "--tree",
+        type=Path,
+        help="check this already generated project (e.g. a real Copier bake) as the one variant given",
+    )
     args = parser.parse_args()
 
     known = variants.all_variants()
+    if args.tree is not None:
+        if len(args.variants) != 1 or args.variants[0] not in known:
+            raise SystemExit(f"--tree needs exactly one variant name; choose from: {', '.join(known)}")
+        problems = check_tree(args.tree, known[args.variants[0]])
+        print(f"{'FAIL' if problems else 'ok  '} {args.variants[0]} ({args.tree})")
+        for problem in problems:
+            print(f"     {problem}")
+        raise SystemExit(1 if problems else 0)
     names = args.variants or list(known)
     unknown = [name for name in names if name not in known]
     if unknown:

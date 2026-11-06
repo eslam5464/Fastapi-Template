@@ -147,12 +147,19 @@ generated project if you want it later."
 
 ## `template-ci.yml` — the self-verification loop
 
-Bakes the template with Copier across an `include_apple_pay: [true, false]` matrix
-(`uv run copier copy . /tmp/baked --data include_apple_pay=... --defaults --trust
---quiet`), greps the baked output for leftover Jinja syntax (defensive, since this
-template shouldn't have any), then installs dependencies and **runs the generated
-project's own full test suite** as the actual verification. This workflow is excluded
-from generated projects (`_exclude` in `copier.yml`) — it only makes sense in the source
-template repo itself. If the skill's Generate Mode is ever wrong about how generation
-behaves, this workflow (and actually baking a throwaway project locally) is the fastest
-way to verify the truth against the live template rather than trusting this document.
+Builds its bake matrix from the feature manifest (`scripts/generate/variants.py
+--matrix`: `minimal`, `full`, each feature alone and full-minus-each-feature, with
+duplicates removed), so a new feature gets its bake jobs without editing the workflow.
+Each `bake` job generates its variant with `scripts/generate/bake.py` (the real Copier
+flow, strict mode), greps for leftover Jinja and `FEATURE[...]` markers, checks the bake
+against the manifest (`check_variants.py --tree`: import closure, forbidden tokens of
+disabled features, ruff), imports every app module with production dependencies only,
+runs the generated project's own pre-commit hooks, migrations and **full test suite**
+(failing on any skipped test), and boots the app to call `/health`. Other jobs run the
+generator's unit tests and the offline checker, the same tests on Python 3.9 (Copier's
+oldest supported interpreter), a Windows bake, and a Docker compose smoke test for
+`minimal` and `full`. This workflow is excluded from generated projects (`_exclude` in
+`copier.yml`) — it only makes sense in the source template repo itself. If the skill's
+Generate Mode is ever wrong about how generation behaves, reproduce a job locally with
+`uv run python scripts/generate/bake.py --variant <name> --dest ../baked` rather than
+trusting this document.

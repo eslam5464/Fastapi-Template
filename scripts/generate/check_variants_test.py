@@ -78,3 +78,18 @@ def test_reports_invalid_toml(tmp_path):
     root = _tree(tmp_path, {"pyproject.toml": "[tool\n"})
     problems = check_variants.check_tree(root, MINIMAL)
     assert any("invalid TOML" in p for p in problems)
+
+
+def test_tree_mode_needs_exactly_one_known_variant(monkeypatch, tmp_path):
+    monkeypatch.setattr(sys, "argv", ["check_variants.py", "--tree", str(tmp_path)])
+    with pytest.raises(SystemExit, match="exactly one variant"):
+        check_variants.main()
+
+
+def test_tree_mode_checks_the_given_tree(monkeypatch, tmp_path, capsys):
+    root = _tree(tmp_path, {"app/__init__.py": "", "app/x.py": "NAME = 'ApplePay'\n"})
+    monkeypatch.setattr(sys, "argv", ["check_variants.py", "--tree", str(root), "minimal"])
+    with pytest.raises(SystemExit) as exit_info:
+        check_variants.main()
+    assert exit_info.value.code == 1
+    assert "of a disabled feature" in capsys.readouterr().out
