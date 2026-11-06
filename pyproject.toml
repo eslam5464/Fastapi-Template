@@ -7,46 +7,46 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "aiofiles>=25.1.0",
-    "alembic>=1.16.5",
-    "asyncpg>=0.30.0",
+    "alembic>=1.20.1",
+    "asyncpg>=0.32.0",
     # --- FEATURE[backblaze] START ---
-    "b2sdk>=2.10.1",
+    "b2sdk>=2.13.2",
     # --- FEATURE[backblaze] END ---
     "email-validator>=2.3.0",
-    "fastapi>=0.116.2",
+    "fastapi>=0.162.0",
     "gunicorn>=26.2.0",
-    "httptools>=0.6.4 ; sys_platform == 'linux'",
+    "httptools>=0.9.0 ; sys_platform == 'linux'",
     "httpx>=0.28.1",
     "loguru>=0.7.3",
     "psycopg[binary]>=3.3.4 ; sys_platform == 'win32'",
-    "psycopg>=3.3.2 ; sys_platform != 'win32'",
+    "psycopg>=3.3.7 ; sys_platform != 'win32'",
     "pwdlib[argon2]>=0.3.0",
-    "pydantic>=2.11.9",
-    "pydantic-settings>=2.10.1",
+    "pydantic>=2.14.2",
+    "pydantic-settings>=2.16.2",
     "python-jose>=3.5.0",
-    "python-multipart>=0.0.20",
+    "python-multipart>=0.0.33",
     "sqlalchemy[asyncio]>=2.0.51",
-    "tzdata>=2026.4",
+    "tzdata>=2026.6",
     "uvicorn[standard]>=0.52.1",
-    "uvloop>=0.21.0 ; sys_platform == 'linux'",
-    "yarl>=1.20.1",
+    "uvloop>=0.23.0 ; sys_platform == 'linux'",
+    "yarl>=1.25.1",
 ]
 
 [project.optional-dependencies]
 email = [
-    "brevo-python>=5.0.2",
-    "resend>=2.23.0",
+    "brevo-python>=5.1.0",
+    "resend>=2.50.1",
 ]
 cloud-service = [
-    "firebase-admin>=7.1.0",
-    "gcloud-aio-storage>=9.6.1",
+    "firebase-admin>=7.7.0",
+    "gcloud-aio-storage>=9.6.5",
 ]
 cache = [
     "redis>=7.1.0",
 ]
 task-queue = [
     "celery[redis]>=5.3.1",
-    "faker>=40.36.0",
+    "faker>=40.44.0",
     "redis>=7.1.0",
 ]
 # --- FEATURE[apple_pay] START ---
@@ -60,26 +60,26 @@ test = [
     # anyio's pytest plugin (its own, not pytest-asyncio) is what runs every
     # @pytest.mark.anyio test in this suite - previously a transitive dep of
     # httpx/fastapi, made explicit since tests rely on it directly.
-    "anyio>=4.11.0",
-    "faker>=40.36.0",
-    "pytest>=9.1.1",
-    "pytest-cov>=7.0.0",
+    "anyio>=4.16.0",
+    "faker>=40.44.0",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
 ]
 dev = [
     "bandit[toml]>=1.9.4",
     # --- FEATURE[_template] START ---
-    "commitizen>=4.16.5",
+    "commitizen>=4.19.3",
     # --- FEATURE[_template] END ---
     "detect-secrets>=1.5.0",
-    "mypy>=1.13.0",
-    "pre-commit>=4.3.0",
-    "ruff>=0.14.0",
-    "tach>=0.29.0",
+    "mypy>=2.4.1",
+    "pre-commit>=4.7.0",
+    "ruff>=0.17.3",
+    "tach>=0.35.3",
     "types-aiofiles>=25.1.0",
 ]
 # --- FEATURE[_template] START ---
 template = [
-    "copier>=9.15.0",
+    "copier>=9.19.1",
 ]
 # --- FEATURE[_template] END ---
 
