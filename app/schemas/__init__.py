@@ -16,11 +16,14 @@ from .firebase import (
     FirebaseSignInResponse,
     FirebaseSignUpResponse,
 )
+
+# --- FEATURE[gcs] START ---
 from .google_bucket import (
     ServiceAccount,
     BucketFile,
     BucketFolder,
 )
+# --- FEATURE[gcs] END ---
 
 __all__ = [
     "BaseSchema",
@@ -43,7 +46,9 @@ __all__ = [
     "FirebaseTokenData",
     "FirebaseSignInResponse",
     "FirebaseSignUpResponse",
+    # --- FEATURE[gcs] START ---
     "ServiceAccount",
     "BucketFile",
     "BucketFolder",
+    # --- FEATURE[gcs] END ---
 ]
