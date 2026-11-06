@@ -99,3 +99,105 @@ class TestNormalizePython:
             ["uvx", "ruff@0.15.22", "check", "--select", "I", "--fix", "--no-cache", "--quiet", str(config)],
             ["uvx", "ruff@0.15.22", "format", "--no-cache", "--quiet", str(config)],
         ]
+
+
+class TestDetectSecretsConfig:
+    def test_repo_config_has_a_detect_secrets_rev(self, monkeypatch):
+        monkeypatch.chdir(TEST_DIR.parent.parent)
+        assert post_gen.hook_rev("Yelp/detect-secrets")
+
+    def test_repo_exclude_matches_pre_commit_hook(self, monkeypatch):
+        monkeypatch.chdir(TEST_DIR.parent.parent)
+        exclude = post_gen.detect_secrets_exclude()
+        assert exclude.search("uv.lock")
+        assert exclude.search("docs/architecture/overview.html")
+        assert not exclude.search("app/main.py")
+        assert not exclude.search("tests/conftest.py")
+
+    def test_exclude_is_read_from_the_hook_block_only(self, tmp_path, monkeypatch):
+        (tmp_path / ".pre-commit-config.yaml").write_text(
+            "repos:\n"
+            "  - repo: https://github.com/Yelp/detect-secrets\n"
+            "    rev: v1.5.0\n"
+            "    hooks:\n"
+            "      - id: detect-secrets\n"
+            "        args: [--baseline, .secrets.baseline]\n"
+            "  - repo: other\n"
+            "    hooks:\n"
+            "      - id: other\n"
+            "        exclude: ^app/\n"
+        )
+        monkeypatch.chdir(tmp_path)
+        assert not post_gen.detect_secrets_exclude().search("app/main.py")
+
+    def test_missing_hook_raises(self, tmp_path, monkeypatch):
+        (tmp_path / ".pre-commit-config.yaml").write_text("repos: []\n")
+        monkeypatch.chdir(tmp_path)
+        with pytest.raises(SystemExit, match="detect-secrets hook"):
+            post_gen.detect_secrets_exclude()
+
+
+class TestRefreshSecretsBaseline:
+    @pytest.fixture
+    def project(self, tmp_path, monkeypatch):
+        (tmp_path / ".pre-commit-config.yaml").write_text(
+            "repos:\n"
+            "  - repo: https://github.com/Yelp/detect-secrets\n"
+            "    rev: v1.5.0\n"
+            "    hooks:\n"
+            "      - id: detect-secrets\n"
+            "        exclude: ^uv\\.lock$\n"
+        )
+        (tmp_path / ".secrets.baseline").write_text("{}\n")
+        monkeypatch.chdir(tmp_path)
+        monkeypatch.delenv("FASTAPI_TEMPLATE_STRICT", raising=False)
+        listed = subprocess_result(0, "app/main.py\nuv.lock\ntests/conftest.py\n")
+        monkeypatch.setattr(post_gen, "run_quiet", lambda cmd, **kwargs: listed)
+        return tmp_path
+
+    def _hook(self, monkeypatch, returncode):
+        calls = []
+
+        def fake_run(cmd, **kwargs):
+            calls.append(cmd)
+            return subprocess_result(returncode, "")
+
+        monkeypatch.setattr(post_gen.subprocess, "run", fake_run)
+        return calls
+
+    def test_runs_pinned_hook_on_listed_files_minus_exclude(self, project, monkeypatch):
+        calls = self._hook(monkeypatch, 3)
+        post_gen.refresh_secrets_baseline()
+        assert calls == [
+            [
+                "uvx",
+                "--from",
+                "detect-secrets==1.5.0",
+                "detect-secrets-hook",
+                "--baseline",
+                ".secrets.baseline",
+                "app/main.py",
+                "tests/conftest.py",
+            ]
+        ]
+
+    def test_skips_without_a_baseline(self, project, monkeypatch):
+        (project / ".secrets.baseline").unlink()
+        calls = self._hook(monkeypatch, 0)
+        post_gen.refresh_secrets_baseline()
+        assert calls == []
+
+    def test_new_secret_warns(self, project, monkeypatch, capsys):
+        self._hook(monkeypatch, 1)
+        post_gen.refresh_secrets_baseline()
+        assert "could not refresh .secrets.baseline" in capsys.readouterr().out
+
+    def test_new_secret_is_fatal_in_strict_mode(self, project, monkeypatch):
+        self._hook(monkeypatch, 1)
+        monkeypatch.setenv("FASTAPI_TEMPLATE_STRICT", "1")
+        with pytest.raises(SystemExit, match="exit code 1"):
+            post_gen.refresh_secrets_baseline()
+
+
+def subprocess_result(returncode, stdout):
+    return post_gen.subprocess.CompletedProcess(args=[], returncode=returncode, stdout=stdout, stderr="")

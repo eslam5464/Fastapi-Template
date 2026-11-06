@@ -244,14 +244,28 @@ def offline_mode() -> bool:
     return os.environ.get("FASTAPI_TEMPLATE_OFFLINE") == "1"
 
 
-RUFF_REV_RE = re.compile(r"astral-sh/ruff-pre-commit\s*\n\s*rev:\s*v?(\S+)")
+def hook_rev(repo: str) -> str:
+    """The `rev:` (without a leading "v") pinned for a hook repo in .pre-commit-config.yaml."""
+    match = re.search(re.escape(repo) + r"\s*\n\s*rev:\s*v?(\S+)", _read(Path(".pre-commit-config.yaml")))
+    if match is None:
+        name = repo.rsplit("/", 1)[-1]
+        raise SystemExit(f"post_gen.py: could not find the {name} rev in .pre-commit-config.yaml")
+    return match.group(1)
 
 
 def ruff_version() -> str:
-    match = RUFF_REV_RE.search(_read(Path(".pre-commit-config.yaml")))
-    if match is None:
-        raise SystemExit("post_gen.py: could not find the ruff-pre-commit rev in .pre-commit-config.yaml")
-    return match.group(1)
+    return hook_rev("astral-sh/ruff-pre-commit")
+
+
+def detect_secrets_exclude() -> re.Pattern:
+    """The `exclude:` regex of the detect-secrets hook in .pre-commit-config.yaml."""
+    text = _read(Path(".pre-commit-config.yaml"))
+    start = text.find("id: detect-secrets")
+    if start == -1:
+        raise SystemExit("post_gen.py: could not find the detect-secrets hook in .pre-commit-config.yaml")
+    hook = re.split(r"\n\s*- (?:id|repo):", text[start:], maxsplit=1)[0]
+    match = re.search(r"\n\s*exclude:\s*(\S+)", hook)
+    return re.compile(match.group(1) if match else r"(?!)")
 
 
 def normalize_python(files: list[Path]) -> None:
@@ -291,9 +305,54 @@ def remove_generate_tooling() -> None:
     shutil.rmtree(Path(__file__).resolve().parent, ignore_errors=True)
 
 
+def refresh_secrets_baseline() -> None:
+    """Update the line numbers in .secrets.baseline after the marker pass.
+
+    Removing a feature block moves the lines below it, so the known (allowed)
+    test secrets recorded in the baseline end up on other line numbers. The
+    detect-secrets pre-commit hook would then rewrite the baseline and fail,
+    breaking the generated project's first `pre-commit run` and its CI lint
+    job. Running the same hook here, on the files `pre-commit run --all-files`
+    gives it, puts the updated baseline into the initial commit instead.
+
+    Runs after `git add -A`, so `git ls-files` lists the project files.
+    """
+    if not Path(".secrets.baseline").is_file():
+        return
+    exclude = detect_secrets_exclude()
+    files = [name for name in run_quiet(["git", "ls-files"]).stdout.splitlines() if name and not exclude.search(name)]
+    cmd = [
+        "uvx",
+        "--from",
+        f"detect-secrets=={hook_rev('Yelp/detect-secrets')}",
+        "detect-secrets-hook",
+        "--baseline",
+        ".secrets.baseline",
+        *files,
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+    except OSError as exc:
+        detail = str(exc)
+    else:
+        # Exit code 0: the baseline was already right; 3: it was updated.
+        if result.returncode in (0, 3):
+            return
+        detail = f"exit code {result.returncode}\n{result.stdout}{result.stderr}".rstrip()
+    message = (
+        "could not refresh .secrets.baseline with detect-secrets. Run "
+        "'uv run pre-commit run detect-secrets --all-files' and commit the updated baseline yourself."
+    )
+    if os.environ.get("FASTAPI_TEMPLATE_STRICT") == "1":
+        raise SystemExit(f"post_gen.py: {message}\n{detail}")
+    print(f"Warning: {message}")
+
+
 def git_init_and_commit() -> None:
     try:
         run_quiet(["git", "init"])
+        run_quiet(["git", "add", "-A"])
+        refresh_secrets_baseline()
         run_quiet(["git", "add", "-A"])
         run_quiet(["git", "commit", "-m", "chore: initial commit from copier template"])
     except (OSError, subprocess.CalledProcessError) as exc:
