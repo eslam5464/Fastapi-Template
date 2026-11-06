@@ -351,7 +351,6 @@ class AuthService:
         user_id: str | int | uuid.UUID | None = payload.get("sub")
         expires_at: int | None = payload.get("exp")
         token_type: str | None = payload.get("type")
-        jti: str | None = payload.get("jti")
         issued_at: int | None = payload.get("iat")
 
         if user_id is None or expires_at is None:
@@ -361,6 +360,7 @@ class AuthService:
         if token_type != "access":  # nosec B105
             raise ValidationError("Token has invalid claims")
 
+        jti: str | None = payload.get("jti")
         if jti and await token_blacklist.is_revoked(jti):
             raise ValidationError("Token has been revoked")
 
@@ -405,7 +405,6 @@ class AuthService:
         )
         user_id: str | int | uuid.UUID | None = payload.get("sub")
         token_type: str | None = payload.get("type")
-        jti: str | None = payload.get("jti")
 
         if user_id is None:
             raise ValidationError("Invalid refresh token")
@@ -414,6 +413,7 @@ class AuthService:
         if token_type != "refresh":  # nosec B105
             raise ValidationError("Invalid token type. Expected refresh token.")
 
+        jti: str | None = payload.get("jti")
         if jti and await token_blacklist.is_revoked(jti):
             raise ValidationError("Refresh token has been revoked")
 

@@ -108,6 +108,10 @@ async def logout(
         https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html
     """
     try:
+        # True once the token is on the blacklist. Without token revocation the
+        # token stays valid until it expires.
+        revoked = False
+
         revoke_payload = await auth_service.get_logout_revoke_payload(token)
 
         # Add token to blacklist
@@ -115,9 +119,10 @@ async def logout(
             jti=revoke_payload["jti"],
             ttl_seconds=revoke_payload["ttl_seconds"],
         )
+        revoked = True
 
         # Return validated Pydantic response
-        return LogoutResponse(message="Successfully logged out", revoked=True)
+        return LogoutResponse(message="Successfully logged out", revoked=revoked)
     except ValidationError as ex:
         raise http_exceptions.UnauthorizedException(
             detail=str(ex),

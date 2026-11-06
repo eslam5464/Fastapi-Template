@@ -29,8 +29,7 @@ direct inspection).
 `line-length = 120`, `target-version = "py314"`, `select = ["E", "F", "I", "W"]`,
 `ignore = ["E501"]` (line length is enforced by the formatter, not the linter, hence the
 explicit ignore). Per-file ignores for `__init__.py` (`F401`/`I001` — re-export files
-legitimately have "unused" imports) and one specific pytest `importorskip` file
-(`E402`).
+legitimately have "unused" imports).
 
 ### Mypy
 
@@ -131,11 +130,12 @@ command, just with real dependencies installed).
 - **`dependabot.yml`** — `uv` ecosystem + `github-actions`, weekly, groups minor/patch
   updates, 3-day cooldown, reviewers sourced from `CODEOWNERS`.
 - **`template-ci.yml`** (source-template repo only — excluded from generated projects,
-  see [copier-template-mechanics.md](copier-template-mechanics.md)) — bakes the template
-  with Copier across an `include_apple_pay: [true, false]` matrix and runs the
-  **generated project's own test suite** as a smoke test. If you're extending the source
-  template itself (not a generated project), any change must keep this workflow green in
-  both matrix legs.
+  see [copier-template-mechanics.md](copier-template-mechanics.md)) — bakes every
+  generation variant from the feature manifest (`minimal`, `full`, one feature alone,
+  full minus one feature) and runs the **generated project's own pre-commit hooks and
+  test suite** on each, plus generator tests, a Python 3.9 run, a Windows bake and a
+  Docker smoke test. If you're extending the source template itself (not a generated
+  project), any change must keep every matrix leg green.
 
 Apple Pay test-credential generation used to be a separate CI-only step in `ci.yml`; it
 was removed in favor of `tests/conftest.py`'s self-contained, import-time

@@ -71,6 +71,11 @@ COPIER_ARGS=(copy "$SOURCE" "$TARGET" --trust
   --data "python_version=${PYTHON_VERSION}"
   --data "include_apple_pay=${INCLUDE_APPLE_PAY}"
 )
+# include_apple_pay=true only takes effect with services=custom; the minimal
+# base (services=minimal) rejects any include_* that is switched on.
+if [[ "$INCLUDE_APPLE_PAY" == "true" ]]; then
+  COPIER_ARGS+=(--data "services=custom")
+fi
 if [[ -n "$PROJECT_DESCRIPTION" ]]; then
   COPIER_ARGS+=(--data "project_description=${PROJECT_DESCRIPTION}")
 fi

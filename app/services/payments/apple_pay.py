@@ -26,7 +26,7 @@ from loguru import logger
 
 from app.core.config import Environment as AppEnvironment
 from app.core.config import settings
-from app.core.credentials import ApplePayStoreCredentials
+from app.core.credentials.apple_pay import ApplePayStoreCredentials
 from app.core.exceptions.apple_pay import (
     AppStoreClientNotInitializedException,
     AppStoreConnectionAbortedException,

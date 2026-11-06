@@ -21,6 +21,20 @@ a documented gap between the generic guidance and this repo's reality. When addi
 tests here, follow the existing mirror-`app/`-structure convention, not the doc's ideal
 layout, unless the user explicitly asks to migrate to the `unit/integration/e2e` split.
 
+**One optional service per test file.** Code for an optional service (Redis cache, rate
+limiting, token blacklist, Celery, Firebase/Firestore, GCS, BackBlaze, email providers,
+Apple Pay, OpenObserve) is tested only in files that belong to that service, so a
+generated project that leaves the service out can drop those files whole:
+`tests/services/<service>/` packages with their own `conftest.py` (the shared
+`tests/services/conftest.py` holds only SDK-free fixtures), `tests/main_cache_test.py` /
+`main_rate_limit_test.py` / `main_token_blacklist_test.py` beside the base
+`tests/main_test.py`, and `tests/api/v1/deps/token_revocation_test.py` /
+`endpoints/logout_revocation_test.py` for revocation. Base tests never patch a service
+object: `tests/api/conftest.py` replaces the token blacklist with an in-memory
+`FakeTokenBlacklist` for every API test, and `tests/utils.py`'s `mock_lifespan_steps()`
+mocks every per-service startup check and shutdown step of `app/main.py`. No test may
+skip: a missing SDK must fail the run, so never use `pytest.importorskip`.
+
 ## `anyio`, not `pytest-asyncio`
 
 The `anyio` fixture is defined explicitly in `conftest.py` (`anyio_backend` fixture

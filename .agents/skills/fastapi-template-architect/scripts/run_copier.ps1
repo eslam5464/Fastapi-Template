@@ -43,6 +43,11 @@ $copierArgs = @(
     "--data", "python_version=$PythonVersion",
     "--data", "include_apple_pay=$($IncludeApplePay.ToString().ToLower())"
 )
+# include_apple_pay=true only takes effect with services=custom; the minimal
+# base (services=minimal) rejects any include_* that is switched on.
+if ($IncludeApplePay) {
+    $copierArgs += @("--data", "services=custom")
+}
 if ($ProjectDescription) {
     $copierArgs += @("--data", "project_description=$ProjectDescription")
 }

@@ -1,5 +1,5 @@
 from datetime import UTC, datetime, timedelta
-from unittest.mock import AsyncMock, patch
+from unittest.mock import patch
 
 import pytest
 from jose import jwt
@@ -93,12 +93,8 @@ class TestGetCurrentUserEdgeCases:
             algorithm=settings.jwt_algorithm,
         )
 
-        with patch("app.services.auth_service.token_blacklist") as mock_blacklist:
-            mock_blacklist.is_revoked = AsyncMock(return_value=False)
-            mock_blacklist.get_user_revocation_time = AsyncMock(return_value=None)
-
-            with pytest.raises(UnauthorizedException, match="User not found"):
-                await get_current_user(valid_token, get_auth_service(db_session))
+        with pytest.raises(UnauthorizedException, match="User not found"):
+            await get_current_user(valid_token, get_auth_service(db_session))
 
     async def test_token_expired_after_decode(self, db_session, user: User):
         """Test expiration check after successful decode."""

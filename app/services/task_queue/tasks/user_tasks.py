@@ -4,7 +4,7 @@ from loguru import logger
 from pwdlib import PasswordHash
 from sqlalchemy import insert
 
-from app.core.db import session_factory
+from app.core.db_sync import session_factory
 from app.models import User
 from app.schemas import UserCreate
 from app.services.task_queue import celery_app

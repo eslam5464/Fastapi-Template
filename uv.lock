@@ -841,7 +841,6 @@ version = "1.2.0"
 source = { virtual = "." }
 dependencies = [
     { name = "aiofiles" },
-    { name = "aiohttp" },
     { name = "alembic" },
     { name = "asyncpg" },
     { name = "b2sdk" },
@@ -849,13 +848,13 @@ dependencies = [
     { name = "fastapi" },
     { name = "gunicorn" },
     { name = "httptools", marker = "sys_platform == 'linux'" },
+    { name = "httpx" },
     { name = "loguru" },
     { name = "psycopg" },
     { name = "psycopg", extra = ["binary"], marker = "sys_platform == 'win32'" },
     { name = "pwdlib", extra = ["argon2"] },
     { name = "pydantic" },
     { name = "pydantic-settings" },
-    { name = "pyjwt" },
     { name = "python-jose" },
     { name = "python-multipart" },
     { name = "sqlalchemy", extra = ["asyncio"] },
@@ -882,6 +881,7 @@ email = [
 ]
 task-queue = [
     { name = "celery", extra = ["redis"] },
+    { name = "faker" },
     { name = "redis" },
 ]
 
@@ -902,7 +902,6 @@ template = [
 test = [
     { name = "anyio" },
     { name = "faker" },
-    { name = "httpx" },
     { name = "pytest" },
     { name = "pytest-cov" },
 ]
@@ -910,7 +909,6 @@ test = [
 [package.metadata]
 requires-dist = [
     { name = "aiofiles", specifier = ">=25.1.0" },
-    { name = "aiohttp", specifier = ">=3.13.2" },
     { name = "alembic", specifier = ">=1.16.5" },
     { name = "app-store-server-library", extras = ["async"], marker = "extra == 'apple-services'", specifier = ">=2.0.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
@@ -918,18 +916,19 @@ requires-dist = [
     { name = "brevo-python", marker = "extra == 'email'", specifier = ">=5.0.2" },
     { name = "celery", extras = ["redis"], marker = "extra == 'task-queue'", specifier = ">=5.3.1" },
     { name = "email-validator", specifier = ">=2.3.0" },
+    { name = "faker", marker = "extra == 'task-queue'", specifier = ">=40.36.0" },
     { name = "fastapi", specifier = ">=0.116.2" },
     { name = "firebase-admin", marker = "extra == 'cloud-service'", specifier = ">=7.1.0" },
     { name = "gcloud-aio-storage", marker = "extra == 'cloud-service'", specifier = ">=9.6.1" },
     { name = "gunicorn", specifier = ">=26.2.0" },
     { name = "httptools", marker = "sys_platform == 'linux'", specifier = ">=0.6.4" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "psycopg", marker = "sys_platform != 'win32'", specifier = ">=3.3.2" },
     { name = "psycopg", extras = ["binary"], marker = "sys_platform == 'win32'", specifier = ">=3.3.4" },
     { name = "pwdlib", extras = ["argon2"], specifier = ">=0.3.0" },
     { name = "pydantic", specifier = ">=2.11.9" },
     { name = "pydantic-settings", specifier = ">=2.10.1" },
-    { name = "pyjwt", specifier = ">=2.10.1" },
     { name = "python-jose", specifier = ">=3.5.0" },
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "redis", marker = "extra == 'cache'", specifier = ">=7.1.0" },
@@ -958,7 +957,6 @@ template = [{ name = "copier", specifier = ">=9.15.0" }]
 test = [
     { name = "anyio", specifier = ">=4.11.0" },
     { name = "faker", specifier = ">=40.36.0" },
-    { name = "httpx", specifier = ">=0.28.1" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.0.0" },
 ]

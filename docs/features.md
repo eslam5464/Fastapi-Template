@@ -35,7 +35,7 @@ uv sync --extra apple-services
 *Always installed — no extra required.*
 
 - **FastAPI** — async web framework. Versioned routers mounted at `/v1` and `/v2` (`app/api/v1/`, `app/api/v2/`), each with its own interactive docs (`/v1/docs`, `/v2/docs`).
-- **Async PostgreSQL** — SQLAlchemy 2.0 async engine (`asyncpg`) for the app, plus a sync engine (`psycopg`) for Celery. Both configured in `app/core/db.py` from `settings.db_url` / `db_url_sync`.
+- **Async PostgreSQL** — SQLAlchemy 2.0 async engine (`asyncpg`) for the app, configured in `app/core/db.py` from `settings.db_url`, plus a sync engine (`psycopg`) for Celery in `app/core/db_sync.py` from `settings.db_url_sync`.
 - **Database migrations** — Alembic (`app/alembic/`). Run via `./scripts/alembic.sh` / `.bat` or `alembic upgrade head` directly.
 - **Clean/layered architecture** — repository pattern (`app/repos/`) + dependency injection, with module boundaries enforced by `tach` (see `tach.toml`): `core` → `models`/`schemas` → `repos` → `services` → `api`/`middleware`.
 - **Structured logging** — Loguru-based (`app/core/logger.py`), with centralized log aggregation support.
@@ -85,14 +85,14 @@ All in `app/middleware/`:
 
 - **Firebase Admin** — `app/services/firebase.py` — authentication and push notifications.
 - **Firestore** — `app/services/firestore.py` — Firestore database access.
-- **Credentials:** modeled by `FirebaseServiceAccount` in `app/core/credentials.py`.
+- **Credentials:** modeled by `FirebaseServiceAccount` in `app/core/credentials/firebase.py`.
 - **Install:** `uv sync --extra cloud-service`
 
 ## 💳 Apple Pay
 
 - **Module:** `app/services/payments/apple_pay.py`
 - **App Store Server API integration** — in-app purchase and subscription verification.
-- **Credentials:** modeled by `ApplePayStoreCredentials` in `app/core/credentials.py`.
+- **Credentials:** modeled by `ApplePayStoreCredentials` in `app/core/credentials/apple_pay.py`.
 - **Install:** `uv sync --extra apple-services`
 - **Configure:** `APPLE_PAY_STORE_PRIVATE_KEY_PATH`, `APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH`, plus key/issuer/bundle IDs in `.env`
 - **Note:** this is the one feature generated projects can opt out of entirely — see [Using This as a Template](../README.md#-using-this-as-a-template) in the main README.

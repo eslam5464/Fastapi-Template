@@ -7,7 +7,6 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "aiofiles>=25.1.0",
-    "aiohttp>=3.13.2",
     "alembic>=1.16.5",
     "asyncpg>=0.30.0",
     "b2sdk>=2.10.1",
@@ -15,13 +14,13 @@ dependencies = [
     "fastapi>=0.116.2",
     "gunicorn>=26.2.0",
     "httptools>=0.6.4 ; sys_platform == 'linux'",
+    "httpx>=0.28.1",
     "loguru>=0.7.3",
     "psycopg[binary]>=3.3.4 ; sys_platform == 'win32'",
     "psycopg>=3.3.2 ; sys_platform != 'win32'",
     "pwdlib[argon2]>=0.3.0",
     "pydantic>=2.11.9",
     "pydantic-settings>=2.10.1",
-    "pyjwt>=2.10.1",
     "python-jose>=3.5.0",
     "python-multipart>=0.0.20",
     "sqlalchemy[asyncio]>=2.0.51",
@@ -45,13 +44,14 @@ cache = [
 ]
 task-queue = [
     "celery[redis]>=5.3.1",
+    "faker>=40.36.0",
     "redis>=7.1.0",
 ]
-# --- APPLE_PAY_PYPROJECT_EXTRA_START ---
+# --- FEATURE[apple_pay] START ---
 apple-services = [
     "app-store-server-library[async]>=2.0.0",
 ]
-# --- APPLE_PAY_PYPROJECT_EXTRA_END ---
+# --- FEATURE[apple_pay] END ---
 
 [dependency-groups]
 test = [
@@ -60,15 +60,14 @@ test = [
     # httpx/fastapi, made explicit since tests rely on it directly.
     "anyio>=4.11.0",
     "faker>=40.36.0",
-    "httpx>=0.28.1",
     "pytest>=9.1.1",
     "pytest-cov>=7.0.0",
 ]
 dev = [
     "bandit[toml]>=1.9.4",
-    # --- TEMPLATE_TOOLING_DEV_DEP_START ---
+    # --- FEATURE[_template] START ---
     "commitizen>=4.16.5",
-    # --- TEMPLATE_TOOLING_DEV_DEP_END ---
+    # --- FEATURE[_template] END ---
     "detect-secrets>=1.5.0",
     "mypy>=1.13.0",
     "pre-commit>=4.3.0",
@@ -76,16 +75,17 @@ dev = [
     "tach>=0.29.0",
     "types-aiofiles>=25.1.0",
 ]
-# --- TEMPLATE_TOOLING_START ---
+# --- FEATURE[_template] START ---
 template = [
     "copier>=9.15.0",
 ]
-# --- TEMPLATE_TOOLING_END ---
+# --- FEATURE[_template] END ---
 
 [tool.ruff]
 line-length = 120
 target-version = "py314"
 extend-exclude = ["app/alembic/versions"]
+per-file-target-version = { "scripts/generate/*.py" = "py39" }
 
 [tool.ruff.lint]
 # E/W (pycodestyle) + F (pyflakes, replaces autoflake's unused import/variable
@@ -103,8 +103,6 @@ ignore = ["E501"]
 # autoflake ran with --ignore-init-module-imports and isort skipped __init__.py
 # outright - manual ordering there (e.g. base classes before dependents) matters.
 "__init__.py" = ["F401", "I001"]
-# pytest.importorskip(...) must run before the imports it's guarding.
-"tests/services/email/resend_test.py" = ["E402"]
 
 [tool.mypy]
 python_version = "3.14"
@@ -132,9 +130,9 @@ module = [
     "app.services.firestore",
     "app.services.gcs",
     "app.services.back_blaze_b2",
-    # --- APPLE_PAY_MYPY_OVERRIDE_START ---
+    # --- FEATURE[apple_pay] START ---
     "app.services.payments.apple_pay",
-    # --- APPLE_PAY_MYPY_OVERRIDE_END ---
+    # --- FEATURE[apple_pay] END ---
 ]
 disallow_untyped_defs = false
 disallow_incomplete_defs = false

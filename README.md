@@ -17,7 +17,18 @@ A production-ready FastAPI project template with modern best practices, async su
 - **🐳 Docker Compose** - Backend, Postgres, and Redis ready to run
 - **🧪 CI & Testing** - Pytest with coverage gating, plus lint/type/security checks in GitHub Actions
 
-Plus optional integrations for caching, background jobs, cloud storage, Firebase, Apple Pay, and email delivery. For the full list of integrations and services, see **[docs/features.md](docs/features.md)**.
+Plus optional integrations:
+
+- caching
+- background jobs
+- cloud storage
+- Firebase
+<!-- --- FEATURE[apple_pay] START --- -->
+- Apple Pay
+<!-- --- FEATURE[apple_pay] END --- -->
+- email delivery
+
+For the full list of integrations and services, see **[docs/features.md](docs/features.md)**.
 
 ## 🚀 Quick Start
 
@@ -101,7 +112,7 @@ The API will be available at `http://localhost:8799` with interactive documentat
 - `http://localhost:8799/v1/docs`
 - `http://localhost:8799/v2/docs`
 
-<!-- TEMPLATE_SECTION_START -->
+<!-- --- FEATURE[_template] START --- -->
 ## 🧬 Using This as a Template
 
 This repository doubles as a [Copier](https://copier.readthedocs.io/) template — generate a brand-new FastAPI project from it, with your own name, author info, and settings, without cloning and hand-editing:
@@ -113,12 +124,12 @@ uvx copier copy gh:eslam5464/Fastapi-Template <new-project-dir> --trust
 
 **Alternative:** if you'd rather have `copier` installed permanently (e.g. for `copier update` later), use `uv tool install copier` instead. On Windows, that installs into a user tools directory that's often **not yet on PATH** in your *current* terminal session — if you see `'copier' is not recognized as an internal or external command` right after installing, either open a **new** terminal window, or run `uv tool update-shell` and then restart the terminal. The `uvx` command above sidesteps the PATH issue entirely since it doesn't need `copier` installed anywhere persistent.
 
-You'll be prompted for a project name, description, author name/email, GitHub username, Python version, and whether to include Apple Pay support. Everything identity-specific — the `pyproject.toml` name, Docker container names, the Postgres schema, `README.md`, `LICENSE`, `CODEOWNERS` — is filled in automatically; see [docs/features.md](docs/features.md) for what ships by default versus what's opt-in.
+You'll be prompted for a project name, description, author name/email, GitHub username, Python version, and whether to keep the minimal base or choose optional services one by one (currently only Apple Pay); running `copier copy ... --defaults` gives you the minimal base. Everything identity-specific — the `pyproject.toml` name, Docker container names, the Postgres schema, `README.md`, `LICENSE`, `CODEOWNERS` — is filled in automatically; see [docs/features.md](docs/features.md) for what ships by default versus what's opt-in.
 
 `--trust` is required because generation runs a small post-processing script (`scripts/generate/post_gen.py`) that substitutes your answers into the copied files, removes unused Apple Pay files when you opt out, regenerates `uv.lock`, and runs `git init` for you.
 
 This repo itself stays fully runnable the whole time — the template mechanics live entirely in `copier.yml` and `scripts/generate/post_gen.py`, which run *after* copying and edit the same real files you already build, test, and run directly. There are no separate `.jinja` template files to keep in sync.
-<!-- TEMPLATE_SECTION_END -->
+<!-- --- FEATURE[_template] END --- -->
 
 ## 🤖 AI Coding Assistant Support
 
@@ -424,15 +435,20 @@ BREVO_API_KEY=your_brevo_api_key_here
 
 ## 📦 Dependencies
 
-Core dependencies (FastAPI, SQLAlchemy, Alembic, Pydantic, Uvicorn) are always installed. Optional integrations (Redis, Celery, Firebase, GCS, BackBlaze, Apple Pay, email providers) are opt-in extras — install only what you need:
+Core dependencies (FastAPI, SQLAlchemy, Alembic, Pydantic, Uvicorn) are always installed. Optional integrations (Redis, Celery, Firebase, GCS, BackBlaze, email providers) are opt-in extras — install only what you need:
 
 ```bash
 uv sync --extra email
 uv sync --extra cloud-service
 uv sync --extra cache
 uv sync --extra task-queue
+```
+
+<!-- --- FEATURE[apple_pay] START --- -->
+```bash
 uv sync --extra apple-services
 ```
+<!-- --- FEATURE[apple_pay] END --- -->
 
 See **[docs/features.md](docs/features.md)** for what each extra provides and how to configure it.
 

@@ -3,8 +3,6 @@ from unittest.mock import AsyncMock
 
 import pytest
 
-pytest.importorskip("brevo")
-
 from app.services.email.brevo import BrevoEmailService
 from app.services.exceptions.email import (
     EmailProviderError,

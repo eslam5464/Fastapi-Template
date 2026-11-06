@@ -2,8 +2,6 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-resend = pytest.importorskip("resend")
-
 from app.services.email.resend import ResendEmailService
 from app.services.exceptions.email import EmailProviderError, EmailSendFailedError
 from app.services.types.email import EmailAttachment, EmailSendPayload, EmailTag, EmailTemplate

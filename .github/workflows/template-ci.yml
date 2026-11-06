@@ -1,18 +1,105 @@
 name: Template CI
 
+# Bakes every generation variant with the real Copier flow and runs the
+# generated project's own checks on it. The variant list comes from the feature
+# manifest (scripts/generate/features.py via variants.py), so a new feature gets
+# its bake jobs here without editing this file. Reproduce one job locally with:
+#   uv run python scripts/generate/bake.py --variant <name> --dest ../baked
+
 on:
   push:
     branches: [master]
   pull_request:
     branches: [master]
 
+concurrency:
+  group: template-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  bake-and-smoke-test:
-    name: Bake template (apple_pay=${{ matrix.include_apple_pay }}) and run generated project's tests
+  variants:
+    name: List generation variants
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+
+      # variants.py and features.py are stdlib-only, so the runner's Python is enough.
+      - name: Build the bake matrix from the feature manifest
+        id: matrix
+        run: |
+          matrix="$(python3 scripts/generate/variants.py --matrix)"
+          echo "$matrix"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
+  generator:
+    name: Generator tests and offline variant check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install "$(cat .python-version)"
+
+      - name: Install template tooling
+        run: uv sync --frozen --group template --group test
+
+      - name: Configure git identity for template generation
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      # Marker engine, manifest consistency, post_gen, variants, the offline
+      # checker and the Copier bake smoke tests. These are not under tests/, so
+      # the main CI's pytest run does not collect them.
+      - name: Run generator tests
+        run: uv run pytest scripts/generate -o addopts="" -q
+
+      - name: Check every variant offline
+        run: uv run python scripts/generate/check_variants.py
+
+  python39:
+    name: Generator on Python 3.9 (Copier's oldest supported Python)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      # Copier runs post_gen.py with its own interpreter, which can be as old as
+      # 3.9, so the generation scripts must not use newer syntax or stdlib APIs.
+      - name: Compile the generation scripts
+        run: uv run --no-project --python 3.9 python -m compileall -q scripts/generate
+
+      - name: Run the engine and post_gen tests
+        run: >-
+          uv run --no-project --python 3.9 --with pytest --with pyyaml
+          python -m pytest -o addopts="" -p no:cacheprovider -q
+          scripts/generate/markers_test.py
+          scripts/generate/post_gen_test.py
+          scripts/generate/manifest_test.py
+          scripts/generate/variants_test.py
+
+  bake:
+    name: Bake ${{ matrix.variant }} and run its checks
+    needs: variants
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        include_apple_pay: ["true", "false"]
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.variants.outputs.matrix) }}
+    env:
+      BAKED: /tmp/baked
     services:
       postgres:
         image: postgres:18-alpine
@@ -27,6 +114,8 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      # Every variant still needs Redis while the Redis-backed services are part
+      # of the base. Once redis becomes a feature, only variants with it get this.
       redis:
         image: redis:8-alpine
         ports:
@@ -39,6 +128,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # psycopg (the Celery / sync engine driver) needs libpq at import time.
       - name: Install libpq
         run: |
           sudo apt-get update
@@ -54,27 +144,33 @@ jobs:
         run: uv python install "$(cat .python-version)"
 
       - name: Install template tooling
-        run: uv sync --group template
+        run: uv sync --frozen --group template
 
       - name: Configure git identity for template generation
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Bake template
-        run: |
-          uv run copier copy --vcs-ref HEAD . /tmp/baked --data include_apple_pay=${{ matrix.include_apple_pay }} --defaults --trust --quiet
+      # Strict mode: a failing uv lock, ruff pass or secrets-baseline refresh
+      # stops the bake instead of printing a warning.
+      - name: "Bake template (features: ${{ matrix.features || 'none' }})"
+        run: uv run python scripts/generate/bake.py --variant "${{ matrix.variant }}" --dest "$BAKED"
 
       - name: Assert no leftover Jinja syntax
         run: |
           # .claude/ and .agents/ are excluded: they carry the fastapi-template-architect
-          # skill (for Claude Code / Codex), whose reference docs legitimately quote the
-          # real `_tasks` Jinja block above as documentation, not unprocessed template code.
-          ! grep -R --include='*' -l -E '\{\{ ?(project_name|project_slug|project_description|author_name|author_email|github_username|python_version)|\{% ?if include_apple_pay' /tmp/baked --exclude-dir=.git --exclude-dir=.claude --exclude-dir=.agents
+          # skill, whose reference docs quote the real `_tasks` Jinja block as documentation.
+          ! grep -R -l -E '\{\{ ?(project_name|project_slug|project_description|author_name|author_email|github_username|python_version|services|include_)|\{% ?if ' "$BAKED" --exclude-dir=.git --exclude-dir=.claude --exclude-dir=.agents
 
-      - name: Install generated project's dependencies
-        working-directory: /tmp/baked
-        run: uv sync --all-groups --all-extras --frozen
+      - name: Assert no leftover feature markers
+        run: |
+          # Only the skill's reference docs (excluded) may quote the marker syntax.
+          ! grep -R -l -E 'FEATURE\[' "$BAKED" --exclude-dir=.git --exclude-dir=.claude --exclude-dir=.agents
+
+      # Parse, import closure (no import of a module or package the variant does
+      # not ship), forbidden tokens of disabled features, ruff.
+      - name: Check the bake against the feature manifest
+        run: uv run python scripts/generate/check_variants.py --tree "$BAKED" "${{ matrix.variant }}"
 
       - name: Configure environment
         working-directory: /tmp/baked
@@ -85,23 +181,203 @@ jobs:
           sed -i 's/^REDIS_PASS=.*/REDIS_PASS=/' .env
           sed -i 's/^REDIS_USER=.*/REDIS_USER=/' .env
 
-      # Dummy Apple Pay test credentials no longer need a dedicated CI step —
-      # `tests/conftest.py`'s `_ensure_apple_pay_test_credentials()` generates them
-      # automatically before any app module is imported, for both variants alike
-      # (a no-op when include_apple_pay=false, since that baked project has neither
-      # the apple_pay module nor its settings fields to consume them).
+      # Production dependencies only: fails when application code imports a
+      # package that only the test or dev groups install.
+      # TODO(phase 4): drop --all-extras once every service is a feature and the
+      # extras are gone.
+      - name: Import every app module with production dependencies only
+        working-directory: /tmp/baked
+        run: |
+          uv sync --locked --no-dev --all-extras
+          uv run --no-sync python "$GITHUB_WORKSPACE/scripts/generate/ci_checks.py" import-app
+
+      - name: Install all dependency groups
+        working-directory: /tmp/baked
+        run: uv sync --locked --all-groups --all-extras
+
+      - name: Cache pre-commit environments
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      # The generated project's own lint job: ruff, mypy, tach, bandit,
+      # detect-secrets, workflow schemas and the skill mirror check.
+      - name: Run the generated project's pre-commit hooks
+        working-directory: /tmp/baked
+        run: uv run --no-sync pre-commit run --all-files --show-diff-on-failure
+
+      - name: Validate docker-compose.yml
+        working-directory: /tmp/baked
+        run: docker compose config -q
 
       - name: Create test database
         working-directory: /tmp/baked
-        run: >
-          uv run python -c "import psycopg; conn = psycopg.connect('host=localhost port=5432
-          user=postgres password=postgres dbname=postgres', autocommit=True);
-          conn.execute('CREATE DATABASE postgres_test'); conn.close()"
+        run: |
+          uv run --no-sync python - <<'EOF'
+          import asyncio
+
+          import asyncpg
+
+
+          async def main() -> None:
+              conn = await asyncpg.connect(host="localhost", port=5432, user="postgres", password="postgres", database="postgres")
+              await conn.execute("CREATE DATABASE postgres_test")
+              await conn.close()
+
+
+          asyncio.run(main())
+          EOF
 
       - name: Run migrations
         working-directory: /tmp/baked
-        run: uv run alembic upgrade head
+        run: uv run --no-sync alembic upgrade head
 
-      - name: Run generated project's test suite
+      - name: Run the generated project's test suite
         working-directory: /tmp/baked
-        run: uv run pytest
+        run: uv run --no-sync pytest -rs --junitxml=junit.xml
+
+      # A skipped test usually means a missing SDK or a disabled feature's test
+      # left behind; every test that ships must run.
+      - name: Fail on skipped tests
+        working-directory: /tmp/baked
+        run: python3 "$GITHUB_WORKSPACE/scripts/generate/ci_checks.py" no-skips junit.xml
+
+      # Runs the lifespan (dependency checks) and serves one request.
+      - name: Boot the app and call /health
+        working-directory: /tmp/baked
+        run: |
+          .venv/bin/uvicorn app.main:app --port 8000 > uvicorn.log 2>&1 &
+          server_pid=$!
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:8000/health; then
+              kill "$server_pid"
+              exit 0
+            fi
+            if ! kill -0 "$server_pid" 2>/dev/null; then
+              break
+            fi
+            sleep 2
+          done
+          echo "The app did not answer /health with HTTP 200"
+          cat uvicorn.log
+          kill "$server_pid" 2>/dev/null || true
+          exit 1
+
+  docker:
+    name: Docker compose smoke test (${{ matrix.variant }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [minimal, full]
+    env:
+      BAKED: /tmp/baked
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        run: uv python install "$(cat .python-version)"
+
+      - name: Install template tooling
+        run: uv sync --frozen --group template
+
+      - name: Configure git identity for template generation
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bake template
+        run: uv run python scripts/generate/bake.py --variant "${{ matrix.variant }}" --dest "$BAKED"
+
+      # The same steps a user runs from a clean checkout (and the generated CI's
+      # docker job): copy the env example, build and start, curl /health.
+      - name: Build and start the stack
+        working-directory: /tmp/baked
+        run: |
+          cp .env.example .env.docker-test
+          docker compose --env-file .env.docker-test up --build -d
+
+      - name: Wait for the health endpoint
+        working-directory: /tmp/baked
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://localhost:8799/health; then
+              exit 0
+            fi
+            echo "Attempt ${attempt}/30: not ready yet, retrying in 5s..."
+            sleep 5
+          done
+          echo "Health endpoint did not return HTTP 200 within 150s"
+          exit 1
+
+      - name: Verify all services are healthy
+        working-directory: /tmp/baked
+        run: |
+          docker compose --env-file .env.docker-test ps
+          ids=$(docker compose --env-file .env.docker-test ps -q)
+          if [ -z "$ids" ]; then
+            echo "No containers found via docker compose ps -q"
+            exit 1
+          fi
+          for id in $ids; do
+            name=$(docker inspect --format '{{.Name}}' "$id" | sed 's|^/||')
+            status=$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$id")
+            echo "${name}: ${status}"
+            if [ "$status" != "healthy" ]; then
+              exit 1
+            fi
+          done
+
+      - name: Print compose logs on failure
+        if: failure()
+        working-directory: /tmp/baked
+        run: docker compose --env-file .env.docker-test logs
+
+      - name: Tear down
+        if: always()
+        working-directory: /tmp/baked
+        run: docker compose --env-file .env.docker-test down -v || true
+
+  windows:
+    name: Windows (generator tests and minimal bake)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Set up Python
+        shell: bash
+        run: uv python install "$(cat .python-version)"
+
+      - name: Install template tooling
+        run: uv sync --frozen --group template --group test
+
+      - name: Configure git identity for template generation
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      # The checkout uses CRLF line endings here (core.autocrlf), which the
+      # marker engine and post_gen's text replacements must handle.
+      - name: Run generator tests
+        run: uv run pytest scripts/generate -o addopts="" -q
+
+      - name: Bake the minimal variant
+        shell: bash
+        run: uv run python scripts/generate/bake.py --variant minimal --dest "$RUNNER_TEMP/baked"
+
+      - name: Check the bake against the feature manifest
+        shell: bash
+        run: uv run python scripts/generate/check_variants.py --tree "$RUNNER_TEMP/baked" minimal

@@ -4,6 +4,8 @@
     uv run pytest scripts/generate/bake_smoke_test.py
 """
 
+import subprocess
+import sys
 from pathlib import Path
 
 import copier
@@ -18,6 +20,7 @@ def _bake(dst: Path, **data) -> None:
         str(dst),
         # Without this Copier bakes the latest release tag, so the test would
         # check the previous release instead of the code being changed.
+        # "HEAD" includes uncommitted changes (the worktree state).
         vcs_ref="HEAD",
         data=data,
         defaults=True,
@@ -45,10 +48,12 @@ _LEFTOVER_TOKENS = (
 
 # The fastapi-template-architect skill ships into generated projects and its
 # references quote copier.yml's `_tasks` verbatim (e.g. "{{ project_name }}") as
-# documentation - that's intentional text, not an unrendered template.
+# documentation - that's intentional text, not an unrendered template. Its
+# references/ dir likewise documents the marker syntax itself, so FEATURE[
+# occurrences there are expected too.
 _SKILL_DIRS = (
-    Path(".claude") / "skills",
-    Path(".agents") / "skills",
+    Path(".claude"),
+    Path(".agents"),
 )
 
 
@@ -60,10 +65,59 @@ def _assert_no_leftover_jinja(root: Path) -> None:
             continue
         try:
             content = path.read_text(encoding="utf-8")
-        except UnicodeDecodeError, ValueError:
+        except (UnicodeDecodeError, ValueError):
             continue
         for token in _LEFTOVER_TOKENS:
             assert token not in content, f"leftover Jinja syntax ({token!r}) in {path}"
+
+
+def _assert_no_feature_markers(root: Path) -> None:
+    """The marker engine must have consumed every FEATURE[ marker line."""
+    for path in root.rglob("*"):
+        if not path.is_file() or ".git" in path.parts:
+            continue
+        if any(path.relative_to(root).is_relative_to(skill_dir) for skill_dir in _SKILL_DIRS):
+            continue
+        try:
+            content = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, ValueError):
+            continue
+        assert "FEATURE[" not in content, f"leftover feature marker in {path}"
+
+
+def _assert_no_tool_caches(root: Path) -> None:
+    """Generation must not leave tool caches (e.g. from post_gen's ruff pass) behind."""
+    leftovers = [name for name in (".ruff_cache", ".pytest_cache", ".mypy_cache") if (root / name).exists()]
+    assert not leftovers, f"tool caches left in the generated project: {leftovers}"
+
+
+def _assert_ruff_clean(root: Path) -> None:
+    """The whole baked project must satisfy its own ruff config (lint + format),
+    run via the same interpreter that runs this test so the tooling is
+    guaranteed present."""
+    for args in (["check", "."], ["format", "--check", "."]):
+        result = subprocess.run(
+            [sys.executable, "-m", "ruff", *args],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode == 0, (
+            f"ruff {' '.join(args)} failed for baked project:\n{result.stdout}\n{result.stderr}"
+        )
+
+
+def _assert_minimal_base(dst: Path) -> None:
+    assert not (dst / "app" / "services" / "payments").exists()
+    assert not (dst / "app" / "core" / "exceptions" / "apple_pay.py").exists()
+    assert not (dst / "app" / "core" / "credentials" / "apple_pay.py").exists()
+    assert not (dst / "tests" / "services" / "payments").exists()
+    assert not (dst / "tests" / "apple_pay_credentials.py").exists()
+    assert (dst / "app" / "core" / "credentials" / "firebase.py").is_file()
+    assert "apple-services" not in (dst / "pyproject.toml").read_text()
+    assert "APPLE_PAY" not in (dst / ".env.example").read_text()
+    assert "apple_pay" not in (dst / "app" / "core" / "config.py").read_text()
+    assert "apple_pay" not in (dst / "tests" / "conftest.py").read_text().lower()
 
 
 @pytest.mark.slow
@@ -74,21 +128,40 @@ def test_bake_with_defaults(tmp_path: Path):
     assert (dst / "pyproject.toml").is_file()
     assert (dst / "app" / "main.py").is_file()
     assert (dst / "Dockerfile").is_file()
-    assert (dst / "app" / "services" / "payments" / "apple_pay.py").is_file()
-    assert "apple-services" in (dst / "pyproject.toml").read_text()
+    _assert_minimal_base(dst)
     _assert_no_leftover_jinja(dst)
+    _assert_no_feature_markers(dst)
+    _assert_no_tool_caches(dst)
+    _assert_ruff_clean(dst)
 
 
 @pytest.mark.slow
-def test_bake_without_apple_pay(tmp_path: Path):
+def test_bake_with_apple_pay(tmp_path: Path):
     dst = tmp_path / "generated"
-    _bake(dst, include_apple_pay=False)
+    _bake(dst, services="custom", include_apple_pay=True)
 
-    assert not (dst / "app" / "services" / "payments" / "apple_pay.py").exists()
-    assert "ApplePayStoreCredentials" not in (dst / "app" / "core" / "credentials.py").read_text()
-    assert "apple-services" not in (dst / "pyproject.toml").read_text()
-    assert "Generate dummy Apple Pay test credentials" not in (dst / ".github" / "workflows" / "ci.yml").read_text()
+    assert (dst / "app" / "services" / "payments" / "apple_pay.py").is_file()
+    assert (dst / "app" / "core" / "credentials" / "apple_pay.py").is_file()
+    assert (dst / "app" / "core" / "exceptions" / "apple_pay.py").is_file()
+    assert (dst / "tests" / "apple_pay_credentials.py").is_file()
+    assert "apple-services" in (dst / "pyproject.toml").read_text()
     _assert_no_leftover_jinja(dst)
+    _assert_no_feature_markers(dst)
+    _assert_no_tool_caches(dst)
+    _assert_ruff_clean(dst)
+
+
+@pytest.mark.slow
+def test_bake_rejects_stray_apple_pay(tmp_path: Path):
+    dst = tmp_path / "generated"
+    # services defaults to minimal; a stray include_apple_pay=true must be
+    # rejected by post_gen.py's answer validation instead of silently shipping
+    # Apple Pay files in a minimal bake.
+    with pytest.raises(Exception) as excinfo:
+        _bake(dst, include_apple_pay=True)
+    stderr = getattr(excinfo.value, "stderr", None)
+    if stderr:
+        assert "services=custom" in str(stderr)
 
 
 @pytest.mark.slow

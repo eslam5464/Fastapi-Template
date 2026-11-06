@@ -1,21 +1,13 @@
 from typing import AsyncGenerator
 
-from sqlalchemy import MetaData, create_engine
+from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
-from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
 
 # Create async database engine
 engine = create_async_engine(
     settings.db_url.human_repr(),
-    echo=True if settings.debug else False,
-    future=True,
-    pool_pre_ping=True,
-)
-
-sync_engine = create_engine(
-    settings.db_url_sync.human_repr(),
     echo=True if settings.debug else False,
     future=True,
     pool_pre_ping=True,
@@ -39,14 +31,6 @@ SessionLocal = async_sessionmaker(
     expire_on_commit=False,
     bind=engine,
     class_=AsyncSession,
-)
-
-session_factory = sessionmaker(
-    autocommit=False,
-    autoflush=False,
-    expire_on_commit=False,
-    bind=sync_engine,
-    class_=Session,
 )
 
 

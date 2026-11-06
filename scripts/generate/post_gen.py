@@ -3,39 +3,28 @@
 Every value that needs to differ between this repo (run directly) and a
 generated project is substituted here, directly on the real files copier just
 copied — there are no `.jinja`-suffixed twin files to keep in sync.
+
+Optional-feature stripping (Apple Pay etc.) and template-only sections are
+handled by the marker engine in markers.py, driven by the feature manifest in
+features.py and the resolved feature flags passed via --features-json.
 """
 
 import argparse
+import json
+import os
 import re
 import shutil
 import subprocess
+import sys
 from datetime import datetime
 from pathlib import Path
 
-APPLE_PAY_MARKERS = ("# --- APPLE_PAY_START ---", "# --- APPLE_PAY_END ---")
-APPLE_PAY_SETTINGS_MARKERS = (
-    "# --- APPLE_PAY_SETTINGS_START ---",
-    "# --- APPLE_PAY_SETTINGS_END ---",
-)
-APPLE_PAY_PROPERTY_MARKERS = (
-    "# --- APPLE_PAY_PROPERTY_START ---",
-    "# --- APPLE_PAY_PROPERTY_END ---",
-)
-APPLE_PAY_ENV_MARKERS = ("# --- APPLE_PAY_ENV_START ---", "# --- APPLE_PAY_ENV_END ---")
-APPLE_PAY_PYPROJECT_EXTRA_MARKERS = (
-    "# --- APPLE_PAY_PYPROJECT_EXTRA_START ---",
-    "# --- APPLE_PAY_PYPROJECT_EXTRA_END ---",
-)
-APPLE_PAY_MYPY_OVERRIDE_MARKERS = (
-    "# --- APPLE_PAY_MYPY_OVERRIDE_START ---",
-    "# --- APPLE_PAY_MYPY_OVERRIDE_END ---",
-)
-TEMPLATE_TOOLING_MARKERS = ("# --- TEMPLATE_TOOLING_START ---", "# --- TEMPLATE_TOOLING_END ---")
-TEMPLATE_TOOLING_DEV_DEP_MARKERS = (
-    "# --- TEMPLATE_TOOLING_DEV_DEP_START ---",
-    "# --- TEMPLATE_TOOLING_DEV_DEP_END ---",
-)
-TEMPLATE_SECTION_MARKERS = ("<!-- TEMPLATE_SECTION_START -->", "<!-- TEMPLATE_SECTION_END -->")
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+
+import features  # noqa: E402
+import markers  # noqa: E402
 
 PY_VERSION_FILES = [
     Path("Dockerfile"),
@@ -45,48 +34,89 @@ PY_VERSION_FILES = [
     Path("docs/guides/getting-started.md"),
 ]
 
-LICENSE_RE = re.compile(r"Copyright \(c\) (\d{4}) (.+)")
+LICENSE_RE = re.compile(r"Copyright \(c\) (\d{4}) ([^\r\n]+)")
+
+
+def _read(path: Path) -> str:
+    with open(path, encoding="utf-8", newline="") as f:
+        return f.read()
+
+
+def _write(path: Path, text: str) -> None:
+    with open(path, "w", encoding="utf-8", newline="") as f:
+        f.write(text)
 
 
 def replace_required(path: Path, old: str, new: str) -> None:
-    content = path.read_text(encoding="utf-8")
-    if old not in content:
+    content = _read(path)
+    match_old = old
+    match_new = new
+    if "\r\n" in content and "\n" in old and "\r" not in old:
+        match_old = old.replace("\n", "\r\n")
+        match_new = new.replace("\n", "\r\n")
+    if match_old not in content:
         raise SystemExit(f"post_gen.py: expected content not found in {path}: {old!r}")
-    path.write_text(content.replace(old, new), encoding="utf-8")
+    _write(path, content.replace(match_old, match_new))
 
 
-def strip_marked_block(path: Path, start_marker: str, end_marker: str) -> None:
-    lines = path.read_text(encoding="utf-8").splitlines(keepends=True)
-    start = next((i for i, line in enumerate(lines) if start_marker in line), None)
-    end = next((i for i, line in enumerate(lines) if end_marker in line), None)
-    if start is None or end is None:
-        raise SystemExit(f"post_gen.py: markers {start_marker!r}/{end_marker!r} not found in {path}")
-    del lines[start : end + 1]
+def resolve(raw: dict) -> dict[str, bool]:
+    """Turn the raw answers dict into a feature name -> on/off flag map.
 
-    # Deleting the block can leave 3+ consecutive blank lines behind (blank
-    # lines from both sides of the removed block collapsing together), which
-    # trips ruff's isort/formatting checks. Collapse runs down to at most 2,
-    # matching standard top-level class/def spacing.
-    collapsed: list[str] = []
-    blank_run = 0
-    for line in lines:
-        if line.strip() == "":
-            blank_run += 1
-            if blank_run > 2:
-                continue
+    ``raw`` keys must be exactly ``{"services"}`` plus every ``Feature.question``
+    in ``features.FEATURES``. ``services`` selects the minimal base (no optional
+    features) or per-service answers; every ``include_*`` value must be a bool.
+    """
+    questions = {feature.question for feature in features.FEATURES if feature.question}
+    expected = {"services"} | questions
+
+    unknown = sorted(set(raw) - expected)
+    if unknown:
+        raise SystemExit(f"post_gen.py: unknown feature answer(s): {', '.join(unknown)}")
+    missing = sorted(expected - set(raw))
+    if missing:
+        raise SystemExit(f"post_gen.py: missing feature answer(s): {', '.join(missing)}")
+
+    services = raw["services"]
+    if services not in ("minimal", "custom"):
+        raise SystemExit(f"post_gen.py: services must be 'minimal' or 'custom', got {services!r}")
+
+    answers: dict[str, bool] = {}
+    for question in sorted(questions):
+        value = raw[question]
+        if not isinstance(value, bool):
+            raise SystemExit(f"post_gen.py: {question} must be a bool, got {value!r}")
+        answers[question] = value
+
+    if services == "minimal":
+        enabled = [question for question in sorted(answers) if answers[question]]
+        if enabled:
+            raise SystemExit(
+                "post_gen.py: " + "; ".join(f"{question}=true requires services=custom" for question in enabled)
+            )
+
+    flags: dict[str, bool] = {}
+    for feature in features.FEATURES:
+        if feature.name == "_template":
+            flags[feature.name] = False
+        elif feature.computed_from:
+            flags[feature.name] = any(flags[source] for source in feature.computed_from)
         else:
-            blank_run = 0
-        collapsed.append(line)
-
-    path.write_text("".join(collapsed), encoding="utf-8")
+            value = answers[feature.question]
+            if feature.parent is not None and value and not flags[feature.parent]:
+                raise SystemExit(
+                    f"post_gen.py: {feature.question}=true requires its parent feature "
+                    f"'{feature.parent}' to be enabled too"
+                )
+            flags[feature.name] = value
+    return flags
 
 
 def capture_source_python_version() -> str:
-    return Path(".python-version").read_text(encoding="utf-8").strip()
+    return _read(Path(".python-version")).strip()
 
 
 def capture_license_year_and_author() -> tuple[str, str]:
-    content = Path("LICENSE").read_text(encoding="utf-8")
+    content = _read(Path("LICENSE"))
     match = LICENSE_RE.search(content)
     if match is None:
         raise SystemExit("post_gen.py: could not find 'Copyright (c) YYYY Name' line in LICENSE")
@@ -96,11 +126,11 @@ def capture_license_year_and_author() -> tuple[str, str]:
 def bump_python_version(old_version: str, new_version: str) -> None:
     pattern = re.compile(rf"(?<![\d.]){re.escape(old_version)}(?![\d.])")
     for path in PY_VERSION_FILES:
-        content = path.read_text(encoding="utf-8")
+        content = _read(path)
         new_content, count = pattern.subn(new_version, content)
         if count == 0:
             raise SystemExit(f"post_gen.py: expected Python version {old_version!r} not found in {path}")
-        path.write_text(new_content, encoding="utf-8")
+        _write(path, new_content)
 
     old_ruff_target = "py" + old_version.replace(".", "")
     new_ruff_target = "py" + new_version.replace(".", "")
@@ -110,7 +140,7 @@ def bump_python_version(old_version: str, new_version: str) -> None:
         f'target-version = "{new_ruff_target}"',
     )
 
-    Path(".python-version").write_text(f"{new_version}\n", encoding="utf-8")
+    _write(Path(".python-version"), f"{new_version}\n")
 
 
 def rewrite_license(old_year: str, old_author: str, new_author: str) -> None:
@@ -181,57 +211,6 @@ def apply_identity_substitutions(args: argparse.Namespace) -> None:
     replace_required(Path("docs/guides/getting-started.md"), "cd Fastapi-Template", f"cd {args.project_slug}")
 
 
-def remove_apple_pay() -> None:
-    apple_pay_module = Path("app/services/payments/apple_pay.py")
-    if apple_pay_module.exists():
-        apple_pay_module.unlink()
-        payments_dir = apple_pay_module.parent
-        if payments_dir.exists() and not any(payments_dir.iterdir()):
-            payments_dir.rmdir()
-
-    apple_pay_exceptions = Path("app/core/exceptions/apple_pay.py")
-    if apple_pay_exceptions.exists():
-        apple_pay_exceptions.unlink()
-
-    payments_tests_dir = Path("tests/services/payments")
-    if payments_tests_dir.exists():
-        shutil.rmtree(payments_tests_dir)
-
-    credentials_path = Path("app/core/credentials.py")
-    strip_marked_block(credentials_path, *APPLE_PAY_MARKERS)
-    content = credentials_path.read_text(encoding="utf-8")
-    content = content.replace(
-        "from pydantic import BaseModel, ConfigDict, Field, model_validator",
-        "from pydantic import BaseModel, ConfigDict, model_validator",
-    )
-    credentials_path.write_text(content, encoding="utf-8")
-
-    config_path = Path("app/core/config.py")
-    content = config_path.read_text(encoding="utf-8")
-    content = content.replace(
-        "from app.core.credentials import ApplePayStoreCredentials, FirebaseServiceAccount",
-        "from app.core.credentials import FirebaseServiceAccount",
-    )
-    config_path.write_text(content, encoding="utf-8")
-    strip_marked_block(config_path, *APPLE_PAY_SETTINGS_MARKERS)
-    strip_marked_block(config_path, *APPLE_PAY_PROPERTY_MARKERS)
-
-    strip_marked_block(Path(".env.example"), *APPLE_PAY_ENV_MARKERS)
-    strip_marked_block(Path("pyproject.toml"), *APPLE_PAY_PYPROJECT_EXTRA_MARKERS)
-    strip_marked_block(Path("pyproject.toml"), *APPLE_PAY_MYPY_OVERRIDE_MARKERS)
-
-    readme = Path("README.md")
-    replace_required(readme, ", Apple Pay", "")
-    replace_required(readme, "uv sync --extra apple-services\n", "")
-
-
-def strip_template_only_sections() -> None:
-    pyproject = Path("pyproject.toml")
-    strip_marked_block(pyproject, *TEMPLATE_TOOLING_MARKERS)
-    strip_marked_block(pyproject, *TEMPLATE_TOOLING_DEV_DEP_MARKERS)
-    strip_marked_block(Path("README.md"), *TEMPLATE_SECTION_MARKERS)
-
-
 def run_quiet(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, check=True, capture_output=True, text=True, **kwargs)
 
@@ -239,16 +218,85 @@ def run_quiet(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
 def regenerate_lockfile(python_version: str) -> None:
     try:
         run_quiet(["uv", "python", "install", python_version], timeout=120)
-    except OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired:
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired):
         pass
 
     try:
         run_quiet(["uv", "lock"])
-    except OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired:
-        print(
-            f"Warning: could not regenerate uv.lock automatically (Python {python_version} "
+    except (OSError, subprocess.CalledProcessError, subprocess.TimeoutExpired) as exc:
+        message = (
+            f"could not regenerate uv.lock automatically (Python {python_version} "
             f"may not be installed). Run 'uv python install {python_version}' then 'uv sync' yourself."
         )
+        if os.environ.get("FASTAPI_TEMPLATE_STRICT") == "1":
+            stderr = getattr(exc, "stderr", None)
+            detail = f"\n{stderr}" if stderr else ""
+            raise SystemExit(f"post_gen.py: {message}{detail}") from exc
+        print(f"Warning: {message}")
+
+
+def offline_mode() -> bool:
+    """FASTAPI_TEMPLATE_OFFLINE=1: the offline variant checker (check_variants.py).
+
+    Skips the steps that need the network or a real project checkout (uv lock,
+    git init) and runs ruff from the current interpreter instead of uvx.
+    """
+    return os.environ.get("FASTAPI_TEMPLATE_OFFLINE") == "1"
+
+
+def hook_rev(repo: str) -> str:
+    """The `rev:` (without a leading "v") pinned for a hook repo in .pre-commit-config.yaml."""
+    match = re.search(re.escape(repo) + r"\s*\n\s*rev:\s*v?(\S+)", _read(Path(".pre-commit-config.yaml")))
+    if match is None:
+        name = repo.rsplit("/", 1)[-1]
+        raise SystemExit(f"post_gen.py: could not find the {name} rev in .pre-commit-config.yaml")
+    return match.group(1)
+
+
+def ruff_version() -> str:
+    return hook_rev("astral-sh/ruff-pre-commit")
+
+
+def detect_secrets_exclude() -> re.Pattern:
+    """The `exclude:` regex of the detect-secrets hook in .pre-commit-config.yaml."""
+    text = _read(Path(".pre-commit-config.yaml"))
+    start = text.find("id: detect-secrets")
+    if start == -1:
+        raise SystemExit("post_gen.py: could not find the detect-secrets hook in .pre-commit-config.yaml")
+    hook = re.split(r"\n\s*- (?:id|repo):", text[start:], maxsplit=1)[0]
+    match = re.search(r"\n\s*exclude:\s*(\S+)", hook)
+    return re.compile(match.group(1) if match else r"(?!)")
+
+
+def normalize_python(files: list[Path]) -> None:
+    """Re-sort imports and re-format the Python files the marker pass rewrote.
+
+    ruff always keeps a blank line between an import and a comment that follows
+    it, so a FEATURE marker sitting between two imports leaves that blank line
+    behind once the marker line is removed, splitting one import block in two.
+    Running ruff's import sorter and formatter (the version the generated
+    project's pre-commit config pins) on the touched files restores the layout
+    the project's own lint hooks expect.
+    """
+    py_files = [str(path) for path in files if path.suffix == ".py"]
+    if not py_files:
+        return
+    ruff = [sys.executable, "-m", "ruff"] if offline_mode() else ["uvx", f"ruff@{ruff_version()}"]
+    try:
+        # --no-cache: don't leave a .ruff_cache/ directory in the generated project.
+        run_quiet([*ruff, "check", "--select", "I", "--fix", "--no-cache", "--quiet", *py_files])
+        run_quiet([*ruff, "format", "--no-cache", "--quiet", *py_files])
+    except (OSError, subprocess.CalledProcessError) as exc:
+        message = (
+            "could not normalise imports in the generated files with ruff. "
+            "Run 'uv run ruff check --fix' and 'uv run ruff format' yourself."
+        )
+        if os.environ.get("FASTAPI_TEMPLATE_STRICT") == "1":
+            output = getattr(exc, "stdout", None) or ""
+            stderr = getattr(exc, "stderr", None) or ""
+            detail = f"\n{output}{stderr}" if (output or stderr) else ""
+            raise SystemExit(f"post_gen.py: {message}{detail}") from exc
+        print(f"Warning: {message}")
 
 
 def remove_generate_tooling() -> None:
@@ -257,9 +305,54 @@ def remove_generate_tooling() -> None:
     shutil.rmtree(Path(__file__).resolve().parent, ignore_errors=True)
 
 
+def refresh_secrets_baseline() -> None:
+    """Update the line numbers in .secrets.baseline after the marker pass.
+
+    Removing a feature block moves the lines below it, so the known (allowed)
+    test secrets recorded in the baseline end up on other line numbers. The
+    detect-secrets pre-commit hook would then rewrite the baseline and fail,
+    breaking the generated project's first `pre-commit run` and its CI lint
+    job. Running the same hook here, on the files `pre-commit run --all-files`
+    gives it, puts the updated baseline into the initial commit instead.
+
+    Runs after `git add -A`, so `git ls-files` lists the project files.
+    """
+    if not Path(".secrets.baseline").is_file():
+        return
+    exclude = detect_secrets_exclude()
+    files = [name for name in run_quiet(["git", "ls-files"]).stdout.splitlines() if name and not exclude.search(name)]
+    cmd = [
+        "uvx",
+        "--from",
+        f"detect-secrets=={hook_rev('Yelp/detect-secrets')}",
+        "detect-secrets-hook",
+        "--baseline",
+        ".secrets.baseline",
+        *files,
+    ]
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+    except OSError as exc:
+        detail = str(exc)
+    else:
+        # Exit code 0: the baseline was already right; 3: it was updated.
+        if result.returncode in (0, 3):
+            return
+        detail = f"exit code {result.returncode}\n{result.stdout}{result.stderr}".rstrip()
+    message = (
+        "could not refresh .secrets.baseline with detect-secrets. Run "
+        "'uv run pre-commit run detect-secrets --all-files' and commit the updated baseline yourself."
+    )
+    if os.environ.get("FASTAPI_TEMPLATE_STRICT") == "1":
+        raise SystemExit(f"post_gen.py: {message}\n{detail}")
+    print(f"Warning: {message}")
+
+
 def git_init_and_commit() -> None:
     try:
         run_quiet(["git", "init"])
+        run_quiet(["git", "add", "-A"])
+        refresh_secrets_baseline()
         run_quiet(["git", "add", "-A"])
         run_quiet(["git", "commit", "-m", "chore: initial commit from copier template"])
     except (OSError, subprocess.CalledProcessError) as exc:
@@ -275,13 +368,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--author-email", required=True)
     parser.add_argument("--github-username", required=True)
     parser.add_argument("--python-version", required=True)
-    parser.add_argument("--include-apple-pay", required=True)
+    parser.add_argument("--features-json", required=True)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    include_apple_pay = args.include_apple_pay.strip().lower() == "true"
+    flags = resolve(json.loads(args.features_json))
 
     old_python_version = capture_source_python_version()
     old_license_year, old_license_author = capture_license_year_and_author()
@@ -290,13 +383,17 @@ def main() -> None:
     apply_identity_substitutions(args)
     rewrite_license(old_license_year, old_license_author, args.author_name)
 
-    if not include_apple_pay:
-        remove_apple_pay()
-    strip_template_only_sections()
+    try:
+        changed = markers.apply(Path("."), flags)
+    except markers.MarkerError as exc:
+        raise SystemExit(f"post_gen.py: {exc}") from exc
+    normalize_python(changed)
 
-    regenerate_lockfile(args.python_version)
+    if not offline_mode():
+        regenerate_lockfile(args.python_version)
     remove_generate_tooling()
-    git_init_and_commit()
+    if not offline_mode():
+        git_init_and_commit()
 
 
 if __name__ == "__main__":
