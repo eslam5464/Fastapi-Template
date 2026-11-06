@@ -14,8 +14,13 @@
 #     --project-description "<description>" \
 #     --author-name "<name>" --author-email "<email>" \
 #     --github-username "<username>" --python-version "3.14" \
-#     --include-apple-pay <true|false> \
+#     [--features "backblaze,apple_pay"] \
 #     [--extras "email,cache"]
+#
+# --features lists the Copier service toggles to switch on (each name maps to
+# `--data include_<name>=true`, plus `--data services=custom`). Leave it out for the
+# minimal base. --include-apple-pay <true|false> is kept as an alias for
+# --features apple_pay.
 #
 # Defaults: --source gh:eslam5464/Fastapi-Template (used when no local checkout
 # is available). Pass a local path (e.g. the sibling directory of this repo) to
@@ -38,7 +43,7 @@ AUTHOR_NAME=""
 AUTHOR_EMAIL=""
 GITHUB_USERNAME=""
 PYTHON_VERSION="3.14"
-INCLUDE_APPLE_PAY="false"
+FEATURES=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -51,7 +56,10 @@ while [[ $# -gt 0 ]]; do
     --author-email) AUTHOR_EMAIL="$2"; shift 2 ;;
     --github-username) GITHUB_USERNAME="$2"; shift 2 ;;
     --python-version) PYTHON_VERSION="$2"; shift 2 ;;
-    --include-apple-pay) INCLUDE_APPLE_PAY="$2"; shift 2 ;;
+    --features) FEATURES="${FEATURES:+${FEATURES},}$2"; shift 2 ;;
+    --include-apple-pay)
+      if [[ "$2" == "true" ]]; then FEATURES="${FEATURES:+${FEATURES},}apple_pay"; fi
+      shift 2 ;;
     --extras) EXTRAS="$2"; shift 2 ;;
     *) echo "Unknown argument: $1" >&2; exit 1 ;;
   esac
@@ -69,12 +77,16 @@ COPIER_ARGS=(copy "$SOURCE" "$TARGET" --trust
   --data "author_email=${AUTHOR_EMAIL}"
   --data "github_username=${GITHUB_USERNAME}"
   --data "python_version=${PYTHON_VERSION}"
-  --data "include_apple_pay=${INCLUDE_APPLE_PAY}"
 )
-# include_apple_pay=true only takes effect with services=custom; the minimal
-# base (services=minimal) rejects any include_* that is switched on.
-if [[ "$INCLUDE_APPLE_PAY" == "true" ]]; then
+# Service toggles only take effect with services=custom; the minimal base
+# (services=minimal, the default) rejects any include_* that is switched on.
+if [[ -n "$FEATURES" ]]; then
   COPIER_ARGS+=(--data "services=custom")
+  IFS=',' read -ra FEATURE_LIST <<< "$FEATURES"
+  for f in "${FEATURE_LIST[@]}"; do
+    f="${f// /}"
+    [[ -n "$f" ]] && COPIER_ARGS+=(--data "include_${f}=true")
+  done
 fi
 if [[ -n "$PROJECT_DESCRIPTION" ]]; then
   COPIER_ARGS+=(--data "project_description=${PROJECT_DESCRIPTION}")

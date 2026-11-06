@@ -253,6 +253,20 @@ def _scan_near_miss(text: str, rel: str, unsupported: bool) -> None:
         _raise_near_miss(rel, i + 1, _body(line), unsupported=unsupported)
 
 
+def _remove_empty_parents(directory: Path, root: Path) -> None:
+    """Remove `directory` and its parents while they are empty, stopping at `root`.
+
+    A PATHS deletion can leave its folder empty (e.g. docs/integrations/ once
+    its only guide is gone); git does not track empty folders, so neither
+    should the generated project.
+    """
+    root = root.resolve()
+    current = directory.resolve()
+    while current != root and root in current.parents and current.is_dir() and not any(current.iterdir()):
+        current.rmdir()
+        current = current.parent
+
+
 def apply(root: Path, feature_flags: dict[str, bool]) -> list[Path]:
     """Apply marker stripping and PATHS deletion to a generated project tree.
 
@@ -271,6 +285,7 @@ def apply(root: Path, feature_flags: dict[str, bool]) -> list[Path]:
                 shutil.rmtree(target)
             else:
                 target.unlink()
+            _remove_empty_parents(target.parent, root)
     for path, rel in _iter_files(root):
         text = _read_text(path)
         if text is None:

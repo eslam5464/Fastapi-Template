@@ -356,6 +356,25 @@ class TestApply:
         assert not (tmp_path / "extra.txt").exists()
         assert (tmp_path / "keeper.py").exists()
 
+    def test_paths_deletion_removes_folders_it_empties(self, tmp_path, monkeypatch):
+        fake_manifest(monkeypatch, paths={"docs/integrations/b.md": "b", "docs/other/b.md": "b"})
+        (tmp_path / "docs" / "integrations").mkdir(parents=True)
+        (tmp_path / "docs" / "other").mkdir()
+        w(tmp_path / "docs" / "integrations" / "b.md", "b\n")
+        w(tmp_path / "docs" / "other" / "b.md", "b\n")
+        w(tmp_path / "docs" / "other" / "keep.md", "keep\n")
+        w(tmp_path / "docs" / "index.md", "index\n")
+        markers.apply(tmp_path, FLAGS)
+        assert not (tmp_path / "docs" / "integrations").exists()
+        assert (tmp_path / "docs" / "other" / "keep.md").exists()
+        assert (tmp_path / "docs" / "index.md").exists()
+
+    def test_paths_deletion_never_removes_root(self, tmp_path, monkeypatch):
+        fake_manifest(monkeypatch, paths={"only.py": "b"})
+        w(tmp_path / "only.py", "x = 1\n")
+        markers.apply(tmp_path, FLAGS)
+        assert tmp_path.is_dir()
+
     def test_paths_entry_kept_when_expression_true(self, tmp_path, monkeypatch):
         fake_manifest(monkeypatch, paths={"keeper.py": "a"})
         w(tmp_path / "keeper.py", "x = 1\n")

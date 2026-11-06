@@ -2,11 +2,15 @@ from .base import BaseSchema, BaseTimestampSchema
 from .health_check import HealthCheckResponse
 from .user import UserResponse, UserCreate, UserUpdate, UserLogin, UserSignup
 from .token import Token, TokenPayload, TokenData, LogoutResponse
+
+# --- FEATURE[backblaze] START ---
 from .back_blaze_bucket import (
     ApplicationData,
     FileDownloadLink,
     UploadedFileInfo,
 )
+
+# --- FEATURE[backblaze] END ---
 from .firebase import (
     FirebaseTokenData,
     FirebaseSignInResponse,
@@ -31,9 +35,11 @@ __all__ = [
     "TokenPayload",
     "TokenData",
     "LogoutResponse",
+    # --- FEATURE[backblaze] START ---
     "ApplicationData",
     "FileDownloadLink",
     "UploadedFileInfo",
+    # --- FEATURE[backblaze] END ---
     "FirebaseTokenData",
     "FirebaseSignInResponse",
     "FirebaseSignUpResponse",

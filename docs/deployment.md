@@ -36,38 +36,12 @@ Create a production `.env` file from the `.env.example` template
 
 ### External Services Configuration
 
+<!-- --- FEATURE[backblaze] START --- -->
 #### BackBlaze B2 Setup for Production
 
-If your application uses BackBlaze B2 cloud storage:
+See the Production section of [integrations/backblaze.md](integrations/backblaze.md).
 
-1. **Create Application Keys**
-
-   - Log in to BackBlaze account
-   - Navigate to App Keys section
-   - Create a new application key with appropriate permissions
-   - Store `keyID` as `B2_APPLICATION_KEY_ID`
-   - Store `applicationKey` as `B2_APPLICATION_KEY`
-
-2. **Bucket Configuration**
-
-   - Create bucket(s) for production use
-   - Set appropriate bucket type (allPrivate recommended for sensitive data)
-   - Configure bucket lifecycle rules if needed
-   - Set up CORS rules if accessing from web browsers
-
-3. **Security Best Practices**
-
-   - Use separate application keys for different environments
-   - Limit key capabilities to only what's needed
-   - Rotate keys periodically
-   - Monitor bucket access logs
-   - Implement file scanning for uploaded content
-
-4. **Performance Optimization**
-   - Use appropriate bucket regions close to your users
-   - Enable CDN if serving public files
-   - Implement file size limits
-   - Use multipart uploads for large files
+<!-- --- FEATURE[backblaze] END --- -->
 
 #### Firebase Setup for Production
 

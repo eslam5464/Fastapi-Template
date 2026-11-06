@@ -40,6 +40,12 @@ FEATURES: tuple[Feature, ...] = (
     # when generating a project.
     Feature("_template"),
     Feature(
+        "backblaze",
+        question="include_backblaze",
+        imports=("b2sdk",),
+        forbidden=(r"b2sdk", r"BackBlaze", r"back_blaze"),
+    ),
+    Feature(
         "apple_pay",
         question="include_apple_pay",
         imports=("appstoreserverlibrary", "cryptography"),
@@ -53,6 +59,11 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 # A key ending in "/" is a directory (deleted with its whole tree when the
 # expression is false). Every key must exist in the template repository.
 PATHS: dict[str, str] = {
+    "app/services/back_blaze_b2.py": "backblaze",
+    "app/core/exceptions/back_blaze_exceptions.py": "backblaze",
+    "app/schemas/back_blaze_bucket.py": "backblaze",
+    "tests/services/backblaze/": "backblaze",
+    "docs/integrations/backblaze.md": "backblaze",
     "app/services/payments/": "apple_pay",
     "app/core/exceptions/apple_pay.py": "apple_pay",
     "app/core/credentials/apple_pay.py": "apple_pay",
@@ -67,7 +78,6 @@ BASE_IMPORTS: tuple[str, ...] = (
     "aiofiles",
     "alembic",
     "anyio",
-    "b2sdk",
     "brevo",
     "celery",
     "faker",

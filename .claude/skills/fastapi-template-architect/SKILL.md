@@ -57,17 +57,18 @@ hand-building (see "Offline fallback" below) when Copier genuinely isn't usable.
    [references/copier-template-mechanics.md](references/copier-template-mechanics.md)
    for the exact question set and what each answer controls. In short: `project_name`,
    `project_slug`, `project_description`, `author_name`, `author_email`,
-   `github_username`, `python_version` (≥3.14), `include_apple_pay` (bool — the only
-   real code-stripping toggle today).
+   `github_username`, `python_version` (≥3.14), then `services` (`minimal`, the
+   default, or `custom`) and, for `custom`, one bool per service that really strips its
+   code when declined: `include_backblaze`, `include_apple_pay` (both default false).
 
 3. **Separately, ask which optional integrations the user actually wants** — email,
-   cache/Redis, cloud storage (GCS/Backblaze/Firebase), task-queue/Celery. These are
+   cache/Redis, cloud storage (GCS/Firebase), task-queue/Celery. These are
    **not** Copier questions; they're `pyproject.toml` extras. See
    [references/optional-integrations.md](references/optional-integrations.md) before
    answering the user's questions about them, and don't present them as if they were
    generation-time code-removal choices — that would misrepresent what the template
-   actually does. Apple Pay is the one exception: it really is stripped at generation
-   time when declined.
+   actually does. BackBlaze B2 and Apple Pay are the exceptions: they are Copier
+   toggles and really are stripped at generation time when declined.
 
 4. **Run generation** — prefer [scripts/run_copier.sh](scripts/run_copier.sh) /
    [scripts/run_copier.ps1](scripts/run_copier.ps1), which already encode the two fixes

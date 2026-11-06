@@ -9,8 +9,8 @@ substitute for the real source.
 
 ## The rule that governs this whole file
 
-**None of the five integrations below are Copier generation-time toggles** — only
-`include_apple_pay` is (see
+**The extras below are not Copier generation-time toggles** — only the services with an
+`include_*` question are (today `include_backblaze` and `include_apple_pay`, see
 [copier-template-mechanics.md](copier-template-mechanics.md)). Their code ships in every
 generated project regardless. "Enabling" one of these for a project means: install its
 `uv sync --extra <name>`, and fill in its `.env` config block. Don't present installing
@@ -59,7 +59,9 @@ closed on shutdown.
 - `app/services/gcs.py` — Google Cloud Storage via `gcloud-aio-storage`, schema in
   `app/schemas/google_bucket.py`.
 - `app/services/back_blaze_b2.py` — Backblaze B2 SDK, schema in
-  `app/schemas/back_blaze_bucket.py`.
+  `app/schemas/back_blaze_bucket.py`. Not an extra: it is the `include_backblaze`
+  Copier toggle, and a project that includes it gets `b2sdk` as a core dependency
+  (guide: `docs/integrations/backblaze.md`).
 - `app/services/firebase.py` (Admin SDK auth) and `firestore.py` (Firestore DB) —
   credentials modeled by `FirebaseServiceAccount` in `app/core/credentials.py`, which
   supports either a raw key string or a file-path-based key and auto-escapes `\n` →
