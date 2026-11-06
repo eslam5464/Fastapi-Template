@@ -10,30 +10,34 @@
 | app/api/v1/\_\_init\_\_.py                     |        0 |        0 |    100% |           |
 | app/api/v1/deps/\_\_init\_\_.py                |        0 |        0 |    100% |           |
 | app/api/v1/deps/auth.py                        |       36 |        0 |    100% |           |
-| app/api/v1/deps/rate\_limit.py                 |       69 |        0 |    100% |           |
+| app/api/v1/deps/rate\_limit.py                 |       73 |        0 |    100% |           |
 | app/api/v1/endpoints/\_\_init\_\_.py           |        0 |        0 |    100% |           |
-| app/api/v1/endpoints/auth.py                   |       35 |        1 |     97% |       128 |
+| app/api/v1/endpoints/auth.py                   |       37 |        1 |     97% |       133 |
 | app/api/v1/endpoints/user.py                   |       11 |        0 |    100% |           |
-| app/api/v1/router.py                           |        8 |        0 |    100% |           |
-| app/api/v2/\_\_init\_\_.py                     |       11 |        1 |     91% |        42 |
+| app/api/v1/router.py                           |        7 |        0 |    100% |           |
+| app/api/v2/\_\_init\_\_.py                     |        0 |        0 |    100% |           |
 | app/api/v2/router.py                           |        2 |        0 |    100% |           |
 | app/core/\_\_init\_\_.py                       |        0 |        0 |    100% |           |
-| app/core/config.py                             |      111 |       13 |     88% |177-180, 235-239, 293-296, 308-311 |
+| app/core/config.py                             |      112 |        9 |     92% |181-184, 239-243, 298, 313 |
 | app/core/constants.py                          |       29 |        3 |     90% | 50, 71-72 |
-| app/core/credentials.py                        |       23 |        1 |     96% |        68 |
-| app/core/db.py                                 |       17 |        0 |    100% |           |
+| app/core/credentials/\_\_init\_\_.py           |        0 |        0 |    100% |           |
+| app/core/credentials/apple\_pay.py             |        7 |        0 |    100% |           |
+| app/core/credentials/firebase.py               |       17 |        1 |     94% |        31 |
+| app/core/db.py                                 |       14 |        0 |    100% |           |
+| app/core/db\_sync.py                           |        5 |        0 |    100% |           |
 | app/core/exceptions/apple\_pay.py              |       37 |        4 |     89% |23, 88, 114, 140 |
 | app/core/exceptions/back\_blaze\_exceptions.py |       20 |        0 |    100% |           |
 | app/core/exceptions/base.py                    |       14 |        0 |    100% |           |
 | app/core/exceptions/firebase\_exceptions.py    |       13 |        1 |     92% |        19 |
-| app/core/exceptions/gcs\_exceptions.py         |       11 |        2 |     82% |    21, 30 |
+| app/core/exceptions/gcs\_exceptions.py         |       10 |        2 |     80% |    19, 28 |
 | app/core/exceptions/http\_exceptions.py        |       33 |        0 |    100% |           |
 | app/core/exceptions/rate\_limiter.py           |       13 |        2 |     85% |    19, 37 |
-| app/core/logger.py                             |      157 |       55 |     65% |118-124, 129-130, 134-162, 166-190, 212, 284-285, 376-423 |
+| app/core/logger.py                             |       55 |        2 |     96% |   105-106 |
+| app/core/openobserve.py                        |      112 |       44 |     61% |84-90, 95-96, 100-128, 132-156, 178, 228, 247 |
 | app/core/responses.py                          |       21 |        0 |    100% |           |
 | app/core/types.py                              |        2 |        0 |    100% |           |
-| app/core/utils.py                              |       54 |        0 |    100% |           |
-| app/main.py                                    |       70 |        0 |    100% |           |
+| app/core/utils.py                              |       12 |        0 |    100% |           |
+| app/main.py                                    |       82 |        0 |    100% |           |
 | app/middleware/\_\_init\_\_.py                 |        0 |        0 |    100% |           |
 | app/middleware/csrf.py                         |       47 |        0 |    100% |           |
 | app/middleware/logging.py                      |       45 |        4 |     91% |39, 45, 47, 49 |
@@ -73,11 +77,15 @@
 | app/services/firestore.py                      |       94 |        0 |    100% |           |
 | app/services/gcs.py                            |      125 |        4 |     97% |130, 174, 282, 357 |
 | app/services/payments/apple\_pay.py            |      285 |       47 |     84% |90, 106, 194, 201-206, 293-294, 386-387, 393-395, 449-459, 579-580, 609-630, 663-664, 814-816 |
+| app/services/task\_queue/\_\_init\_\_.py       |        8 |        0 |    100% |           |
+| app/services/task\_queue/celery\_config.py     |        6 |        0 |    100% |           |
+| app/services/task\_queue/tasks/\_\_init\_\_.py |        2 |        0 |    100% |           |
+| app/services/task\_queue/tasks/user\_tasks.py  |       27 |        0 |    100% |           |
 | app/services/types/\_\_init\_\_.py             |        3 |        0 |    100% |           |
 | app/services/types/auth.py                     |        5 |        0 |    100% |           |
 | app/services/types/email.py                    |       77 |        4 |     95% |78, 92, 95-96 |
 | app/web.py                                     |       13 |        0 |    100% |           |
-| **TOTAL**                                      | **2784** |  **227** | **92%** |           |
+| **TOTAL**                                      | **2804** |  **213** | **92%** |           |
 
 
 ## Setup coverage badge

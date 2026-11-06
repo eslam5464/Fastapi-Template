@@ -54,8 +54,8 @@
             </div>
         </aside>
         <h2>
-            <span class="text">35 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">34<span class="text"> run</span></button>
+            <span class="text">37 statements &nbsp;</span>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">36<span class="text"> run</span></button>
             <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">1<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">0<span class="text"> excluded</span></button>
         </h2>
@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_41f09dac0431399d_user_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-11-06 03:34 +0000
+            created at 2026-11-06 04:07 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -190,30 +190,35 @@
     <p class="pln"><span class="n"><a id="t108" href="#t108">108</a></span><span class="t"><span class="str">        https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t109" href="#t109">109</a></span><span class="t"><span class="str">    &quot;&quot;&quot;</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t110" href="#t110">110</a></span><span class="t">    <span class="key">try</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t111" href="#t111">111</a></span><span class="t">        <span class="nam">revoke_payload</span> <span class="op">=</span> <span class="key">await</span> <span class="nam">auth_service</span><span class="op">.</span><span class="nam">get_logout_revoke_payload</span><span class="op">(</span><span class="nam">token</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t112" href="#t112">112</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t113" href="#t113">113</a></span><span class="t">        <span class="com"># Add token to blacklist</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t114" href="#t114">114</a></span><span class="t">        <span class="key">await</span> <span class="nam">token_blacklist</span><span class="op">.</span><span class="nam">revoke_token</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t115" href="#t115">115</a></span><span class="t">            <span class="nam">jti</span><span class="op">=</span><span class="nam">revoke_payload</span><span class="op">[</span><span class="str">&quot;jti&quot;</span><span class="op">]</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t116" href="#t116">116</a></span><span class="t">            <span class="nam">ttl_seconds</span><span class="op">=</span><span class="nam">revoke_payload</span><span class="op">[</span><span class="str">&quot;ttl_seconds&quot;</span><span class="op">]</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t117" href="#t117">117</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t118" href="#t118">118</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t119" href="#t119">119</a></span><span class="t">        <span class="com"># Return validated Pydantic response</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t120" href="#t120">120</a></span><span class="t">        <span class="key">return</span> <span class="nam">LogoutResponse</span><span class="op">(</span><span class="nam">message</span><span class="op">=</span><span class="str">&quot;Successfully logged out&quot;</span><span class="op">,</span> <span class="nam">revoked</span><span class="op">=</span><span class="key">True</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t121" href="#t121">121</a></span><span class="t">    <span class="key">except</span> <span class="nam">ValidationError</span> <span class="key">as</span> <span class="nam">ex</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t122" href="#t122">122</a></span><span class="t">        <span class="key">raise</span> <span class="nam">http_exceptions</span><span class="op">.</span><span class="nam">UnauthorizedException</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t123" href="#t123">123</a></span><span class="t">            <span class="nam">detail</span><span class="op">=</span><span class="nam">str</span><span class="op">(</span><span class="nam">ex</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t124" href="#t124">124</a></span><span class="t">            <span class="nam">headers</span><span class="op">=</span><span class="op">{</span><span class="str">&quot;WWW-Authenticate&quot;</span><span class="op">:</span> <span class="str">&quot;Bearer&quot;</span><span class="op">}</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t125" href="#t125">125</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t126" href="#t126">126</a></span><span class="t">    <span class="key">except</span> <span class="nam">http_exceptions</span><span class="op">.</span><span class="nam">UnauthorizedException</span> <span class="key">as</span> <span class="nam">ex</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t127" href="#t127">127</a></span><span class="t">        <span class="com"># Re-raise UnauthorizedException without converting to 500</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t128" href="#t128">128</a></span><span class="t">        <span class="key">raise</span> <span class="nam">ex</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t129" href="#t129">129</a></span><span class="t">    <span class="key">except</span> <span class="nam">Exception</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t130" href="#t130">130</a></span><span class="t">        <span class="nam">logger</span><span class="op">.</span><span class="nam">exception</span><span class="op">(</span><span class="fst">f&quot;</span><span class="fst">Logout failed for user </span><span class="op">{</span><span class="nam">current_user</span><span class="op">.</span><span class="nam">id</span><span class="op">}</span><span class="fst">&quot;</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t131" href="#t131">131</a></span><span class="t">        <span class="key">raise</span> <span class="nam">http_exceptions</span><span class="op">.</span><span class="nam">InternalServerErrorException</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t132" href="#t132">132</a></span><span class="t">            <span class="nam">detail</span><span class="op">=</span><span class="str">&quot;Logout failed&quot;</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t133" href="#t133">133</a></span><span class="t">            <span class="nam">headers</span><span class="op">=</span><span class="op">{</span><span class="str">&quot;WWW-Authenticate&quot;</span><span class="op">:</span> <span class="str">&quot;Bearer&quot;</span><span class="op">}</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t134" href="#t134">134</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t111" href="#t111">111</a></span><span class="t">        <span class="com"># True once the token is on the blacklist. Without token revocation the</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t112" href="#t112">112</a></span><span class="t">        <span class="com"># token stays valid until it expires.</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t113" href="#t113">113</a></span><span class="t">        <span class="nam">revoked</span> <span class="op">=</span> <span class="key">False</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t114" href="#t114">114</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t115" href="#t115">115</a></span><span class="t">        <span class="nam">revoke_payload</span> <span class="op">=</span> <span class="key">await</span> <span class="nam">auth_service</span><span class="op">.</span><span class="nam">get_logout_revoke_payload</span><span class="op">(</span><span class="nam">token</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t116" href="#t116">116</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t117" href="#t117">117</a></span><span class="t">        <span class="com"># Add token to blacklist</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t118" href="#t118">118</a></span><span class="t">        <span class="key">await</span> <span class="nam">token_blacklist</span><span class="op">.</span><span class="nam">revoke_token</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t119" href="#t119">119</a></span><span class="t">            <span class="nam">jti</span><span class="op">=</span><span class="nam">revoke_payload</span><span class="op">[</span><span class="str">&quot;jti&quot;</span><span class="op">]</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t120" href="#t120">120</a></span><span class="t">            <span class="nam">ttl_seconds</span><span class="op">=</span><span class="nam">revoke_payload</span><span class="op">[</span><span class="str">&quot;ttl_seconds&quot;</span><span class="op">]</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t121" href="#t121">121</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t122" href="#t122">122</a></span><span class="t">        <span class="nam">revoked</span> <span class="op">=</span> <span class="key">True</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t123" href="#t123">123</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t124" href="#t124">124</a></span><span class="t">        <span class="com"># Return validated Pydantic response</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t125" href="#t125">125</a></span><span class="t">        <span class="key">return</span> <span class="nam">LogoutResponse</span><span class="op">(</span><span class="nam">message</span><span class="op">=</span><span class="str">&quot;Successfully logged out&quot;</span><span class="op">,</span> <span class="nam">revoked</span><span class="op">=</span><span class="nam">revoked</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t126" href="#t126">126</a></span><span class="t">    <span class="key">except</span> <span class="nam">ValidationError</span> <span class="key">as</span> <span class="nam">ex</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t127" href="#t127">127</a></span><span class="t">        <span class="key">raise</span> <span class="nam">http_exceptions</span><span class="op">.</span><span class="nam">UnauthorizedException</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t128" href="#t128">128</a></span><span class="t">            <span class="nam">detail</span><span class="op">=</span><span class="nam">str</span><span class="op">(</span><span class="nam">ex</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t129" href="#t129">129</a></span><span class="t">            <span class="nam">headers</span><span class="op">=</span><span class="op">{</span><span class="str">&quot;WWW-Authenticate&quot;</span><span class="op">:</span> <span class="str">&quot;Bearer&quot;</span><span class="op">}</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t130" href="#t130">130</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t131" href="#t131">131</a></span><span class="t">    <span class="key">except</span> <span class="nam">http_exceptions</span><span class="op">.</span><span class="nam">UnauthorizedException</span> <span class="key">as</span> <span class="nam">ex</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t132" href="#t132">132</a></span><span class="t">        <span class="com"># Re-raise UnauthorizedException without converting to 500</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t133" href="#t133">133</a></span><span class="t">        <span class="key">raise</span> <span class="nam">ex</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t134" href="#t134">134</a></span><span class="t">    <span class="key">except</span> <span class="nam">Exception</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t135" href="#t135">135</a></span><span class="t">        <span class="nam">logger</span><span class="op">.</span><span class="nam">exception</span><span class="op">(</span><span class="fst">f&quot;</span><span class="fst">Logout failed for user </span><span class="op">{</span><span class="nam">current_user</span><span class="op">.</span><span class="nam">id</span><span class="op">}</span><span class="fst">&quot;</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t136" href="#t136">136</a></span><span class="t">        <span class="key">raise</span> <span class="nam">http_exceptions</span><span class="op">.</span><span class="nam">InternalServerErrorException</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t137" href="#t137">137</a></span><span class="t">            <span class="nam">detail</span><span class="op">=</span><span class="str">&quot;Logout failed&quot;</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t138" href="#t138">138</a></span><span class="t">            <span class="nam">headers</span><span class="op">=</span><span class="op">{</span><span class="str">&quot;WWW-Authenticate&quot;</span><span class="op">:</span> <span class="str">&quot;Bearer&quot;</span><span class="op">}</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t139" href="#t139">139</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
 </main>
 <footer>
     <div class="content">
@@ -223,7 +228,7 @@
             <a class="nav" href="z_41f09dac0431399d_user_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.17.0">coverage.py v7.17.0</a>,
-            created at 2026-11-06 03:34 +0000
+            created at 2026-11-06 04:07 +0000
         </p>
     </div>
 </footer>
