@@ -21,8 +21,12 @@ Plus optional integrations:
 
 - caching
 - background jobs
+<!-- --- FEATURE[backblaze|gcs] START --- -->
 - cloud storage
+<!-- --- FEATURE[backblaze|gcs] END --- -->
+<!-- --- FEATURE[firebase] START --- -->
 - Firebase
+<!-- --- FEATURE[firebase] END --- -->
 <!-- --- FEATURE[apple_pay] START --- -->
 - Apple Pay
 <!-- --- FEATURE[apple_pay] END --- -->
@@ -124,7 +128,7 @@ uvx copier copy gh:eslam5464/Fastapi-Template <new-project-dir> --trust
 
 **Alternative:** if you'd rather have `copier` installed permanently (e.g. for `copier update` later), use `uv tool install copier` instead. On Windows, that installs into a user tools directory that's often **not yet on PATH** in your *current* terminal session — if you see `'copier' is not recognized as an internal or external command` right after installing, either open a **new** terminal window, or run `uv tool update-shell` and then restart the terminal. The `uvx` command above sidesteps the PATH issue entirely since it doesn't need `copier` installed anywhere persistent.
 
-You'll be prompted for a project name, description, author name/email, GitHub username, Python version, and whether to keep the minimal base or choose optional services one by one (currently Google Cloud Storage, BackBlaze B2 and Apple Pay); running `copier copy ... --defaults` gives you the minimal base. Everything identity-specific — the `pyproject.toml` name, Docker container names, the Postgres schema, `README.md`, `LICENSE`, `CODEOWNERS` — is filled in automatically; see [docs/features.md](docs/features.md) for what ships by default versus what's opt-in.
+You'll be prompted for a project name, description, author name/email, GitHub username, Python version, and whether to keep the minimal base or choose optional services one by one (currently Firebase, Firestore, Google Cloud Storage, BackBlaze B2 and Apple Pay); running `copier copy ... --defaults` gives you the minimal base. Everything identity-specific — the `pyproject.toml` name, Docker container names, the Postgres schema, `README.md`, `LICENSE`, `CODEOWNERS` — is filled in automatically; see [docs/features.md](docs/features.md) for what ships by default versus what's opt-in.
 
 `--trust` is required because generation runs a small post-processing script (`scripts/generate/post_gen.py`) that substitutes your answers into the copied files, removes unused Apple Pay files when you opt out, regenerates `uv.lock`, and runs `git init` for you.
 
@@ -435,11 +439,10 @@ BREVO_API_KEY=your_brevo_api_key_here
 
 ## 📦 Dependencies
 
-Core dependencies (FastAPI, SQLAlchemy, Alembic, Pydantic, Uvicorn) are always installed. Optional integrations (Redis, Celery, Firebase, email providers) are opt-in extras — install only what you need:
+Core dependencies (FastAPI, SQLAlchemy, Alembic, Pydantic, Uvicorn) are always installed. Optional integrations (Redis, Celery, email providers) are opt-in extras — install only what you need:
 
 ```bash
 uv sync --extra email
-uv sync --extra cloud-service
 uv sync --extra cache
 uv sync --extra task-queue
 ```

@@ -1,4 +1,4 @@
-"""Firebase fixtures (also used by the Firestore tests in this package)."""
+"""Firebase fixtures, shared by the tests in this package."""
 
 from unittest.mock import Mock
 

@@ -50,7 +50,7 @@ class ApplePay:
     Provides methods for transaction verification, subscription status,
     transaction history, refund history, and subscription renewal management.
 
-    Follows the same pattern as Firebase service class with proper
+    Follows the same pattern as the other service classes, with proper
     error handling and logging.
     """
 

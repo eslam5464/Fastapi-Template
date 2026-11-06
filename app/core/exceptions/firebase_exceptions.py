@@ -19,6 +19,7 @@ class FirebaseAuthenticationError(FirebaseError):
         super().__init__(message, exception)
 
 
+# --- FEATURE[firestore] START ---
 class FirebaseFirestoreError(FirebaseError):
     """
     Firestore operation error for Firebase
@@ -35,3 +36,6 @@ class FirebaseDocumentNotFoundError(FirebaseFirestoreError):
 
     def __init__(self, message, exception: Exception | None = None):
         super().__init__(message, exception)
+
+
+# --- FEATURE[firestore] END ---

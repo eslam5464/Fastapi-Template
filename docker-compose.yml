@@ -29,11 +29,13 @@ services:
       - POSTGRES_PASSWORD
       - POSTGRES_DB
       - POSTGRES_DB_SCHEMA
+      # --- FEATURE[firebase] START ---
       - FIREBASE_PROJECT_ID
       - FIREBASE_PRIVATE_KEY_ID
       - FIREBASE_PRIVATE_KEY
       - FIREBASE_CLIENT_EMAIL
       - FIREBASE_CLIENT_ID
+      # --- FEATURE[firebase] END ---
       - REDIS_HOST=redis
       - REDIS_PORT
       - REDIS_PASS

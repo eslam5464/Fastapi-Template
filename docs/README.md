@@ -42,7 +42,12 @@ Complete guide for local development environment setup and daily development tas
 <!-- --- FEATURE[backblaze] START --- -->
 - BackBlaze B2 integration guide ([integrations/backblaze.md](integrations/backblaze.md))
 <!-- --- FEATURE[backblaze] END --- -->
-- Firebase, Firestore integration guides
+<!-- --- FEATURE[firebase] START --- -->
+- Firebase integration guide ([integrations/firebase.md](integrations/firebase.md))
+<!-- --- FEATURE[firebase] END --- -->
+<!-- --- FEATURE[firestore] START --- -->
+- Firestore integration guide ([integrations/firestore.md](integrations/firestore.md))
+<!-- --- FEATURE[firestore] END --- -->
 <!-- --- FEATURE[gcs] START --- -->
 - Google Cloud Storage (GCS) integration guide ([integrations/gcs.md](integrations/gcs.md))
 <!-- --- FEATURE[gcs] END --- -->
@@ -140,7 +145,9 @@ This template is built with:
 <!-- --- FEATURE[backblaze] START --- -->
 - **B2SDK** - BackBlaze B2 cloud storage integration
 <!-- --- FEATURE[backblaze] END --- -->
+<!-- --- FEATURE[firebase] START --- -->
 - **Firebase Admin** - Firebase authentication, FCM, and Firestore
+<!-- --- FEATURE[firebase] END --- -->
 <!-- --- FEATURE[gcs] START --- -->
 - **Google Cloud Storage** - GCS bucket integration
 <!-- --- FEATURE[gcs] END --- -->

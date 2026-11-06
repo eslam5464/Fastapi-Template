@@ -13,7 +13,10 @@ from yarl import URL
 from app.core.credentials.apple_pay import ApplePayStoreCredentials
 
 # --- FEATURE[apple_pay] END ---
+# --- FEATURE[firebase] START ---
 from app.core.credentials.firebase import FirebaseServiceAccount
+
+# --- FEATURE[firebase] END ---
 
 PROJECT_DIR = Path(__file__).parent.parent.parent
 PROJECT_TOML_PATH = PROJECT_DIR / "pyproject.toml"
@@ -78,6 +81,7 @@ class Settings(BaseSettings):
     postgres_db: str
     postgres_db_schema: str
 
+    # --- FEATURE[firebase] START ---
     # firebase
     firebase_project_id: str
     firebase_private_key_id: str
@@ -85,6 +89,7 @@ class Settings(BaseSettings):
     firebase_private_key_path: Path | None = None
     firebase_client_email: str
     firebase_client_id: str
+    # --- FEATURE[firebase] END ---
 
     # Variables for Redis
     redis_host: str
@@ -228,6 +233,7 @@ class Settings(BaseSettings):
             path=f"/{self.postgres_db}_test",
         )
 
+    # --- FEATURE[firebase] START ---
     @computed_field
     @property
     def firebase_credentials(self) -> FirebaseServiceAccount:
@@ -247,6 +253,8 @@ class Settings(BaseSettings):
             client_email=self.firebase_client_email,
             client_id=self.firebase_client_id,
         )
+
+    # --- FEATURE[firebase] END ---
 
     @computed_field
     @property
