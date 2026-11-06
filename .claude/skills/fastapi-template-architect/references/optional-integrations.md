@@ -76,7 +76,7 @@ closed on shutdown.
 `CeleryTaskSettings` `TypedDict`. The one sample scheduled task,
 `seed_fake_users_task` (`app/services/task_queue/tasks/user_tasks.py`), runs every 10
 seconds when `ENABLE_DATA_SEEDING=true`, using the **sync** session factory
-(`session_factory` from `app/core/db.py` — Celery workers are sync, not async) to bulk
+(`session_factory` from `app/core/db_sync.py` — Celery workers are sync, not async) to bulk
 insert Faker-generated users. Celery broker/backend URLs are computed from separate
 Redis DB indices (1 and 2) via `settings.celery_broker`/`celery_backend`. Run with:
 

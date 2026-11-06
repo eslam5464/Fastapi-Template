@@ -29,7 +29,8 @@ loggers) into Loguru so log formatting stays consistent everywhere:
    useful in this repo's failure-triage workflow, though it's also more verbose and can
    leak values into logs — that trade-off is already made deliberately here).
 3. **OpenObserve** (optional, `settings.log_to_openobserve`) — a **hand-rolled**,
-   thread-based, batching async HTTP log shipper (`OpenObserveHandler`): a daemon
+   thread-based, batching async HTTP log shipper (`OpenObserveHandler` in
+   `app/core/openobserve.py`, added by `setup_logger()` via `add_openobserve_sink()`): a daemon
    background thread reads off a bounded `queue.Queue(maxsize=1000)`, batches by size or
    a flush interval, retries with exponential backoff, and registers `atexit.register
    (self.shutdown)` for a graceful flush on process exit. `shutdown_logger()` (called

@@ -35,7 +35,7 @@ uv sync --extra apple-services
 *Always installed — no extra required.*
 
 - **FastAPI** — async web framework. Versioned routers mounted at `/v1` and `/v2` (`app/api/v1/`, `app/api/v2/`), each with its own interactive docs (`/v1/docs`, `/v2/docs`).
-- **Async PostgreSQL** — SQLAlchemy 2.0 async engine (`asyncpg`) for the app, plus a sync engine (`psycopg`) for Celery. Both configured in `app/core/db.py` from `settings.db_url` / `db_url_sync`.
+- **Async PostgreSQL** — SQLAlchemy 2.0 async engine (`asyncpg`) for the app, configured in `app/core/db.py` from `settings.db_url`, plus a sync engine (`psycopg`) for Celery in `app/core/db_sync.py` from `settings.db_url_sync`.
 - **Database migrations** — Alembic (`app/alembic/`). Run via `./scripts/alembic.sh` / `.bat` or `alembic upgrade head` directly.
 - **Clean/layered architecture** — repository pattern (`app/repos/`) + dependency injection, with module boundaries enforced by `tach` (see `tach.toml`): `core` → `models`/`schemas` → `repos` → `services` → `api`/`middleware`.
 - **Structured logging** — Loguru-based (`app/core/logger.py`), with centralized log aggregation support.

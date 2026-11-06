@@ -1,14 +1,54 @@
-from typing import Annotated
+from typing import Annotated, Any
 
-from fastapi import Depends, Request
+from fastapi import Depends, Request, status
 
 from app.api.v1.deps.auth import get_current_user
+from app.core import responses
 from app.core.config import settings
 from app.core.constants import RateLimitPrefix
 from app.core.exceptions.http_exceptions import TooManyRequestsException
 from app.core.utils import get_client_ip
 from app.models.user import User
 from app.services.cache.rate_limiter import rate_limiter
+
+
+def rate_limit_responses(limit: int, reset_example: int = 1764425820102866) -> dict[int | str, dict[str, Any]]:
+    """
+    OpenAPI `responses` entry documenting the 429 a rate-limited route can return.
+
+    Spread it into a route's `responses` (`**rate_limit_responses(60)`) or pass
+    it whole to `include_router(responses=...)`.
+
+    Args:
+        limit: Requests allowed per minute, shown in the header descriptions.
+        reset_example: Example value of the X-RateLimit-Reset header.
+
+    Returns:
+        A dict keyed by status 429 with the response model and rate limit headers.
+    """
+    return {
+        status.HTTP_429_TOO_MANY_REQUESTS: {
+            "model": responses.TooManyRequestsResponse,
+            "headers": {
+                "X-RateLimit-Limit": {
+                    "description": f"Maximum requests allowed ({limit}/min)",
+                    "schema": {"type": "integer", "example": limit},
+                },
+                "X-RateLimit-Remaining": {
+                    "description": "Requests remaining in current window",
+                    "schema": {"type": "integer", "example": limit - 1},
+                },
+                "X-RateLimit-Reset": {
+                    "description": "Unix timestamp when limit resets",
+                    "schema": {"type": "integer", "example": reset_example},
+                },
+            },
+        },
+    }
+
+
+# The 429 response of the auth routes, which all share rate_limit_auth.
+RATE_LIMIT_AUTH_RESPONSES = rate_limit_responses(limit=10, reset_example=17655251150102866)
 
 
 async def rate_limit_auth(request: Request) -> None:
