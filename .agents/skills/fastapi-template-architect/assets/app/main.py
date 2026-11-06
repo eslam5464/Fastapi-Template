@@ -1,5 +1,5 @@
 # --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
-# Verbatim copy of app/main.py from eslam5464/Fastapi-Template, taken 2026-10-11.
+# Verbatim copy of app/main.py from eslam5464/Fastapi-Template, taken 2026-11-06.
 # The real repo is the source of truth; this is a fallback/reference copy
 # for offline scaffolding and Extend/Audit-mode pattern-matching. It can drift
 # from the live repo over time - prefer driving the real Copier template
@@ -26,10 +26,8 @@ from app.services.cache.rate_limiter import rate_limiter
 from app.services.cache.token_blacklist import token_blacklist
 
 
-async def _check_dependencies():
-    """Check essential dependencies before starting the app"""
-
-    # Check CacheManager health
+async def _check_cache_manager() -> None:
+    """Fail startup when caching is enabled but the cache store is not reachable."""
     cache_healthy = await cache_manager.health_check()
 
     if not cache_healthy and settings.cache_enabled:
@@ -38,6 +36,9 @@ async def _check_dependencies():
     else:
         logger.success("CacheManager is healthy.")
 
+
+async def _check_rate_limiter() -> None:
+    """Fail startup when rate limiting is enabled but its store is not reachable."""
     rate_limiter_healthy = await rate_limiter.health_check()
 
     if not rate_limiter_healthy and settings.rate_limit_enabled:
@@ -46,7 +47,9 @@ async def _check_dependencies():
     else:
         logger.success("RateLimiter is healthy.")
 
-    # Check TokenBlacklist health (only in non-local environments)
+
+async def _check_token_blacklist() -> None:
+    """Warn (outside LOCAL) when the token blacklist is not reachable; startup continues."""
     if settings.current_environment != Environment.LOCAL:
         blacklist_healthy = await token_blacklist.health_check()
 
@@ -56,17 +59,33 @@ async def _check_dependencies():
             logger.success("TokenBlacklist is healthy.")
 
 
-async def _shutdown_dependencies():
-    """Shutdown essential dependencies gracefully"""
+async def _check_dependencies():
+    """Check essential dependencies before starting the app"""
+    await _check_cache_manager()
+    await _check_rate_limiter()
+    await _check_token_blacklist()
 
+
+async def _close_cache_manager() -> None:
     await cache_manager.close()
     logger.success("CacheManager connection closed.")
 
+
+async def _close_rate_limiter() -> None:
     await rate_limiter.close()
     logger.success("RateLimiter connection closed.")
 
+
+async def _close_token_blacklist() -> None:
     await token_blacklist.close()
     logger.success("TokenBlacklist connection closed.")
+
+
+async def _shutdown_dependencies():
+    """Shutdown essential dependencies gracefully"""
+    await _close_cache_manager()
+    await _close_rate_limiter()
+    await _close_token_blacklist()
 
 
 @asynccontextmanager

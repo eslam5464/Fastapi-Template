@@ -103,8 +103,6 @@ ignore = ["E501"]
 # autoflake ran with --ignore-init-module-imports and isort skipped __init__.py
 # outright - manual ordering there (e.g. base classes before dependents) matters.
 "__init__.py" = ["F401", "I001"]
-# pytest.importorskip(...) must run before the imports it's guarding.
-"tests/services/email/resend_test.py" = ["E402"]
 
 [tool.mypy]
 python_version = "3.14"

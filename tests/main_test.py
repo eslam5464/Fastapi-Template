@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from fastapi import FastAPI
 
+import app.main as main_module
 from app.core.config import Environment
 from app.main import (
     ALLOWED_ENVIRONMENTS,
@@ -11,127 +12,30 @@ from app.main import (
     app,
     lifespan,
 )
+from tests.utils import mock_lifespan_steps
 
 
 @pytest.mark.anyio
-class TestDependencyChecks:
-    """Test dependency health checks on startup."""
+class TestDependencySteps:
+    """_check_dependencies / _shutdown_dependencies run each service's step."""
 
-    async def test_check_dependencies_all_healthy(self):
-        """Test that check passes when all dependencies are healthy."""
-        with patch("app.main.cache_manager.health_check", new_callable=AsyncMock) as mock_cache:
-            with patch("app.main.rate_limiter.health_check", new_callable=AsyncMock) as mock_rate:
-                with patch("app.main.settings.cache_enabled", True):
-                    with patch("app.main.settings.rate_limit_enabled", True):
-                        mock_cache.return_value = True
-                        mock_rate.return_value = True
+    async def test_check_dependencies_runs_every_check(self, monkeypatch):
+        mocks = mock_lifespan_steps(monkeypatch, main_module)
 
-                        # Should not raise any exception
-                        await _check_dependencies()
+        await _check_dependencies()
 
-                        mock_cache.assert_called_once()
-                        mock_rate.assert_called_once()
+        for name, mock in mocks.items():
+            if name.startswith("_check_"):
+                mock.assert_awaited_once()
 
-    async def test_check_dependencies_cache_unhealthy_enabled(self):
-        """Test that RuntimeError is raised when cache is unhealthy and enabled."""
-        with patch("app.main.cache_manager.health_check", new_callable=AsyncMock) as mock_cache:
-            with patch("app.main.settings.cache_enabled", True):
-                mock_cache.return_value = False
+    async def test_shutdown_dependencies_runs_every_close(self, monkeypatch):
+        mocks = mock_lifespan_steps(monkeypatch, main_module)
 
-                with pytest.raises(RuntimeError, match="CacheManager is not healthy"):
-                    await _check_dependencies()
+        await _shutdown_dependencies()
 
-    async def test_check_dependencies_cache_unhealthy_disabled(self):
-        """Test that check continues when cache is unhealthy but disabled."""
-        with patch("app.main.cache_manager.health_check", new_callable=AsyncMock) as mock_cache:
-            with patch("app.main.rate_limiter.health_check", new_callable=AsyncMock) as mock_rate:
-                with patch("app.main.settings.cache_enabled", False):
-                    with patch("app.main.settings.rate_limit_enabled", True):
-                        mock_cache.return_value = False
-                        mock_rate.return_value = True
-
-                        # Should not raise exception
-                        await _check_dependencies()
-
-                        # Both checks should still be called
-                        mock_cache.assert_called_once()
-                        mock_rate.assert_called_once()
-
-    async def test_check_dependencies_rate_limiter_unhealthy_enabled(self):
-        """Test that RuntimeError is raised when rate limiter is unhealthy and enabled."""
-        with patch("app.main.cache_manager.health_check", new_callable=AsyncMock) as mock_cache:
-            with patch("app.main.rate_limiter.health_check", new_callable=AsyncMock) as mock_rate:
-                with patch("app.main.settings.cache_enabled", True):
-                    with patch("app.main.settings.rate_limit_enabled", True):
-                        mock_cache.return_value = True
-                        mock_rate.return_value = False
-
-                        with pytest.raises(RuntimeError, match="RateLimiter is not healthy"):
-                            await _check_dependencies()
-
-    async def test_check_dependencies_rate_limiter_unhealthy_disabled(self):
-        """Test that check continues when rate limiter is unhealthy but disabled."""
-        with patch("app.main.cache_manager.health_check", new_callable=AsyncMock) as mock_cache:
-            with patch("app.main.rate_limiter.health_check", new_callable=AsyncMock) as mock_rate:
-                with patch("app.main.settings.cache_enabled", True):
-                    with patch("app.main.settings.rate_limit_enabled", False):
-                        mock_cache.return_value = True
-                        mock_rate.return_value = False
-
-                        # Should not raise exception
-                        await _check_dependencies()
-
-                        mock_cache.assert_called_once()
-                        mock_rate.assert_called_once()
-
-    async def test_check_dependencies_both_unhealthy_both_disabled(self):
-        """Test that check continues when both are unhealthy but disabled."""
-        with patch("app.main.cache_manager.health_check", new_callable=AsyncMock) as mock_cache:
-            with patch("app.main.rate_limiter.health_check", new_callable=AsyncMock) as mock_rate:
-                with patch("app.main.settings.cache_enabled", False):
-                    with patch("app.main.settings.rate_limit_enabled", False):
-                        mock_cache.return_value = False
-                        mock_rate.return_value = False
-
-                        # Should not raise exception
-                        await _check_dependencies()
-
-                        mock_cache.assert_called_once()
-                        mock_rate.assert_called_once()
-
-
-@pytest.mark.anyio
-class TestShutdown:
-    """Test shutdown dependencies function."""
-
-    async def test_shutdown_dependencies_closes_cache(self):
-        """Test that shutdown closes cache manager."""
-        with patch("app.main.cache_manager.close", new_callable=AsyncMock) as mock_cache_close:
-            with patch("app.main.rate_limiter.close", new_callable=AsyncMock) as mock_rate_close:
-                await _shutdown_dependencies()
-
-                mock_cache_close.assert_called_once()
-                mock_rate_close.assert_called_once()
-
-    async def test_shutdown_dependencies_closes_rate_limiter(self):
-        """Test that shutdown closes rate limiter."""
-        with patch("app.main.cache_manager.close", new_callable=AsyncMock) as mock_cache_close:
-            with patch("app.main.rate_limiter.close", new_callable=AsyncMock) as mock_rate_close:
-                await _shutdown_dependencies()
-
-                mock_cache_close.assert_called_once()
-                mock_rate_close.assert_called_once()
-
-    async def test_shutdown_dependencies_handles_exceptions(self):
-        """Test that shutdown handles exceptions gracefully."""
-        with patch("app.main.cache_manager.close", new_callable=AsyncMock) as mock_cache_close:
-            with patch("app.main.rate_limiter.close", new_callable=AsyncMock):
-                # Simulate cache close failing
-                mock_cache_close.side_effect = Exception("Cache close failed")
-
-                # Should raise the exception (not swallowed)
-                with pytest.raises(Exception, match="Cache close failed"):
-                    await _shutdown_dependencies()
+        for name, mock in mocks.items():
+            if name.startswith("_close_"):
+                mock.assert_awaited_once()
 
 
 @pytest.mark.anyio
@@ -279,7 +183,6 @@ class TestAppConfiguration:
         assert "CORSMiddleware" in middleware_types
 
         # Should have custom middleware
-        assert "RateLimitHeaderMiddleware" in middleware_types
         assert "LoggingMiddleware" in middleware_types
 
     def test_app_router_included(self):

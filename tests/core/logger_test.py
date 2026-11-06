@@ -116,7 +116,6 @@ class TestSetupLogger:
             with patch("app.core.logger.settings") as mock_settings:
                 mock_settings.current_environment = Environment.DEV
                 mock_settings.log_level = 20  # INFO
-                mock_settings.log_to_openobserve = False
 
                 setup_logger()
 
@@ -130,7 +129,6 @@ class TestSetupLogger:
             with patch("app.core.logger.settings") as mock_settings:
                 mock_settings.current_environment = Environment.DEV
                 mock_settings.log_level = 20  # INFO
-                mock_settings.log_to_openobserve = False
 
                 setup_logger()
 

@@ -29,8 +29,7 @@ direct inspection).
 `line-length = 120`, `target-version = "py314"`, `select = ["E", "F", "I", "W"]`,
 `ignore = ["E501"]` (line length is enforced by the formatter, not the linter, hence the
 explicit ignore). Per-file ignores for `__init__.py` (`F401`/`I001` — re-export files
-legitimately have "unused" imports) and one specific pytest `importorskip` file
-(`E402`).
+legitimately have "unused" imports).
 
 ### Mypy
 
