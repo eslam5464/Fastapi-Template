@@ -2,7 +2,14 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
-EmailProviderLiteral = Literal["resend", "brevo"]
+EmailProviderLiteral = Literal[
+    # --- FEATURE[resend] START ---
+    "resend",
+    # --- FEATURE[resend] END ---
+    # --- FEATURE[brevo] START ---
+    "brevo",
+    # --- FEATURE[brevo] END ---
+]
 
 
 class EmailAttachment(BaseModel):

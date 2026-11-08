@@ -4,6 +4,8 @@ from .auth import (
     TokenPairDict,
     TokenWithJtiDict,
 )
+
+# --- FEATURE[resend|brevo] START ---
 from .email import (
     EmailAttachment,
     EmailProviderLiteral,
@@ -12,14 +14,17 @@ from .email import (
     EmailTag,
     EmailTemplate,
 )
+# --- FEATURE[resend|brevo] END ---
 
 __all__ = [
+    # --- FEATURE[resend|brevo] START ---
     "EmailAttachment",
     "EmailProviderLiteral",
     "EmailSendPayload",
     "EmailSendResult",
     "EmailTag",
     "EmailTemplate",
+    # --- FEATURE[resend|brevo] END ---
     "JWTPayloadDict",
     "LogoutRevokePayloadDict",
     "TokenPairDict",

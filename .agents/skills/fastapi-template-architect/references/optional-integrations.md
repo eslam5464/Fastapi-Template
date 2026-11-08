@@ -11,7 +11,7 @@ substitute for the real source.
 
 **The extras below are not Copier generation-time toggles** — only the services with an
 `include_*` question are (today `include_firebase`, `include_firestore`, `include_gcs`,
-`include_backblaze` and `include_apple_pay`, see
+`include_backblaze`, `include_resend`, `include_brevo` and `include_apple_pay`, see
 [copier-template-mechanics.md](copier-template-mechanics.md)). Their code ships in every
 generated project regardless. "Enabling" one of these for a project means: install its
 `uv sync --extra <name>`, and fill in its `.env` config block. Don't present installing
@@ -19,13 +19,13 @@ an extra as equivalent to "generating the project with/without" that feature.
 
 | Integration | Extra name | Key modules | Default behavior with no config |
 |---|---|---|---|
-| Email | `email` | `app/services/email/{base,resend,brevo}.py` | Not usable until an API key is set; no silent fallback |
+| Email | — (Copier toggles `include_resend`, `include_brevo`) | `app/services/email/{base,resend,brevo}.py` | Not usable until an API key is set; no silent fallback |
 | Cache (Redis) | `cache` | `app/services/cache/{base,manager,decorators,rate_limiter,token_blacklist}.py` | Fails open / no-op in `LOCAL` |
 | Firebase, Firestore, GCS, BackBlaze | — (Copier toggles, below) | `app/services/{firebase,firestore,gcs,back_blaze_b2}.py` | Not usable until credentials are set |
 | Task queue | `task-queue` | `app/services/task_queue/{celery_config.py, tasks/user_tasks.py}` | Inert unless a worker/beat process is actually started |
 | Apple Pay | `apple-services` | `app/services/payments/apple_pay.py` | **Removable at generation time** — the one real toggle |
 
-## Email (`email` extra)
+## Email (Copier toggles, not an extra)
 
 `app/services/email/base.py` defines `BaseEmailService(ABC)` with an abstract `send()`
 and a concrete `send_welcome()` helper that renders `static/welcome.html` via a naive
@@ -37,7 +37,10 @@ sync) and `brevo.py`. This is the one service in this repo that genuinely uses t
 [schema-and-service-patterns.md](schema-and-service-patterns.md) — appropriate here
 specifically because there are two real interchangeable providers. Config: `.env.example`
 has `RESEND_API_KEY` / `BREVO_API_KEY` — note these are now **uppercase**, consistent with
-the rest of the file's `UPPER_SNAKE_CASE` convention.
+the rest of the file's `UPPER_SNAKE_CASE` convention. Each provider is its own Copier
+toggle (`include_resend`, `include_brevo`); the shared base, types and exceptions ship
+when at least one is chosen, and the chosen SDKs are core dependencies (guide:
+`docs/integrations/email.md`).
 
 ## Cache / rate limiting / token blacklist (`cache` extra, Redis-backed)
 

@@ -673,20 +673,12 @@ OPENOBSERVE_BATCH_SIZE=50
 OPENOBSERVE_FLUSH_INTERVAL=5.0
 ```
 
+<!-- --- FEATURE[resend|brevo] START --- -->
 #### Email Provider Setup for Production
 
-If your application sends emails via the service layer:
+See the Production section of [integrations/email.md](integrations/email.md).
 
-1. Create API keys in both providers (or only the provider you use).
-2. Store keys in your secret manager and inject them at runtime.
-3. Configure environment variables:
-
-    ```env
-    RESEND_API_KEY=your_resend_api_key_here
-    BREVO_API_KEY=your_brevo_api_key_here
-    ```
-
-4. Ensure the optional email dependencies are installed in your build image (`uv sync --extra email`).
+<!-- --- FEATURE[resend|brevo] END --- -->
 
 #### Log Features in Production
 

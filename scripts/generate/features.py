@@ -65,6 +65,18 @@ FEATURES: tuple[Feature, ...] = (
         forbidden=(r"b2sdk", r"BackBlaze", r"back_blaze"),
     ),
     Feature(
+        "resend",
+        question="include_resend",
+        imports=("resend",),
+        forbidden=(r"(?i)resend",),
+    ),
+    Feature(
+        "brevo",
+        question="include_brevo",
+        imports=("brevo",),
+        forbidden=(r"(?i)brevo",),
+    ),
+    Feature(
         "apple_pay",
         question="include_apple_pay",
         imports=("appstoreserverlibrary", "cryptography"),
@@ -78,6 +90,15 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 # A key ending in "/" is a directory (deleted with its whole tree when the
 # expression is false). Every key must exist in the template repository.
 PATHS: dict[str, str] = {
+    "app/services/email/": "resend|brevo",
+    "app/services/email/resend.py": "resend",
+    "app/services/email/brevo.py": "brevo",
+    "app/services/exceptions/email.py": "resend|brevo",
+    "app/services/types/email.py": "resend|brevo",
+    "tests/services/email/": "resend|brevo",
+    "tests/services/email/resend_test.py": "resend",
+    "tests/services/email/brevo_test.py": "brevo",
+    "docs/integrations/email.md": "resend|brevo",
     "app/services/firebase.py": "firebase",
     "app/core/credentials/firebase.py": "firebase",
     "app/core/exceptions/firebase_exceptions.py": "firebase",
@@ -110,7 +131,6 @@ PATHS: dict[str, str] = {
 BASE_IMPORTS: tuple[str, ...] = (
     "alembic",
     "anyio",
-    "brevo",
     "celery",
     "faker",
     "fastapi",
@@ -122,7 +142,6 @@ BASE_IMPORTS: tuple[str, ...] = (
     "pydantic",
     "pydantic_settings",
     "redis",
-    "resend",
     "sqlalchemy",
     "starlette",
     "uvicorn",

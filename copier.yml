@@ -72,6 +72,18 @@ include_backblaze:
   default: false
   when: "{{ services == 'custom' }}"
 
+include_resend:
+  type: bool
+  help: "Include the Resend email provider? Adds RESEND_API_KEY."
+  default: false
+  when: "{{ services == 'custom' }}"
+
+include_brevo:
+  type: bool
+  help: "Include the Brevo email provider? Adds BREVO_API_KEY."
+  default: false
+  when: "{{ services == 'custom' }}"
+
 include_apple_pay:
   type: bool
   help: "Include the Apple Pay in-app purchase verification module?"
@@ -102,4 +114,4 @@ _tasks:
      "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_apple_pay': include_apple_pay} | tojson }}"]

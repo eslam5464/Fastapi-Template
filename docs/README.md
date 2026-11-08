@@ -152,7 +152,9 @@ This template is built with:
 - **Google Cloud Storage** - GCS bucket integration
 <!-- --- FEATURE[gcs] END --- -->
 - **App Store Server API** - Apple Pay in-app purchase verification
+<!-- --- FEATURE[resend|brevo] START --- -->
 - **Brevo / Resend** - Email delivery provider integrations
+<!-- --- FEATURE[resend|brevo] END --- -->
 
 ---
 

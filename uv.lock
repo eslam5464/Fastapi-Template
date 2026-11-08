@@ -844,6 +844,7 @@ dependencies = [
     { name = "alembic" },
     { name = "asyncpg" },
     { name = "b2sdk" },
+    { name = "brevo-python" },
     { name = "email-validator" },
     { name = "fastapi" },
     { name = "firebase-admin" },
@@ -859,6 +860,7 @@ dependencies = [
     { name = "pydantic-settings" },
     { name = "python-jose" },
     { name = "python-multipart" },
+    { name = "resend" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "tzdata" },
     { name = "uvicorn", extra = ["standard"] },
@@ -872,10 +874,6 @@ apple-services = [
 ]
 cache = [
     { name = "redis" },
-]
-email = [
-    { name = "brevo-python" },
-    { name = "resend" },
 ]
 task-queue = [
     { name = "celery", extra = ["redis"] },
@@ -911,7 +909,7 @@ requires-dist = [
     { name = "app-store-server-library", extras = ["async"], marker = "extra == 'apple-services'", specifier = ">=2.0.0" },
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "b2sdk", specifier = ">=2.10.1" },
-    { name = "brevo-python", marker = "extra == 'email'", specifier = ">=5.0.2" },
+    { name = "brevo-python", specifier = ">=5.0.2" },
     { name = "celery", extras = ["redis"], marker = "extra == 'task-queue'", specifier = ">=5.3.1" },
     { name = "email-validator", specifier = ">=2.3.0" },
     { name = "faker", marker = "extra == 'task-queue'", specifier = ">=40.36.0" },
@@ -931,14 +929,14 @@ requires-dist = [
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "redis", marker = "extra == 'cache'", specifier = ">=7.1.0" },
     { name = "redis", marker = "extra == 'task-queue'", specifier = ">=7.1.0" },
-    { name = "resend", marker = "extra == 'email'", specifier = ">=2.23.0" },
+    { name = "resend", specifier = ">=2.23.0" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.51" },
     { name = "tzdata", specifier = ">=2026.4" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.52.1" },
     { name = "uvloop", marker = "sys_platform == 'linux'", specifier = ">=0.21.0" },
     { name = "yarl", specifier = ">=1.20.1" },
 ]
-provides-extras = ["email", "cache", "task-queue", "apple-services"]
+provides-extras = ["cache", "task-queue", "apple-services"]
 
 [package.metadata.requires-dev]
 dev = [

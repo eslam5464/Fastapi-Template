@@ -305,6 +305,7 @@ NoSQL document database integration:
 
 <!-- --- FEATURE[firestore] END --- -->
 
+<!-- --- FEATURE[resend|brevo] START --- -->
 #### Email Delivery Services
 
 Provider-based email delivery with shared contracts and strict validation:
@@ -314,6 +315,8 @@ Provider-based email delivery with shared contracts and strict validation:
 - **Validation**: Pydantic request/response models for payload safety
 - **Templates**: File-based HTML templates under `app/services/email/static/html`
 - **Error Handling**: Domain-specific service exceptions
+
+<!-- --- FEATURE[resend|brevo] END --- -->
 
 #### Cache & Rate Limiting Services
 

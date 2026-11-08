@@ -73,8 +73,12 @@ services:
       - APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH
       - ENABLE_DATA_SEEDING
       - SEEDING_USER_COUNT
+      # --- FEATURE[resend] START ---
       - RESEND_API_KEY
+      # --- FEATURE[resend] END ---
+      # --- FEATURE[brevo] START ---
       - BREVO_API_KEY
+      # --- FEATURE[brevo] END ---
     deploy:
       restart_policy:
         condition: on-failure
