@@ -14,14 +14,13 @@ Full reference for what's built into this template: what each integration does, 
 | ☁️ Cloud storage (BackBlaze B2, GCS) | chosen at generation (`include_backblaze`, `include_gcs`) | [Cloud storage](#-cloud-storage) |
 | 🔥 Firebase (Auth, Firestore) | chosen at generation (`include_firebase`, `include_firestore`) | [Firebase](#-firebase) |
 | 💳 Apple Pay | `apple-services` | [Apple Pay](#-apple-pay) |
-| 📧 Email (Brevo, Resend) | `email` | [Email](#-email) |
+| 📧 Email (Brevo, Resend) | chosen at generation (`include_brevo`, `include_resend`) | [Email](#-email) |
 | 🧪 Testing & quality tooling | dev/test groups | [Testing & quality tooling](#-testing--quality-tooling) |
 | 🌍 Environment management | — always installed | [Environment management](#-environment-management) |
 
 Install optional extras individually as needed:
 
 ```bash
-uv sync --extra email
 uv sync --extra cache
 uv sync --extra task-queue
 uv sync --extra apple-services
@@ -106,12 +105,18 @@ All in `app/middleware/`:
 - **Configure:** `APPLE_PAY_STORE_PRIVATE_KEY_PATH`, `APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH`, plus key/issuer/bundle IDs in `.env`
 - **Note:** this is the one feature generated projects can opt out of entirely — see [Using This as a Template](../README.md#-using-this-as-a-template) in the main README.
 
+<!-- --- FEATURE[resend|brevo] START --- -->
 ## 📧 Email
 
-- **Module:** `app/services/email/brevo.py`, `resend.py`, sharing a common interface (`base.py`)
-- **Brevo** and **Resend** provider adapters.
-- **Install:** `uv sync --extra email`
-- **Configure:** `BREVO_API_KEY`, `RESEND_API_KEY` in `.env`
+- **Module:** `app/services/email/`, providers sharing a common interface (`base.py`). Guide: [integrations/email.md](integrations/email.md).
+<!-- --- FEATURE[brevo] START --- -->
+- **Brevo:** `app/services/email/brevo.py`, configured with `BREVO_API_KEY`.
+<!-- --- FEATURE[brevo] END --- -->
+<!-- --- FEATURE[resend] START --- -->
+- **Resend:** `app/services/email/resend.py`, configured with `RESEND_API_KEY`.
+<!-- --- FEATURE[resend] END --- -->
+- **Included** when the project is generated with `include_brevo` and/or `include_resend`; the provider SDK is then a regular dependency.
+<!-- --- FEATURE[resend|brevo] END --- -->
 
 ## 🧪 Testing & quality tooling
 

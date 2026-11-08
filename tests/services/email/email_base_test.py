@@ -1,10 +1,11 @@
 from pathlib import Path
+from typing import get_args
 
 import pytest
 
 from app.services.email.base import BaseEmailService
 from app.services.exceptions.email import EmailConfigurationError
-from app.services.types.email import EmailSendPayload, EmailSendResult
+from app.services.types.email import EmailProviderLiteral, EmailSendPayload, EmailSendResult
 
 
 class DummyEmailService(BaseEmailService):
@@ -16,7 +17,7 @@ class DummyEmailService(BaseEmailService):
 
     async def send(self, payload: EmailSendPayload) -> EmailSendResult:
         self.last_payload = payload
-        return EmailSendResult(id="dummy_message_id", provider="resend")
+        return EmailSendResult(id="dummy_message_id", provider=get_args(EmailProviderLiteral)[0])
 
 
 class TestBaseEmailService:

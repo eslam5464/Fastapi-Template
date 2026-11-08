@@ -42,7 +42,9 @@ This API template includes the following services:
 - **Firestore Database** - NoSQL document database for flexible data storage (available as a service layer)
 <!-- --- FEATURE[firestore] END --- -->
 - **Apple Pay** - App Store Server API integration for in-app purchase verification (available as a service layer)
+<!-- --- FEATURE[resend|brevo] START --- -->
 - **Email Delivery (Resend/Brevo)** - Provider-based email service layer with Pydantic-validated payloads and template support (available as a service layer)
+<!-- --- FEATURE[resend|brevo] END --- -->
 
 For integration examples:
 

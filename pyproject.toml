@@ -14,6 +14,9 @@ dependencies = [
     # --- FEATURE[backblaze] START ---
     "b2sdk>=2.10.1",
     # --- FEATURE[backblaze] END ---
+    # --- FEATURE[brevo] START ---
+    "brevo-python>=5.0.2",
+    # --- FEATURE[brevo] END ---
     "email-validator>=2.3.0",
     "fastapi>=0.116.2",
     # --- FEATURE[firebase] START ---
@@ -33,6 +36,9 @@ dependencies = [
     "pydantic-settings>=2.10.1",
     "python-jose>=3.5.0",
     "python-multipart>=0.0.20",
+    # --- FEATURE[resend] START ---
+    "resend>=2.23.0",
+    # --- FEATURE[resend] END ---
     "sqlalchemy[asyncio]>=2.0.51",
     "tzdata>=2026.4",
     "uvicorn[standard]>=0.52.1",
@@ -41,10 +47,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-email = [
-    "brevo-python>=5.0.2",
-    "resend>=2.23.0",
-]
 cache = [
     "redis>=7.1.0",
 ]

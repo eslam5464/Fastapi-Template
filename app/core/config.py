@@ -5,7 +5,12 @@ from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
 
-from pydantic import Field, SecretStr, computed_field
+from pydantic import Field, computed_field
+
+# --- FEATURE[resend|brevo] START ---
+from pydantic.types import SecretStr
+
+# --- FEATURE[resend|brevo] END ---
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from yarl import URL
 
@@ -157,9 +162,15 @@ class Settings(BaseSettings):
     celery_timezone: str = "UTC"
     celery_task_time_limit: int = 300  # Maximum time limit (default is 5 minutes)
 
+    # --- FEATURE[resend|brevo] START ---
     # Email API keys
+    # --- FEATURE[resend] START ---
     resend_api_key: SecretStr
+    # --- FEATURE[resend] END ---
+    # --- FEATURE[brevo] START ---
     brevo_api_key: SecretStr
+    # --- FEATURE[brevo] END ---
+    # --- FEATURE[resend|brevo] END ---
 
     @computed_field
     @property
