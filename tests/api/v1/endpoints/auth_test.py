@@ -344,7 +344,7 @@ class TestSignup:
         response = await client.post(
             "/v1/auth/signup",
             data={
-                "email": faker.safe_email(),
+                "email": faker.unique.safe_email(),
                 "password": "P@ssword123",
             },
         )
@@ -365,7 +365,7 @@ class TestSignup:
             "/v1/auth/signup",
             data={
                 "username": "TestUser123!@#",
-                "email": faker.safe_email(),
+                "email": faker.unique.safe_email(),
             },
         )
         assert response.status_code == 422

@@ -80,8 +80,8 @@ class TestToDict:
 
         # Create user
         user_data = UserCreate(
-            email=faker.safe_email(),
-            username=faker.user_name(),
+            email=faker.unique.safe_email(),
+            username=faker.unique.user_name(),
             hashed_password=pre_hashed_password,
             first_name=faker.first_name(),
             last_name="",  # Empty string instead of None
@@ -102,8 +102,8 @@ class TestToDict:
 
         # Create user
         user_data = UserCreate(
-            email=faker.safe_email(),
-            username=faker.user_name(),
+            email=faker.unique.safe_email(),
+            username=faker.unique.user_name(),
             hashed_password=pre_hashed_password,
             first_name=faker.first_name(),
             last_name="",  # Empty string instead of None
@@ -159,8 +159,8 @@ class TestToDict:
 
         # Create user
         user_data = UserCreate(
-            email=faker.safe_email(),
-            username=faker.user_name(),
+            email=faker.unique.safe_email(),
+            username=faker.unique.user_name(),
             hashed_password=pre_hashed_password,
             first_name=faker.first_name(),
             last_name="",  # Empty string instead of None
