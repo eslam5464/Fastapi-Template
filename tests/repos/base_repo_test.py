@@ -43,8 +43,8 @@ class TestBaseRepositoryCreate:
         """Test creating single record with exclude_none=True (default)."""
         repo = repos.UserRepo(db_session)
         user_data = UserCreate(
-            email=faker.safe_email(),
-            username=faker.user_name(),
+            email=faker.unique.safe_email(),
+            username=faker.unique.user_name(),
             hashed_password=pre_hashed_password,
             first_name=faker.first_name(),
             last_name="",  # Empty string instead of None
@@ -63,8 +63,8 @@ class TestBaseRepositoryCreate:
         """Test creating single record with exclude_none=False."""
         repo = repos.UserRepo(db_session)
         user_data = UserCreate(
-            email=faker.safe_email(),
-            username=faker.user_name(),
+            email=faker.unique.safe_email(),
+            username=faker.unique.user_name(),
             hashed_password=pre_hashed_password,
             first_name=faker.first_name(),
             last_name="",  # Empty string instead of None
@@ -88,8 +88,8 @@ class TestBaseRepositoryCreate:
         repo = repos.UserRepo(db_session)
         users_data = [
             UserCreate(
-                email=faker.safe_email(),
-                username=faker.user_name(),
+                email=faker.unique.safe_email(),
+                username=faker.unique.user_name(),
                 hashed_password=pre_hashed_password,
                 first_name=faker.first_name(),
                 last_name=faker.last_name(),
@@ -112,8 +112,8 @@ class TestBaseRepositoryCreate:
         repo = repos.UserRepo(db_session)
         users_data = [
             UserCreate(
-                email=faker.safe_email(),
-                username=faker.user_name(),
+                email=faker.unique.safe_email(),
+                username=faker.unique.user_name(),
                 hashed_password=pre_hashed_password,
                 first_name=faker.first_name(),
                 last_name="",  # Empty string instead of None
@@ -158,8 +158,8 @@ class TestBaseRepositoryRead:
         # Create 5 users
         users_data = [
             UserCreate(
-                email=faker.safe_email(),
-                username=faker.user_name(),
+                email=faker.unique.safe_email(),
+                username=faker.unique.user_name(),
                 hashed_password=pre_hashed_password,
                 first_name=faker.first_name(),
                 last_name=faker.last_name(),
@@ -198,8 +198,8 @@ class TestBaseRepositoryRead:
         # Create users
         users_data = [
             UserCreate(
-                email=faker.safe_email(),
-                username=faker.user_name(),
+                email=faker.unique.safe_email(),
+                username=faker.unique.user_name(),
                 hashed_password=pre_hashed_password,
                 first_name=faker.first_name(),
                 last_name=faker.last_name(),
@@ -272,8 +272,8 @@ class TestBaseRepositoryUpdate:
         # Create 2 users
         users_data = [
             UserCreate(
-                email=faker.safe_email(),
-                username=faker.user_name(),
+                email=faker.unique.safe_email(),
+                username=faker.unique.user_name(),
                 hashed_password=pre_hashed_password,
                 first_name=faker.first_name(),
                 last_name=faker.last_name(),
@@ -304,8 +304,8 @@ class TestBaseRepositoryUpdate:
         # Create 3 users
         users_data = [
             UserCreate(
-                email=faker.safe_email(),
-                username=faker.user_name(),
+                email=faker.unique.safe_email(),
+                username=faker.unique.user_name(),
                 hashed_password=pre_hashed_password,
                 first_name=faker.first_name(),
                 last_name=faker.last_name(),
@@ -330,8 +330,8 @@ class TestBaseRepositoryUpdate:
         # Create users
         users_data = [
             UserCreate(
-                email=faker.safe_email(),
-                username=faker.user_name(),
+                email=faker.unique.safe_email(),
+                username=faker.unique.user_name(),
                 hashed_password=pre_hashed_password,
                 first_name=faker.first_name(),
                 last_name=faker.last_name(),
@@ -404,8 +404,8 @@ class TestBaseRepositoryDelete:
         # Create 2 users
         users_data = [
             UserCreate(
-                email=faker.safe_email(),
-                username=faker.user_name(),
+                email=faker.unique.safe_email(),
+                username=faker.unique.user_name(),
                 hashed_password=pre_hashed_password,
                 first_name=faker.first_name(),
                 last_name=faker.last_name(),
@@ -430,8 +430,8 @@ class TestBaseRepositoryDelete:
         # Create 3 users
         users_data = [
             UserCreate(
-                email=faker.safe_email(),
-                username=faker.user_name(),
+                email=faker.unique.safe_email(),
+                username=faker.unique.user_name(),
                 hashed_password=pre_hashed_password,
                 first_name=faker.first_name(),
                 last_name=faker.last_name(),
@@ -456,8 +456,8 @@ class TestBaseRepositoryDelete:
         # Create users
         users_data = [
             UserCreate(
-                email=faker.safe_email(),
-                username=faker.user_name(),
+                email=faker.unique.safe_email(),
+                username=faker.unique.user_name(),
                 hashed_password=pre_hashed_password,
                 first_name=faker.first_name(),
                 last_name=faker.last_name(),
@@ -482,8 +482,8 @@ class TestBaseRepositoryCustomQuery:
 
         # Create a user
         user_data = UserCreate(
-            email=faker.safe_email(),
-            username=faker.user_name(),
+            email=faker.unique.safe_email(),
+            username=faker.unique.user_name(),
             hashed_password=pre_hashed_password,
             first_name=faker.first_name(),
             last_name=faker.last_name(),
@@ -505,8 +505,8 @@ class TestBaseRepositoryCustomQuery:
         # Create multiple users
         users_data = [
             UserCreate(
-                email=faker.safe_email(),
-                username=faker.user_name(),
+                email=faker.unique.safe_email(),
+                username=faker.unique.user_name(),
                 hashed_password=pre_hashed_password,
                 first_name=faker.first_name(),
                 last_name=faker.last_name(),

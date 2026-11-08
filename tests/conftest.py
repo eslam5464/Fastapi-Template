@@ -121,8 +121,8 @@ async def db_session(test_app: FastAPI) -> AsyncGenerator[AsyncSession, None]:
 async def user(db_session: AsyncSession, faker: Faker, pre_hashed_password: str) -> User:
     """Create a test user."""
     user_data = UserCreate(
-        email=faker.safe_email(),
-        username=faker.user_name(),
+        email=faker.unique.safe_email(),
+        username=faker.unique.user_name(),
         hashed_password=pre_hashed_password,
         first_name=faker.first_name(),
         last_name=faker.last_name(),
@@ -139,8 +139,8 @@ async def other_user(
 ) -> User:
     """Create another test user."""
     user_data = UserCreate(
-        email=faker.safe_email(),
-        username=faker.user_name(),
+        email=faker.unique.safe_email(),
+        username=faker.unique.user_name(),
         hashed_password=pre_hashed_password,
         first_name=faker.first_name(),
         last_name=faker.last_name(),
