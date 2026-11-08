@@ -48,6 +48,18 @@ services:
     "Choose services one by one": custom
   default: minimal
 
+include_firebase:
+  type: bool
+  help: "Include Firebase (Admin SDK: authentication, users, push notifications)? Adds the FIREBASE_* settings."
+  default: false
+  when: "{{ services == 'custom' }}"
+
+include_firestore:
+  type: bool
+  help: "Include Firestore (document database, uses the Firebase credentials)?"
+  default: false
+  when: "{{ services == 'custom' and include_firebase }}"
+
 include_gcs:
   type: bool
   help: "Include Google Cloud Storage (gcloud-aio-storage, aiofiles)?"
@@ -90,4 +102,4 @@ _tasks:
      "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_apple_pay': include_apple_pay} | tojson }}"]

@@ -34,9 +34,13 @@ This API template includes the following services:
 <!-- --- FEATURE[gcs] START --- -->
 - **Google Cloud Storage (GCS)** - GCS bucket integration for file management (available as a service layer)
 <!-- --- FEATURE[gcs] END --- -->
+<!-- --- FEATURE[firebase] START --- -->
 - **Firebase Authentication** - User authentication and management via Firebase (available as a service layer)
 - **Firebase Cloud Messaging** - Push notification service for mobile and web applications (available as a service layer)
+<!-- --- FEATURE[firebase] END --- -->
+<!-- --- FEATURE[firestore] START --- -->
 - **Firestore Database** - NoSQL document database for flexible data storage (available as a service layer)
+<!-- --- FEATURE[firestore] END --- -->
 - **Apple Pay** - App Store Server API integration for in-app purchase verification (available as a service layer)
 - **Email Delivery (Resend/Brevo)** - Provider-based email service layer with Pydantic-validated payloads and template support (available as a service layer)
 
@@ -48,8 +52,12 @@ For integration examples:
 <!-- --- FEATURE[gcs] START --- -->
 - [Google Cloud Storage Integration](./integrations/gcs.md)
 <!-- --- FEATURE[gcs] END --- -->
-- [Firebase Integration](./development.md#firebase-authentication--messaging-integration)
-- [Firestore Integration](./development.md#firestore-nosql-database-integration)
+<!-- --- FEATURE[firebase] START --- -->
+- [Firebase Integration](./integrations/firebase.md)
+<!-- --- FEATURE[firebase] END --- -->
+<!-- --- FEATURE[firestore] START --- -->
+- [Firestore Integration](./integrations/firestore.md)
+<!-- --- FEATURE[firestore] END --- -->
 - [Apple Pay Integration](./development.md#apple-pay-app-store-server-api-integration)
 
 ## Authentication

@@ -40,6 +40,19 @@ FEATURES: tuple[Feature, ...] = (
     # when generating a project.
     Feature("_template"),
     Feature(
+        "firebase",
+        question="include_firebase",
+        imports=("firebase_admin",),
+        forbidden=(r"(?i)firebase",),
+    ),
+    Feature(
+        "firestore",
+        question="include_firestore",
+        parent="firebase",
+        imports=("google",),
+        forbidden=(r"(?i)firestore",),
+    ),
+    Feature(
         "gcs",
         question="include_gcs",
         imports=("gcloud", "aiofiles"),
@@ -65,6 +78,15 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 # A key ending in "/" is a directory (deleted with its whole tree when the
 # expression is false). Every key must exist in the template repository.
 PATHS: dict[str, str] = {
+    "app/services/firebase.py": "firebase",
+    "app/core/credentials/firebase.py": "firebase",
+    "app/core/exceptions/firebase_exceptions.py": "firebase",
+    "app/schemas/firebase.py": "firebase",
+    "tests/services/firebase/": "firebase",
+    "docs/integrations/firebase.md": "firebase",
+    "app/services/firestore.py": "firestore",
+    "tests/services/firebase/firestore_test.py": "firestore",
+    "docs/integrations/firestore.md": "firestore",
     "app/services/gcs.py": "gcs",
     "app/core/exceptions/gcs_exceptions.py": "gcs",
     "app/schemas/google_bucket.py": "gcs",
@@ -92,8 +114,6 @@ BASE_IMPORTS: tuple[str, ...] = (
     "celery",
     "faker",
     "fastapi",
-    "firebase_admin",
-    "google",
     "gunicorn",
     "httpx",
     "jose",

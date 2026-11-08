@@ -369,6 +369,24 @@ class TestApply:
         assert (tmp_path / "docs" / "other" / "keep.md").exists()
         assert (tmp_path / "docs" / "index.md").exists()
 
+    def test_paths_file_inside_deleted_directory(self, tmp_path, monkeypatch):
+        # A child feature's file inside its parent's folder: both off.
+        fake_manifest(monkeypatch, paths={"pkg/": "b", "pkg/child.py": "b"})
+        (tmp_path / "pkg").mkdir()
+        w(tmp_path / "pkg" / "child.py", "x = 1\n")
+        w(tmp_path / "pkg" / "base.py", "x = 1\n")
+        markers.apply(tmp_path, FLAGS)
+        assert not (tmp_path / "pkg").exists()
+
+    def test_paths_file_inside_kept_directory(self, tmp_path, monkeypatch):
+        fake_manifest(monkeypatch, paths={"pkg/": "a", "pkg/child.py": "b"})
+        (tmp_path / "pkg").mkdir()
+        w(tmp_path / "pkg" / "child.py", "x = 1\n")
+        w(tmp_path / "pkg" / "base.py", "x = 1\n")
+        markers.apply(tmp_path, FLAGS)
+        assert (tmp_path / "pkg" / "base.py").exists()
+        assert not (tmp_path / "pkg" / "child.py").exists()
+
     def test_paths_deletion_never_removes_root(self, tmp_path, monkeypatch):
         fake_manifest(monkeypatch, paths={"only.py": "b"})
         w(tmp_path / "only.py", "x = 1\n")

@@ -281,6 +281,10 @@ def apply(root: Path, feature_flags: dict[str, bool]) -> list[Path]:
     for rel, expr in features.PATHS.items():
         if not _eval_expr(expr, feature_flags, allow_not=False, path=rel, line_no=0):
             target = root / rel
+            if not target.exists():
+                # Already gone with a deleted parent folder (e.g. a firestore-only
+                # test file inside the firebase test package).
+                continue
             if target.is_dir():
                 shutil.rmtree(target)
             else:

@@ -43,72 +43,12 @@ See the Production section of [integrations/backblaze.md](integrations/backblaze
 
 <!-- --- FEATURE[backblaze] END --- -->
 
+<!-- --- FEATURE[firebase] START --- -->
 #### Firebase Setup for Production
 
-If your application uses Firebase for authentication or push notifications:
+See the Production sections of [integrations/firebase.md](integrations/firebase.md) and, for Firestore security rules, [integrations/firestore.md](integrations/firestore.md).
 
-1. **Firebase Project Setup**
-
-   - Create production Firebase project (separate from development)
-   - Navigate to Project Settings → Service Accounts
-   - Generate production service account key
-   - Download JSON credentials file
-   - Convert to environment variables or store securely
-
-2. **Security Best Practices**
-
-   - Use separate Firebase projects for dev/staging/production
-   - Restrict service account permissions to minimum required
-   - Enable Firebase App Check for API protection
-   - Set up Firebase Security Rules for Firestore
-   - Rotate service account keys periodically
-   - Monitor Firebase usage and quotas
-
-3. **Firestore Configuration**
-
-   - Set up Firestore security rules:
-
-   ```javascript
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       // Example: Authenticated users can read/write their own data
-       match /user_preferences/{userId} {
-         allow read, write: if request.auth != null && request.auth.uid == userId;
-       }
-
-       // Example: Only server can write to certain collections
-       match /analytics/{document=**} {
-         allow read: if request.auth != null;
-         allow write: if false; // Server-side only
-       }
-     }
-   }
-   ```
-
-4. **Push Notification Setup**
-
-   - Configure Firebase Cloud Messaging (FCM)
-   - Set up APNs certificates for iOS (if applicable)
-   - Configure notification channels for Android
-   - Implement token refresh logic in clients
-   - Monitor delivery success rates
-
-5. **Performance Optimization**
-
-   - Use Firestore indexes for complex queries
-   - Implement pagination for large collections
-   - Use Firebase SDK caching where appropriate
-   - Monitor read/write operations to optimize costs
-   - Batch notification sends (automatically handled up to 500 per batch)
-
-6. **Cost Management**
-
-   - Monitor Firebase usage dashboard
-   - Set up budget alerts
-   - Optimize Firestore queries to reduce reads
-   - Clean up expired FCM tokens regularly
-   - Use appropriate Firebase pricing plan
+<!-- --- FEATURE[firebase] END --- -->
 
 <!-- --- FEATURE[gcs] START --- -->
 #### Google Cloud Storage (GCS) Setup for Production

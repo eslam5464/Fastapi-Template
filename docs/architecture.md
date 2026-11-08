@@ -275,6 +275,7 @@ Cloud storage integration for file management:
 
 <!-- --- FEATURE[backblaze] END --- -->
 
+<!-- --- FEATURE[firebase] START --- -->
 #### Firebase Authentication & Messaging
 
 Firebase integration for user authentication and push notifications:
@@ -288,6 +289,9 @@ Firebase integration for user authentication and push notifications:
 - **Batch Notifications**: Send up to 500 notifications per batch with automatic chunking
 - **Singleton Pattern**: Single Firebase app initialization across application
 
+<!-- --- FEATURE[firebase] END --- -->
+
+<!-- --- FEATURE[firestore] START --- -->
 #### Firestore Database
 
 NoSQL document database integration:
@@ -298,6 +302,8 @@ NoSQL document database integration:
 - **Type Safety**: Fully typed responses with dictionary return types
 - **Automatic Initialization**: Singleton pattern with service account credentials
 - **Logging**: Comprehensive debug and error logging for all operations
+
+<!-- --- FEATURE[firestore] END --- -->
 
 #### Email Delivery Services
 
