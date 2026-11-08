@@ -133,6 +133,7 @@ class Settings(BaseSettings):
     refresh_token_expire_seconds: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_SECONDS", timedelta(hours=24).seconds))
     jwt_algorithm: str = "HS256"
 
+    # --- FEATURE[openobserve] START ---
     # OpenObserve
     log_to_openobserve: bool = False
     openobserve_url: str
@@ -141,6 +142,7 @@ class Settings(BaseSettings):
     openobserve_access_key: str
     openobserve_batch_size: int = 10
     openobserve_flush_interval: float = 5.0
+    # --- FEATURE[openobserve] END ---
 
     # --- FEATURE[apple_pay] START ---
     # App Store Connect API credentials

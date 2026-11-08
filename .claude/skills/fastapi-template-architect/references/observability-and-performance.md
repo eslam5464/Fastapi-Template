@@ -28,7 +28,8 @@ loggers) into Loguru so log formatting stays consistent everywhere:
    realizing it removes variable-value context from crash logs, which is genuinely
    useful in this repo's failure-triage workflow, though it's also more verbose and can
    leak values into logs — that trade-off is already made deliberately here).
-3. **OpenObserve** (optional, `settings.log_to_openobserve`) — a **hand-rolled**,
+3. **OpenObserve** (the `include_openobserve` Copier toggle, then `settings.log_to_openobserve`;
+   guide `docs/integrations/openobserve.md`) — a **hand-rolled**,
    thread-based, batching async HTTP log shipper (`OpenObserveHandler` in
    `app/core/openobserve.py`, added by `setup_logger()` via `add_openobserve_sink()`): a daemon
    background thread reads off a bounded `queue.Queue(maxsize=1000)`, batches by size or

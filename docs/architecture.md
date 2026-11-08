@@ -558,6 +558,7 @@ retention = "3 months"
 compression = "gz"
 ```
 
+<!-- --- FEATURE[openobserve] START --- -->
 #### Remote Log Aggregation (Optional)
 
 ```bash
@@ -569,6 +570,8 @@ OPENOBSERVE_STREAM_NAME=default
 OPENOBSERVE_BATCH_SIZE=10
 OPENOBSERVE_FLUSH_INTERVAL=5.0
 ```
+
+<!-- --- FEATURE[openobserve] END --- -->
 
 ### Performance Characteristics
 

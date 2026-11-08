@@ -898,6 +898,7 @@ template = [
 test = [
     { name = "anyio" },
     { name = "faker" },
+    { name = "httpx" },
     { name = "pytest" },
     { name = "pytest-cov" },
 ]
@@ -953,6 +954,7 @@ template = [{ name = "copier", specifier = ">=9.15.0" }]
 test = [
     { name = "anyio", specifier = ">=4.11.0" },
     { name = "faker", specifier = ">=40.36.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest-cov", specifier = ">=7.0.0" },
 ]

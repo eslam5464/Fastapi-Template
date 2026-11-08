@@ -27,7 +27,9 @@ dependencies = [
     # --- FEATURE[gcs] END ---
     "gunicorn>=26.2.0",
     "httptools>=0.6.4 ; sys_platform == 'linux'",
+    # --- FEATURE[openobserve] START ---
     "httpx>=0.28.1",
+    # --- FEATURE[openobserve] END ---
     "loguru>=0.7.3",
     "psycopg[binary]>=3.3.4 ; sys_platform == 'win32'",
     "psycopg>=3.3.2 ; sys_platform != 'win32'",
@@ -68,6 +70,8 @@ test = [
     # httpx/fastapi, made explicit since tests rely on it directly.
     "anyio>=4.11.0",
     "faker>=40.36.0",
+    # The tests' HTTP client (httpx.AsyncClient against the app).
+    "httpx>=0.28.1",
     "pytest>=9.1.1",
     "pytest-cov>=7.0.0",
 ]

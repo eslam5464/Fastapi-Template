@@ -42,6 +42,7 @@ include_gcs:         # bool, default false, asked only when services == custom
 include_backblaze:   # bool, default false, asked only when services == custom
 include_resend:      # bool, default false, asked only when services == custom
 include_brevo:       # bool, default false, asked only when services == custom
+include_openobserve: # bool, default false, asked only when services == custom
 include_apple_pay:   # bool, default false, asked only when services == custom
 
 _exclude:
@@ -55,7 +56,7 @@ _tasks:
      "--author-name", "{{ author_name }}", "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
 ```
 
 Invocation (from `README.md`):
@@ -150,7 +151,7 @@ work.
 ## ⚠️ The distinction that matters most: toggle vs. extra
 
 **Services with an `include_*` question remove their code at generation time** when
-declined (today: Firebase, Firestore, Google Cloud Storage, BackBlaze B2, Resend, Brevo and Apple Pay). Cache/Redis and
+declined (today: Firebase, Firestore, Google Cloud Storage, BackBlaze B2, Resend, Brevo, OpenObserve and Apple Pay). Cache/Redis and
 task-queue/Celery are still `pyproject.toml` optional-dependency extras (`uv sync --extra
 cache`, `--extra task-queue`, see [optional-integrations.md](optional-integrations.md))
 whose source code ships in **every** generated project; "selecting" one of those means

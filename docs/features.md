@@ -36,7 +36,10 @@ uv sync --extra apple-services
 - **Async PostgreSQL** — SQLAlchemy 2.0 async engine (`asyncpg`) for the app, configured in `app/core/db.py` from `settings.db_url`, plus a sync engine (`psycopg`) for Celery in `app/core/db_sync.py` from `settings.db_url_sync`.
 - **Database migrations** — Alembic (`app/alembic/`). Run via `./scripts/alembic.sh` / `.bat` or `alembic upgrade head` directly.
 - **Clean/layered architecture** — repository pattern (`app/repos/`) + dependency injection, with module boundaries enforced by `tach` (see `tach.toml`): `core` → `models`/`schemas` → `repos` → `services` → `api`/`middleware`.
-- **Structured logging** — Loguru-based (`app/core/logger.py`), with centralized log aggregation support.
+- **Structured logging** — Loguru-based (`app/core/logger.py`): console and rotating file output, request and process IDs.
+<!-- --- FEATURE[openobserve] START --- -->
+- **Log shipping** — non-blocking, batched shipping to OpenObserve (`app/core/openobserve.py`). Guide: [integrations/openobserve.md](integrations/openobserve.md).
+<!-- --- FEATURE[openobserve] END --- -->
 - **Automatic API documentation** — Swagger UI and ReDoc, generated per API version.
 
 ## 🔐 Authentication

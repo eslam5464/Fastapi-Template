@@ -61,7 +61,7 @@ hand-building (see "Offline fallback" below) when Copier genuinely isn't usable.
    default, or `custom`) and, for `custom`, one bool per service that really strips its
    code when declined: `include_firebase`, `include_firestore` (asked only after Firebase),
    `include_gcs`, `include_backblaze`, `include_resend`, `include_brevo`,
-   `include_apple_pay` (all default false).
+   `include_openobserve`, `include_apple_pay` (all default false).
 
 3. **Separately, ask which optional integrations the user actually wants** —
    cache/Redis, task-queue/Celery. These are
@@ -69,7 +69,7 @@ hand-building (see "Offline fallback" below) when Copier genuinely isn't usable.
    [references/optional-integrations.md](references/optional-integrations.md) before
    answering the user's questions about them, and don't present them as if they were
    generation-time code-removal choices — that would misrepresent what the template
-   actually does. Firebase/Firestore, Google Cloud Storage, BackBlaze B2, the Resend/Brevo email providers and Apple Pay are the exceptions: they are Copier
+   actually does. Firebase/Firestore, Google Cloud Storage, BackBlaze B2, the Resend/Brevo email providers, OpenObserve log shipping and Apple Pay are the exceptions: they are Copier
    toggles and really are stripped at generation time when declined.
 
 4. **Run generation** — prefer [scripts/run_copier.sh](scripts/run_copier.sh) /
