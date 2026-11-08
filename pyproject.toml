@@ -6,7 +6,9 @@ authors = [{ name = "Eslam", email = "eslam5464@users.noreply.github.com" }]
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    # --- FEATURE[gcs] START ---
     "aiofiles>=25.1.0",
+    # --- FEATURE[gcs] END ---
     "alembic>=1.16.5",
     "asyncpg>=0.30.0",
     # --- FEATURE[backblaze] START ---
@@ -14,6 +16,9 @@ dependencies = [
     # --- FEATURE[backblaze] END ---
     "email-validator>=2.3.0",
     "fastapi>=0.116.2",
+    # --- FEATURE[gcs] START ---
+    "gcloud-aio-storage>=9.6.1",
+    # --- FEATURE[gcs] END ---
     "gunicorn>=26.2.0",
     "httptools>=0.6.4 ; sys_platform == 'linux'",
     "httpx>=0.28.1",
@@ -39,7 +44,6 @@ email = [
 ]
 cloud-service = [
     "firebase-admin>=7.1.0",
-    "gcloud-aio-storage>=9.6.1",
 ]
 cache = [
     "redis>=7.1.0",
@@ -75,7 +79,9 @@ dev = [
     "pre-commit>=4.3.0",
     "ruff>=0.14.0",
     "tach>=0.29.0",
+    # --- FEATURE[gcs] START ---
     "types-aiofiles>=25.1.0",
+    # --- FEATURE[gcs] END ---
 ]
 # --- FEATURE[_template] START ---
 template = [
@@ -130,7 +136,9 @@ disallow_incomplete_defs = true
 module = [
     "app.services.firebase",
     "app.services.firestore",
+    # --- FEATURE[gcs] START ---
     "app.services.gcs",
+    # --- FEATURE[gcs] END ---
     # --- FEATURE[backblaze] START ---
     "app.services.back_blaze_b2",
     # --- FEATURE[backblaze] END ---
@@ -148,7 +156,9 @@ module = [
     "b2sdk.*",
     # --- FEATURE[backblaze] END ---
     "firebase_admin.*",
+    # --- FEATURE[gcs] START ---
     "gcloud.*",
+    # --- FEATURE[gcs] END ---
     "google.cloud.firestore.*",
     "jose.*",
     "celery.*",

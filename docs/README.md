@@ -43,7 +43,9 @@ Complete guide for local development environment setup and daily development tas
 - BackBlaze B2 integration guide ([integrations/backblaze.md](integrations/backblaze.md))
 <!-- --- FEATURE[backblaze] END --- -->
 - Firebase, Firestore integration guides
-- Google Cloud Storage (GCS) integration
+<!-- --- FEATURE[gcs] START --- -->
+- Google Cloud Storage (GCS) integration guide ([integrations/gcs.md](integrations/gcs.md))
+<!-- --- FEATURE[gcs] END --- -->
 - Apple Pay (App Store Server API) integration
 - Security middleware (CSRF, security headers)
 - Token blacklisting and logout
@@ -139,7 +141,9 @@ This template is built with:
 - **B2SDK** - BackBlaze B2 cloud storage integration
 <!-- --- FEATURE[backblaze] END --- -->
 - **Firebase Admin** - Firebase authentication, FCM, and Firestore
+<!-- --- FEATURE[gcs] START --- -->
 - **Google Cloud Storage** - GCS bucket integration
+<!-- --- FEATURE[gcs] END --- -->
 - **App Store Server API** - Apple Pay in-app purchase verification
 - **Brevo / Resend** - Email delivery provider integrations
 
