@@ -36,6 +36,7 @@ author_email:        # str, default "eslam5464@users.noreply.github.com"
 github_username:     # str, default "eslam5464"
 python_version:      # str, default "3.14"; validator enforces >= 3.14 (PEP 758 syntax requirement)
 services:            # choice: "minimal" (default) or "custom"
+include_celery:      # bool, default false, asked only when services == custom
 include_firebase:    # bool, default false, asked only when services == custom
 include_firestore:   # bool, default false, asked only when include_firebase is true
 include_gcs:         # bool, default false, asked only when services == custom
@@ -56,7 +57,7 @@ _tasks:
      "--author-name", "{{ author_name }}", "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
 ```
 
 Invocation (from `README.md`):
@@ -151,13 +152,13 @@ work.
 ## ⚠️ The distinction that matters most: toggle vs. extra
 
 **Services with an `include_*` question remove their code at generation time** when
-declined (today: Firebase, Firestore, Google Cloud Storage, BackBlaze B2, Resend, Brevo, OpenObserve and Apple Pay). Cache/Redis and
-task-queue/Celery are still `pyproject.toml` optional-dependency extras (`uv sync --extra
-cache`, `--extra task-queue`, see [optional-integrations.md](optional-integrations.md))
-whose source code ships in **every** generated project; "selecting" one of those means
-choosing which extras to install and which `.env` block to fill in, not code removal.
-Never tell a user "I'll generate the project without Celery" as if that were a
-Copier-level choice for an extra — say "I won't install the `task-queue` extra or set up
+declined (today: Celery, Firebase, Firestore, Google Cloud Storage, BackBlaze B2, Resend,
+Brevo, OpenObserve and Apple Pay). Cache/Redis is still a `pyproject.toml`
+optional-dependency extra (`uv sync --extra cache`, see
+[optional-integrations.md](optional-integrations.md)) whose source code ships in **every**
+generated project; "selecting" it means installing the extra and filling in its `.env`
+block, not code removal. Never tell a user "I'll generate the project without caching"
+as if that were a Copier-level choice — say "I won't install the `cache` extra or set up
 its config, but the code will still be present if you want it later."
 
 ## `template-ci.yml` — the self-verification loop

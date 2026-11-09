@@ -40,6 +40,12 @@ FEATURES: tuple[Feature, ...] = (
     # when generating a project.
     Feature("_template"),
     Feature(
+        "celery",
+        question="include_celery",
+        imports=("celery", "faker"),
+        forbidden=(r"(?i)celery", r"psycopg", r"db_sync", r"db_url_sync", r"task_queue", r"(?i)data_seeding"),
+    ),
+    Feature(
         "firebase",
         question="include_firebase",
         imports=("firebase_admin",),
@@ -96,6 +102,15 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 # A key ending in "/" is a directory (deleted with its whole tree when the
 # expression is false). Every key must exist in the template repository.
 PATHS: dict[str, str] = {
+    "app/services/task_queue/": "celery",
+    "app/core/db_sync.py": "celery",
+    "tests/services/task_queue/": "celery",
+    "tests/core/db_sync_test.py": "celery",
+    "scripts/celery_beat.sh": "celery",
+    "scripts/celery_beat.bat": "celery",
+    "scripts/celery_worker.sh": "celery",
+    "scripts/celery_worker.bat": "celery",
+    "docs/integrations/celery.md": "celery",
     "app/core/openobserve.py": "openobserve",
     "tests/core/openobserve_test.py": "openobserve",
     "docs/integrations/openobserve.md": "openobserve",
@@ -140,8 +155,6 @@ PATHS: dict[str, str] = {
 BASE_IMPORTS: tuple[str, ...] = (
     "alembic",
     "anyio",
-    "celery",
-    "faker",
     "fastapi",
     "gunicorn",
     "jose",

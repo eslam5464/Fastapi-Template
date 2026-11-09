@@ -11,6 +11,9 @@ dependencies = [
     # --- FEATURE[gcs] END ---
     "alembic>=1.16.5",
     "asyncpg>=0.30.0",
+    # --- FEATURE[celery] START ---
+    "celery[redis]>=5.3.1",
+    # --- FEATURE[celery] END ---
     # --- FEATURE[backblaze] START ---
     "b2sdk>=2.10.1",
     # --- FEATURE[backblaze] END ---
@@ -18,6 +21,9 @@ dependencies = [
     "brevo-python>=5.0.2",
     # --- FEATURE[brevo] END ---
     "email-validator>=2.3.0",
+    # --- FEATURE[celery] START ---
+    "faker>=40.36.0",
+    # --- FEATURE[celery] END ---
     "fastapi>=0.116.2",
     # --- FEATURE[firebase] START ---
     "firebase-admin>=7.1.0",
@@ -31,8 +37,10 @@ dependencies = [
     "httpx>=0.28.1",
     # --- FEATURE[openobserve] END ---
     "loguru>=0.7.3",
+    # --- FEATURE[celery] START ---
     "psycopg[binary]>=3.3.4 ; sys_platform == 'win32'",
     "psycopg>=3.3.2 ; sys_platform != 'win32'",
+    # --- FEATURE[celery] END ---
     "pwdlib[argon2]>=0.3.0",
     "pydantic>=2.11.9",
     "pydantic-settings>=2.10.1",
@@ -50,11 +58,6 @@ dependencies = [
 
 [project.optional-dependencies]
 cache = [
-    "redis>=7.1.0",
-]
-task-queue = [
-    "celery[redis]>=5.3.1",
-    "faker>=40.36.0",
     "redis>=7.1.0",
 ]
 # --- FEATURE[apple_pay] START ---
@@ -177,7 +180,9 @@ module = [
     "google.cloud.firestore.*",
     # --- FEATURE[firestore] END ---
     "jose.*",
+    # --- FEATURE[celery] START ---
     "celery.*",
+    # --- FEATURE[celery] END ---
     "gunicorn.*",
 ]
 ignore_missing_imports = true

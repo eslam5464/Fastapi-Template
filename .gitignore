@@ -80,8 +80,10 @@ build/
 
 # Additional common patterns
 __pypackages__/
+# --- FEATURE[celery] START ---
 celerybeat-schedule
 celerybeat.pid
+# --- FEATURE[celery] END ---
 *.sage.py
 .ipynb_checkpoints
 profile_default/

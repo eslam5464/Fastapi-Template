@@ -845,7 +845,9 @@ dependencies = [
     { name = "asyncpg" },
     { name = "b2sdk" },
     { name = "brevo-python" },
+    { name = "celery", extra = ["redis"] },
     { name = "email-validator" },
+    { name = "faker" },
     { name = "fastapi" },
     { name = "firebase-admin" },
     { name = "gcloud-aio-storage" },
@@ -873,11 +875,6 @@ apple-services = [
     { name = "app-store-server-library", extra = ["async"] },
 ]
 cache = [
-    { name = "redis" },
-]
-task-queue = [
-    { name = "celery", extra = ["redis"] },
-    { name = "faker" },
     { name = "redis" },
 ]
 
@@ -911,9 +908,9 @@ requires-dist = [
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "b2sdk", specifier = ">=2.10.1" },
     { name = "brevo-python", specifier = ">=5.0.2" },
-    { name = "celery", extras = ["redis"], marker = "extra == 'task-queue'", specifier = ">=5.3.1" },
+    { name = "celery", extras = ["redis"], specifier = ">=5.3.1" },
     { name = "email-validator", specifier = ">=2.3.0" },
-    { name = "faker", marker = "extra == 'task-queue'", specifier = ">=40.36.0" },
+    { name = "faker", specifier = ">=40.36.0" },
     { name = "fastapi", specifier = ">=0.116.2" },
     { name = "firebase-admin", specifier = ">=7.1.0" },
     { name = "gcloud-aio-storage", specifier = ">=9.6.1" },
@@ -929,7 +926,6 @@ requires-dist = [
     { name = "python-jose", specifier = ">=3.5.0" },
     { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "redis", marker = "extra == 'cache'", specifier = ">=7.1.0" },
-    { name = "redis", marker = "extra == 'task-queue'", specifier = ">=7.1.0" },
     { name = "resend", specifier = ">=2.23.0" },
     { name = "sqlalchemy", extras = ["asyncio"], specifier = ">=2.0.51" },
     { name = "tzdata", specifier = ">=2026.4" },
@@ -937,7 +933,7 @@ requires-dist = [
     { name = "uvloop", marker = "sys_platform == 'linux'", specifier = ">=0.21.0" },
     { name = "yarl", specifier = ">=1.20.1" },
 ]
-provides-extras = ["cache", "task-queue", "apple-services"]
+provides-extras = ["cache", "apple-services"]
 
 [package.metadata.requires-dev]
 dev = [

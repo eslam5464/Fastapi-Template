@@ -28,15 +28,18 @@ RUN uv sync --frozen --no-dev --extra cache
 # Production stage
 FROM python:3.14-alpine AS production
 
-# Install runtime dependencies only
+# Install runtime dependencies only (wget is used by the HEALTHCHECK)
+RUN apk add --no-cache wget
+# --- FEATURE[celery] START ---
 # binutils (ld/objdump) + the libpq.so symlink let ctypes.util.find_library("pq")
-# locate libpq on musl, which psycopg's pure-Python wrapper requires at import
-# time (postgresql-dev would pull ~500 MB of toolchain instead of ~25 MB).
+# locate libpq on musl, which psycopg's pure-Python wrapper (the Celery sync
+# engine's driver) requires at import time (postgresql-dev would pull ~500 MB of
+# toolchain instead of ~25 MB).
 RUN apk add --no-cache \
     postgresql-libs \
     binutils \
-    wget \
     && ln -sf libpq.so.5 /usr/lib/libpq.so
+# --- FEATURE[celery] END ---
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1 \

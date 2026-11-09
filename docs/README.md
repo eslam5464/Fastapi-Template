@@ -140,7 +140,9 @@ This template is built with:
 - **pwdlib** - Password hashing with Argon2
 - **Loguru** - Structured logging with centralized aggregation
 - **Redis** - Caching and rate limiting
+<!-- --- FEATURE[celery] START --- -->
 - **Celery** - Background task processing
+<!-- --- FEATURE[celery] END --- -->
 - **uvicorn/gunicorn** - ASGI server
 <!-- --- FEATURE[backblaze] START --- -->
 - **B2SDK** - BackBlaze B2 cloud storage integration
