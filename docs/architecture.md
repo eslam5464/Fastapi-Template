@@ -318,10 +318,12 @@ Provider-based email delivery with shared contracts and strict validation:
 
 <!-- --- FEATURE[resend|brevo] END --- -->
 
-#### Cache & Rate Limiting Services
+<!-- --- FEATURE[redis] START --- -->
+#### Redis-backed Services
 
-Redis-based caching and rate limiting infrastructure:
+Redis-based infrastructure shared by the cache, rate limiting and the token blacklist:
 
+<!-- --- FEATURE[redis_cache] START --- -->
 **CacheManager** - General-purpose caching service:
 
 - **Data Caching**: Store and retrieve any Python object using pickle serialization
@@ -331,6 +333,7 @@ Redis-based caching and rate limiting infrastructure:
 - **Graceful Degradation**: Continues operation even if Redis is unavailable
 - **Shared Connection Pool**: Efficient Redis connection management
 
+<!-- --- FEATURE[redis_cache] END --- -->
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 **RateLimiter** - Sliding window rate limiting:
 
@@ -493,6 +496,8 @@ The template implements a sophisticated logging infrastructure built with Loguru
 - **Request Flow Analysis**: Debug complex operations by filtering all logs for a specific request ID
 
 ### Dual Output Strategy
+
+<!-- --- FEATURE[redis] END --- -->
 
 #### Console Output (Development-Friendly)
 

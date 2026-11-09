@@ -106,6 +106,22 @@ def enabled_features(raw: dict) -> list[str]:
     return [feature.name for feature in question_features() if raw[feature.question]]
 
 
+def computed_features(raw: dict) -> list[str]:
+    """Computed features (no question, e.g. redis) that these answers switch on."""
+    on = set(enabled_features(raw))
+    result = []
+    for feature in features.FEATURES:  # manifest order: sources come before what they compute
+        if feature.computed_from and any(source in on for source in feature.computed_from):
+            on.add(feature.name)
+            result.append(feature.name)
+    return result
+
+
+def all_enabled_features(raw: dict) -> list[str]:
+    """Every feature these answers switch on: the chosen ones plus the computed ones."""
+    return enabled_features(raw) + computed_features(raw)
+
+
 def matrix() -> dict:
     """GitHub Actions `strategy.matrix` value: one include entry per variant."""
     return {
@@ -114,6 +130,8 @@ def matrix() -> dict:
                 "variant": name,
                 "data": " ".join(copier_data_args(raw)),
                 "features": ",".join(enabled_features(raw)),
+                # Computed features (e.g. redis) decide which CI services a bake needs.
+                "computed": ",".join(computed_features(raw)),
             }
             for name, raw in all_variants().items()
         ]

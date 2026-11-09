@@ -10,11 +10,16 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      # --- FEATURE[redis] START ---
       redis:
         condition: service_healthy
+      # --- FEATURE[redis] END ---
     # Bare names pass through from the --env-file/.env so the backend receives the
     # full environment app/core/config.py requires. Only the hosts that must point
-    # at compose services are overridden (POSTGRES_HOST=db, REDIS_HOST=redis).
+    # at compose services are overridden (POSTGRES_HOST=db).
+    # --- FEATURE[redis] START ---
+    # REDIS_HOST=redis below points the app at the compose Redis service.
+    # --- FEATURE[redis] END ---
     environment:
       - CURRENT_ENVIRONMENT
       - DEBUG
@@ -36,6 +41,7 @@ services:
       - FIREBASE_CLIENT_EMAIL
       - FIREBASE_CLIENT_ID
       # --- FEATURE[firebase] END ---
+      # --- FEATURE[redis] START ---
       - REDIS_HOST=redis
       - REDIS_PORT
       - REDIS_PASS
@@ -44,11 +50,14 @@ services:
       - REDIS_MAX_POOL_CONNECTIONS
       - REDIS_SOCKET_CONNECT_TIMEOUT
       - REDIS_SOCKET_TIMEOUT
+      # --- FEATURE[redis] END ---
+      # --- FEATURE[redis_cache] START ---
       - CACHE_ENABLED
       - CACHE_TTL_DEFAULT
       - CACHE_TTL_SHORT
       - CACHE_TTL_LONG
       - CACHE_TTL_VERY_LONG
+      # --- FEATURE[redis_cache] END ---
       # --- FEATURE[redis_rate_limit] START ---
       - RATE_LIMIT_ENABLED
       - RATE_LIMIT_DEFAULT
@@ -117,6 +126,7 @@ services:
       - fastapi_template_db_data:/var/lib/postgresql
     networks:
       - fastapi_template_network
+  # --- FEATURE[redis] START ---
   redis:
     image: redis:8-alpine
     restart: on-failure:5
@@ -140,6 +150,7 @@ services:
       start_period: 10s
     networks:
       - fastapi_template_network
+  # --- FEATURE[redis] END ---
 
 networks:
   fastapi_template_network:

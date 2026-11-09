@@ -21,9 +21,7 @@ WORKDIR /app
 COPY pyproject.toml uv.lock* ./
 
 # Create virtual environment at /app/.venv and install dependencies
-# The `cache` extra provides the `redis` package, which app/services/cache/*
-# imports unconditionally at startup (it is not in the main dependencies).
-RUN uv sync --frozen --no-dev --extra cache
+RUN uv sync --frozen --no-dev
 
 # Production stage
 FROM python:3.14-alpine AS production

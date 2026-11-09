@@ -23,12 +23,14 @@ A production-ready FastAPI project template with modern best practices, async su
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - **🚦 Rate limiting** - Redis sliding-window limits on the auth and user routes
 <!-- --- FEATURE[redis_rate_limit] END --- -->
-- **🐳 Docker Compose** - Backend, Postgres, and Redis ready to run
+- **🐳 Docker Compose** - Backend and Postgres ready to run
 - **🧪 CI & Testing** - Pytest with coverage gating, plus lint/type/security checks in GitHub Actions
 
 Plus optional integrations:
 
+<!-- --- FEATURE[redis_cache] START --- -->
 - caching
+<!-- --- FEATURE[redis_cache] END --- -->
 <!-- --- FEATURE[celery] START --- -->
 - background jobs
 <!-- --- FEATURE[celery] END --- -->
@@ -141,7 +143,7 @@ uvx copier copy gh:eslam5464/Fastapi-Template <new-project-dir> --trust
 
 **Alternative:** if you'd rather have `copier` installed permanently (e.g. for `copier update` later), use `uv tool install copier` instead. On Windows, that installs into a user tools directory that's often **not yet on PATH** in your *current* terminal session — if you see `'copier' is not recognized as an internal or external command` right after installing, either open a **new** terminal window, or run `uv tool update-shell` and then restart the terminal. The `uvx` command above sidesteps the PATH issue entirely since it doesn't need `copier` installed anywhere persistent.
 
-You'll be prompted for a project name, description, author name/email, GitHub username, Python version, and whether to keep the minimal base or choose optional services one by one (currently rate limiting, the token blacklist, Celery, Firebase, Firestore, Google Cloud Storage, BackBlaze B2, Resend, Brevo, OpenObserve and Apple Pay); running `copier copy ... --defaults` gives you the minimal base. Everything identity-specific — the `pyproject.toml` name, Docker container names, the Postgres schema, `README.md`, `LICENSE`, `CODEOWNERS` — is filled in automatically; see [docs/features.md](docs/features.md) for what ships by default versus what's opt-in.
+You'll be prompted for a project name, description, author name/email, GitHub username, Python version, and whether to keep the minimal base or choose optional services one by one (currently the Redis cache, rate limiting, the token blacklist, Celery, Firebase, Firestore, Google Cloud Storage, BackBlaze B2, Resend, Brevo, OpenObserve and Apple Pay); running `copier copy ... --defaults` gives you the minimal base. Everything identity-specific — the `pyproject.toml` name, Docker container names, the Postgres schema, `README.md`, `LICENSE`, `CODEOWNERS` — is filled in automatically; see [docs/features.md](docs/features.md) for what ships by default versus what's opt-in.
 
 `--trust` is required because generation runs a small post-processing script (`scripts/generate/post_gen.py`) that substitutes your answers into the copied files, removes unused Apple Pay files when you opt out, regenerates `uv.lock`, and runs `git init` for you.
 
@@ -427,11 +429,7 @@ BREVO_API_KEY=your_brevo_api_key_here
 
 ## 📦 Dependencies
 
-Core dependencies (FastAPI, SQLAlchemy, Alembic, Pydantic, Uvicorn) are always installed. Optional integrations (Redis) are opt-in extras — install only what you need:
-
-```bash
-uv sync --extra cache
-```
+Core dependencies (FastAPI, SQLAlchemy, Alembic, Pydantic, Uvicorn) are always installed. The packages of the optional services chosen when the project was generated are regular dependencies too, so `uv sync` installs everything the project uses.
 
 <!-- --- FEATURE[apple_pay] START --- -->
 ```bash

@@ -22,7 +22,7 @@ an extra as equivalent to "generating the project with/without" that feature.
 | Integration | Extra name | Key modules | Default behavior with no config |
 |---|---|---|---|
 | Email | — (Copier toggles `include_resend`, `include_brevo`) | `app/services/email/{base,resend,brevo}.py` | Not usable until an API key is set; no silent fallback |
-| Cache (Redis) | `cache` | `app/services/cache/{base,manager,decorators,rate_limiter,token_blacklist}.py` | Fails open / no-op in `LOCAL` |
+| Cache, rate limiting, token blacklist (Redis) | — (Copier toggles; Redis is computed from them and Celery) | `app/services/cache/{base,manager,decorators,rate_limiter,token_blacklist}.py` | Fails open / no-op in `LOCAL` |
 | Firebase, Firestore, GCS, BackBlaze | — (Copier toggles, below) | `app/services/{firebase,firestore,gcs,back_blaze_b2}.py` | Not usable until credentials are set |
 | Task queue | — (Copier toggle `include_celery`) | `app/services/task_queue/{celery_config.py, tasks/user_tasks.py}` | Inert unless a worker/beat process is actually started |
 | Apple Pay | `apple-services` | `app/services/payments/apple_pay.py` | **Removable at generation time** — the one real toggle |
@@ -44,7 +44,12 @@ toggle (`include_resend`, `include_brevo`); the shared base, types and exception
 when at least one is chosen, and the chosen SDKs are core dependencies (guide:
 `docs/integrations/email.md`).
 
-## Cache / rate limiting / token blacklist (`cache` extra, Redis-backed)
+## Cache / rate limiting / token blacklist (Copier toggles, Redis-backed)
+
+The cache is the `include_redis_cache` Copier toggle (guide: `docs/integrations/caching.md`).
+Redis (`app/services/cache/base.py`, the `REDIS_*` settings, the `redis` dependency and
+the compose/CI service) is included only when the cache, rate limiting, the token
+blacklist or Celery is.
 
 The token blacklist is the `include_redis_token_blacklist` Copier toggle (without it,
 logout returns `revoked: false` and tokens stay valid until they expire).

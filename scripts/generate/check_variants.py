@@ -126,15 +126,15 @@ def _imports(tree: ast.AST) -> list[tuple[int, str]]:
 def check_tree(root: Path, raw: dict) -> list[str]:
     """Problems found in a generated tree (empty list = clean)."""
     problems: list[str] = []
-    enabled = set(variants.enabled_features(raw))
+    enabled = set(variants.all_enabled_features(raw))
     allowed = set(sys.stdlib_module_names) | set(features.BASE_IMPORTS)
     for name in enabled:
         allowed |= set(features.FEATURES_BY_NAME[name].imports)
     test_allowed = allowed | set(features.TEST_IMPORTS)
     forbidden = [
         re.compile(pattern)
-        for feature in variants.question_features()
-        if feature.name not in enabled
+        for feature in features.FEATURES
+        if feature.name != "_template" and feature.name not in enabled
         for pattern in feature.forbidden
     ]
 

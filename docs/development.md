@@ -109,7 +109,10 @@ createdb fastapi_template
 psql -c "CREATE DATABASE fastapi_template;"
 ```
 
-#### Install Redis (Required for Celery)
+<!-- --- FEATURE[redis] START --- -->
+#### Install Redis
+
+Required by the Redis-backed services this project includes.
 
 ```bash
 # macOS
@@ -125,6 +128,8 @@ sudo systemctl start redis
 # Or use Docker:
 docker run -d -p 6379:6379 redis:alpine
 ```
+
+<!-- --- FEATURE[redis] END --- -->
 
 #### Run Migrations
 
@@ -1052,24 +1057,12 @@ See [integrations/token-revocation.md](integrations/token-revocation.md).
 
 <!-- --- FEATURE[redis_token_blacklist] END --- -->
 
+<!-- --- FEATURE[redis_cache] START --- -->
 ### Cache Decorators
 
-The template includes caching decorators for easy function-level caching.
+See [integrations/caching.md](integrations/caching.md).
 
-```python
-from app.services.cache.decorators import cached, cache_invalidate
-
-# Cache function result for 5 minutes
-@cached(ttl=300, key_prefix="user")
-async def get_user_profile(user_id: int) -> dict:
-    # Expensive database query
-    return await fetch_user_from_db(user_id)
-
-# Invalidate cache when data changes
-@cache_invalidate(key_pattern="user:*")
-async def update_user_profile(user_id: int, data: dict):
-    await save_user_to_db(user_id, data)
-```
+<!-- --- FEATURE[redis_cache] END --- -->
 
 ### Custom Middleware
 

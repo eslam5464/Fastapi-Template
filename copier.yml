@@ -48,6 +48,12 @@ services:
     "Choose services one by one": custom
   default: minimal
 
+include_redis_cache:
+  type: bool
+  help: "Include the Redis cache (cache_manager, @cache_result)? Any Redis-backed choice adds Redis to the settings, docker-compose and CI."
+  default: false
+  when: "{{ services == 'custom' }}"
+
 include_redis_rate_limit:
   type: bool
   help: "Include Redis-backed rate limiting on the auth and user routes? Adds the RATE_LIMIT_* settings."
@@ -138,4 +144,4 @@ _tasks:
      "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]

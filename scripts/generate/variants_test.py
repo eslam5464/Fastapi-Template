@@ -78,7 +78,7 @@ def test_matrix_shape(fake_manifest):
     entries = variants.matrix()["include"]
     assert [entry["variant"] for entry in entries] == list(variants.all_variants())
     minimal = entries[0]
-    assert minimal == {"variant": "minimal", "data": "", "features": ""}
+    assert minimal == {"variant": "minimal", "data": "", "features": "", "computed": ""}
     only_b = next(entry for entry in entries if entry["variant"] == "only-b")
     assert only_b["features"] == "a,b"
     assert only_b["data"] == "--data services=custom --data include_a=true --data include_b=true"
@@ -104,3 +104,21 @@ def test_bake_command_for_known_variant(tmp_path):
 def test_bake_rejects_unknown_variant(tmp_path):
     with pytest.raises(SystemExit, match="unknown variant"):
         bake.copier_command("nope", tmp_path, "HEAD")
+
+
+def test_computed_features(monkeypatch):
+    fake = (
+        features.Feature("_template"),
+        features.Feature("a", question="include_a"),
+        features.Feature("c", question="include_c"),
+        features.Feature("store", computed_from=("a", "c")),
+    )
+    monkeypatch.setattr(features, "FEATURES", fake)
+    monkeypatch.setattr(features, "FEATURES_BY_NAME", {f.name: f for f in fake})
+
+    assert variants.computed_features(variants.answers(set())) == []
+    assert variants.computed_features(variants.answers({"c"})) == ["store"]
+    assert variants.all_enabled_features(variants.answers({"a"})) == ["a", "store"]
+    entries = {entry["variant"]: entry for entry in variants.matrix()["include"]}
+    assert entries["minimal"]["computed"] == ""
+    assert entries["full"]["computed"] == "store"

@@ -46,6 +46,9 @@ dependencies = [
     "pydantic-settings>=2.10.1",
     "python-jose>=3.5.0",
     "python-multipart>=0.0.20",
+    # --- FEATURE[redis] START ---
+    "redis>=7.1.0",
+    # --- FEATURE[redis] END ---
     # --- FEATURE[resend] START ---
     "resend>=2.23.0",
     # --- FEATURE[resend] END ---
@@ -56,11 +59,8 @@ dependencies = [
     "yarl>=1.20.1",
 ]
 
-[project.optional-dependencies]
-cache = [
-    "redis>=7.1.0",
-]
 # --- FEATURE[apple_pay] START ---
+[project.optional-dependencies]
 apple-services = [
     "app-store-server-library[async]>=2.0.0",
 ]

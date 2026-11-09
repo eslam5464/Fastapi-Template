@@ -1,6 +1,9 @@
 from dataclasses import dataclass, field
+
+# --- FEATURE[redis_cache] START ---
 from typing import cast
 
+# --- FEATURE[redis_cache] END ---
 from appstoreserverlibrary.api_client import APIException, AsyncAppStoreServerAPIClient
 from appstoreserverlibrary.models.Environment import Environment
 from appstoreserverlibrary.models.ExtendReasonCode import ExtendReasonCode
@@ -38,7 +41,11 @@ from app.core.exceptions.apple_pay import (
     AppStoreRateLimitExceededException,
     AppStoreValidationException,
 )
+
+# --- FEATURE[redis_cache] START ---
 from app.services.cache.manager import cache_manager
+
+# --- FEATURE[redis_cache] END ---
 
 
 @dataclass
@@ -54,10 +61,12 @@ class ApplePay:
     error handling and logging.
     """
 
+    # --- FEATURE[redis_cache] START ---
     # Cache key patterns
     CACHE_PREFIX = "payments:applepay"
     SUBSCRIPTION_STATUS_KEY = f"{CACHE_PREFIX}:sub_status:{{user_id}}"
     TRANSACTION_INFO_KEY = f"{CACHE_PREFIX}:transaction:{{transaction_id}}"
+    # --- FEATURE[redis_cache] END ---
 
     _client: AsyncAppStoreServerAPIClient | None = field(init=False, default=None)
     _credentials: ApplePayStoreCredentials | None = field(init=False, default=None)
@@ -710,6 +719,7 @@ class ApplePay:
             logger.exception(f"Webhook signature verification failed: {err}")
             raise AppStoreValidationException("Invalid webhook signature") from err
 
+    # --- FEATURE[redis_cache] START ---
     async def get_subscription_status_cached(
         self,
         user_id: int,
@@ -766,6 +776,8 @@ class ApplePay:
             logger.info(f"Invalidated subscription cache for user {user_id}")
         else:
             logger.debug(f"No cache found for user {user_id}")
+
+    # --- FEATURE[redis_cache] END ---
 
     def get_latest_transaction(
         self,

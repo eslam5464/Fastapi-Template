@@ -40,6 +40,18 @@ FEATURES: tuple[Feature, ...] = (
     # when generating a project.
     Feature("_template"),
     Feature(
+        "redis_cache",
+        question="include_redis_cache",
+        forbidden=(
+            r"cache_manager",
+            r"CacheManager",
+            r"cache_result",
+            r"\bcache_enabled\b",
+            r"cache_ttl_",
+            r"CACHE_(ENABLED|TTL)",
+        ),
+    ),
+    Feature(
         "redis_rate_limit",
         question="include_redis_rate_limit",
         forbidden=(
@@ -63,6 +75,14 @@ FEATURES: tuple[Feature, ...] = (
         question="include_celery",
         imports=("celery", "faker"),
         forbidden=(r"(?i)celery", r"psycopg", r"db_sync", r"db_url_sync", r"task_queue", r"(?i)data_seeding"),
+    ),
+    # Computed: on when any Redis-backed service is chosen. Listed after its
+    # sources, since post_gen.resolve() computes features in manifest order.
+    Feature(
+        "redis",
+        computed_from=("redis_cache", "redis_rate_limit", "redis_token_blacklist", "celery"),
+        imports=("redis",),
+        forbidden=(r"(?i)redis",),
     ),
     Feature(
         "firebase",
@@ -121,6 +141,15 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 # A key ending in "/" is a directory (deleted with its whole tree when the
 # expression is false). Every key must exist in the template repository.
 PATHS: dict[str, str] = {
+    "app/services/cache/": "redis",
+    "app/services/cache/manager.py": "redis_cache",
+    "app/services/cache/decorators.py": "redis_cache",
+    "tests/services/cache/": "redis",
+    "tests/services/cache/manager_test.py": "redis_cache",
+    "tests/services/cache/decorators_test.py": "redis_cache",
+    "tests/main_cache_test.py": "redis_cache",
+    "tests/services/payments/apple_pay_cache_test.py": "apple_pay&redis_cache",
+    "docs/integrations/caching.md": "redis_cache",
     "app/services/cache/token_blacklist.py": "redis_token_blacklist",
     "tests/services/cache/token_blacklist_test.py": "redis_token_blacklist",
     "tests/main_token_blacklist_test.py": "redis_token_blacklist",
@@ -201,7 +230,6 @@ BASE_IMPORTS: tuple[str, ...] = (
     "pwdlib",
     "pydantic",
     "pydantic_settings",
-    "redis",
     "sqlalchemy",
     "starlette",
     "uvicorn",
