@@ -145,7 +145,9 @@ This template is built with:
 - **JWT** - Authentication
 - **pwdlib** - Password hashing with Argon2
 - **Loguru** - Structured logging with centralized aggregation
-- **Redis** - Caching and rate limiting
+<!-- --- FEATURE[redis] START --- -->
+- **Redis** - Backs the cache, rate limiting, the token blacklist and the Celery broker
+<!-- --- FEATURE[redis] END --- -->
 <!-- --- FEATURE[celery] START --- -->
 - **Celery** - Background task processing
 <!-- --- FEATURE[celery] END --- -->

@@ -114,10 +114,11 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-      # Every variant still needs Redis while the Redis-backed services are part
-      # of the base. Once redis becomes a feature, only variants with it get this.
+      # Only variants that include a Redis-backed service (the computed `redis`
+      # feature) get Redis; an empty image skips the service, which also proves
+      # the other variants (the minimal base among them) run without Redis.
       redis:
-        image: redis:8-alpine
+        image: ${{ contains(matrix.computed, 'redis') && 'redis:8-alpine' || '' }}
         ports:
           - 6379:6379
         options: >-

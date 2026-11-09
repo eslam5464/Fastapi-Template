@@ -25,8 +25,11 @@ from app.middleware.rate_limit import RateLimitHeaderMiddleware
 
 # --- FEATURE[redis_rate_limit] END ---
 from app.middleware.security_headers import SecurityHeadersMiddleware
+
+# --- FEATURE[redis_cache] START ---
 from app.services.cache.manager import cache_manager
 
+# --- FEATURE[redis_cache] END ---
 # --- FEATURE[redis_rate_limit] START ---
 from app.services.cache.rate_limiter import rate_limiter
 
@@ -37,6 +40,7 @@ from app.services.cache.token_blacklist import token_blacklist
 # --- FEATURE[redis_token_blacklist] END ---
 
 
+# --- FEATURE[redis_cache] START ---
 async def _check_cache_manager() -> None:
     """Fail startup when caching is enabled but the cache store is not reachable."""
     cache_healthy = await cache_manager.health_check()
@@ -46,6 +50,9 @@ async def _check_cache_manager() -> None:
         raise RuntimeError("CacheManager is not healthy.")
     else:
         logger.success("CacheManager is healthy.")
+
+
+# --- FEATURE[redis_cache] END ---
 
 
 # --- FEATURE[redis_rate_limit] START ---
@@ -80,7 +87,9 @@ async def _check_token_blacklist() -> None:
 
 async def _check_dependencies():
     """Check essential dependencies before starting the app"""
+    # --- FEATURE[redis_cache] START ---
     await _check_cache_manager()
+    # --- FEATURE[redis_cache] END ---
     # --- FEATURE[redis_rate_limit] START ---
     await _check_rate_limiter()
     # --- FEATURE[redis_rate_limit] END ---
@@ -89,9 +98,13 @@ async def _check_dependencies():
     # --- FEATURE[redis_token_blacklist] END ---
 
 
+# --- FEATURE[redis_cache] START ---
 async def _close_cache_manager() -> None:
     await cache_manager.close()
     logger.success("CacheManager connection closed.")
+
+
+# --- FEATURE[redis_cache] END ---
 
 
 # --- FEATURE[redis_rate_limit] START ---
@@ -114,7 +127,9 @@ async def _close_token_blacklist() -> None:
 
 async def _shutdown_dependencies():
     """Shutdown essential dependencies gracefully"""
+    # --- FEATURE[redis_cache] START ---
     await _close_cache_manager()
+    # --- FEATURE[redis_cache] END ---
     # --- FEATURE[redis_rate_limit] START ---
     await _close_rate_limiter()
     # --- FEATURE[redis_rate_limit] END ---

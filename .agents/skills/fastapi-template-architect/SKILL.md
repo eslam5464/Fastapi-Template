@@ -60,17 +60,19 @@ hand-building (see "Offline fallback" below) when Copier genuinely isn't usable.
    `github_username`, `python_version` (≥3.14), then `services` (`minimal`, the
    default, or `custom`) and, for `custom`, one bool per service that really strips its
    code when declined: `include_firebase`, `include_firestore` (asked only after Firebase),
-   `include_redis_rate_limit`, `include_redis_token_blacklist`, `include_celery`, `include_gcs`, `include_backblaze`, `include_resend`, `include_brevo`,
+   `include_redis_cache`, `include_redis_rate_limit`, `include_redis_token_blacklist`, `include_celery`, `include_gcs`, `include_backblaze`, `include_resend`, `include_brevo`,
    `include_openobserve`, `include_apple_pay` (all default false).
 
-3. **Separately, ask which optional integrations the user actually wants** —
-   cache/Redis. That one is
-   **not** a Copier question; it's a `pyproject.toml` extra. See
-   [references/optional-integrations.md](references/optional-integrations.md) before
-   answering the user's questions about them, and don't present them as if they were
-   generation-time code-removal choices — that would misrepresent what the template
-   actually does. Rate limiting, the token blacklist, Celery, Firebase/Firestore, Google Cloud Storage, BackBlaze B2, the Resend/Brevo email providers, OpenObserve log shipping and Apple Pay are the exceptions: they are Copier
-   toggles and really are stripped at generation time when declined.
+3. **Every optional service is a Copier question** — the Redis cache, rate limiting,
+   the token blacklist, Celery, Firebase/Firestore, Google Cloud Storage, BackBlaze B2,
+   the Resend/Brevo email providers, OpenObserve log shipping and Apple Pay. A declined
+   service is really stripped from the generated project (code, tests, settings, env,
+   compose, CI, docs and dependencies). Redis itself is never asked: it is added when
+   any Redis-backed service (cache, rate limiting, token blacklist, Celery) is chosen.
+   Mention the security trade-offs when a user declines rate limiting or the token
+   blacklist (see [references/auth-and-security.md](references/auth-and-security.md)),
+   and read [references/optional-integrations.md](references/optional-integrations.md)
+   before answering questions about a service.
 
 4. **Run generation** — prefer [scripts/run_copier.sh](scripts/run_copier.sh) /
    [scripts/run_copier.ps1](scripts/run_copier.ps1), which already encode the two fixes

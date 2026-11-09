@@ -29,7 +29,9 @@ This API template includes the following services:
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - **Rate Limiting** - Redis-based sliding window rate limiting with microsecond precision
 <!-- --- FEATURE[redis_rate_limit] END --- -->
+<!-- --- FEATURE[redis_cache] START --- -->
 - **Caching** - High-performance Redis caching with shared connection pooling
+<!-- --- FEATURE[redis_cache] END --- -->
 
 ### Integrated Services
 

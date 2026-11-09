@@ -9,7 +9,7 @@ Full reference for what's built into this template: what each integration does, 
 | 🚀 Core (FastAPI, Postgres, Alembic, logging, docs) | — always installed | [Core](#-core) |
 | 🔐 Authentication (JWT, Argon2, blacklisting) | blacklisting chosen at generation (`include_redis_token_blacklist`) | [Authentication](#-authentication) |
 | 🔒 Security middleware (CSRF, headers, rate limiting) | rate limiting chosen at generation (`include_redis_rate_limit`) | [Security middleware](#-security-middleware) |
-| ⚡ Caching | `cache` | [Caching](#-caching) |
+| ⚡ Caching | chosen at generation (`include_redis_cache`) | [Caching](#-caching) |
 | ⚙️ Background jobs (Celery) | chosen at generation (`include_celery`) | [Background jobs](#-background-jobs--task-queue) |
 | ☁️ Cloud storage (BackBlaze B2, GCS) | chosen at generation (`include_backblaze`, `include_gcs`) | [Cloud storage](#-cloud-storage) |
 | 🔥 Firebase (Auth, Firestore) | chosen at generation (`include_firebase`, `include_firestore`) | [Firebase](#-firebase) |
@@ -21,7 +21,6 @@ Full reference for what's built into this template: what each integration does, 
 Install optional extras individually as needed:
 
 ```bash
-uv sync --extra cache
 uv sync --extra apple-services
 ```
 
@@ -66,12 +65,13 @@ All in `app/middleware/`:
 <!-- --- FEATURE[redis_rate_limit] END --- -->
 - **Request logging** (`logging.py`)
 
+<!-- --- FEATURE[redis_cache] START --- -->
 ## ⚡ Caching
 
-- **Module:** `app/services/cache/manager.py`, `decorators.py`
+- **Module:** `app/services/cache/manager.py` (`cache_manager`), `decorators.py` (`@cache_result`). Guide: [integrations/caching.md](integrations/caching.md).
 - **Redis caching** — shared connection pooling, decorator-based caching helpers.
-- **Install:** `uv sync --extra cache`
-- **Configure:** `REDIS_HOST`, `REDIS_PORT`, `REDIS_USER`, `REDIS_PASS` in `.env`
+- **Included** when the project is generated with `include_redis_cache`; Redis (`redis`, the `REDIS_*` settings, the compose service) comes with it.
+<!-- --- FEATURE[redis_cache] END --- -->
 
 <!-- --- FEATURE[celery] START --- -->
 ## ⚙️ Background jobs / task queue

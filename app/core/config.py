@@ -96,6 +96,7 @@ class Settings(BaseSettings):
     firebase_client_id: str
     # --- FEATURE[firebase] END ---
 
+    # --- FEATURE[redis] START ---
     # Variables for Redis
     redis_host: str
     redis_port: int
@@ -105,13 +106,16 @@ class Settings(BaseSettings):
     redis_max_pool_connections: int  # Maximum number of connections in the Redis pool
     redis_socket_connect_timeout: int  # Socket connect timeout in seconds
     redis_socket_timeout: int  # Socket timeout in seconds
+    # --- FEATURE[redis] END ---
 
+    # --- FEATURE[redis_cache] START ---
     # Cache settings
     cache_enabled: bool
     cache_ttl_default: int  # Default cache TTL in seconds
     cache_ttl_short: int  # Short cache TTL in seconds
     cache_ttl_long: int  # Long cache TTL in seconds
     cache_ttl_very_long: int  # Very long cache TTL in seconds
+    # --- FEATURE[redis_cache] END ---
 
     # --- FEATURE[redis_rate_limit] START ---
     # Rate limiting settings (requests per window)
@@ -276,6 +280,7 @@ class Settings(BaseSettings):
 
     # --- FEATURE[firebase] END ---
 
+    # --- FEATURE[redis] START ---
     @computed_field
     @property
     def redis_url(self) -> URL:
@@ -295,6 +300,8 @@ class Settings(BaseSettings):
             password=self.redis_pass,
             path=path,
         )
+
+    # --- FEATURE[redis] END ---
 
     # --- FEATURE[apple_pay] START ---
     @computed_field

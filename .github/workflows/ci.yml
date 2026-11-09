@@ -71,6 +71,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      # --- FEATURE[redis] START ---
       redis:
         image: redis:8-alpine
         ports:
@@ -80,6 +81,7 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      # --- FEATURE[redis] END ---
     steps:
       - uses: actions/checkout@v7
 
@@ -108,19 +110,21 @@ jobs:
       - name: Configure environment
         run: |
           cp .env.example .env
-          # BaseRedisClient.redis_client always returns None when
-          # current_environment == LOCAL (a deliberate safety guard for local dev
-          # without Redis running) - which breaks the rate-limiter/token-blacklist
-          # tests that rely on a real (mocked) client. "dev" keeps CORS/docs/CSRF
-          # behavior sane while allowing Redis to actually be used, matching what
-          # local dev already runs with.
+          # "dev" keeps CORS/docs/CSRF behaviour sane for the tests, matching what
+          # local development runs with.
+          # --- FEATURE[redis] START ---
+          # It also lets the tests use Redis: in LOCAL, BaseRedisClient.redis_client
+          # always returns None (a guard for local dev without Redis running).
+          # --- FEATURE[redis] END ---
           sed -i 's/^CURRENT_ENVIRONMENT=.*/CURRENT_ENVIRONMENT=dev/' .env
           # Match the postgres service container's credentials above.
           sed -i 's/^POSTGRES_PASSWORD=.*/POSTGRES_PASSWORD=postgres/' .env
+          # --- FEATURE[redis] START ---
           # .env.example's Redis defaults assume auth; our service container runs
           # without a password, so clear both to avoid an unwanted AUTH attempt.
           sed -i 's/^REDIS_PASS=.*/REDIS_PASS=/' .env
           sed -i 's/^REDIS_USER=.*/REDIS_USER=/' .env
+          # --- FEATURE[redis] END ---
 
       # `app/services/payments/apple_pay.py` constructs a module-level ApplePay()
       # singleton at import time, which eagerly PEM-parses the private key. Real

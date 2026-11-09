@@ -16,8 +16,8 @@ direct inspection).
   pyjwt + python-jose, loguru, gunicorn, `uvicorn[standard]`, uvloop/httptools on
   non-Windows platforms, yarl.
 - **Optional extras** (`uv sync --extra <name>`, see
-  [optional-integrations.md](optional-integrations.md)): `cache`, `apple-services`.
-  Services chosen at generation time (Celery, Firebase, GCS, BackBlaze, email, ...)
+  [optional-integrations.md](optional-integrations.md)): `apple-services`.
+  Services chosen at generation time (Redis and the cache, Celery, Firebase, GCS, ...)
   are core dependencies of the projects that include them instead.
 - **`dependency-groups`** (not extras — dev/test tooling, `uv sync --all-groups`):
   `test` (anyio, faker, httpx, pytest, pytest-cov), `dev` (bandit[toml], commitizen,

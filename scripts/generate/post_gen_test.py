@@ -53,7 +53,20 @@ class TestResolve:
             while features.FEATURES_BY_NAME[chain[-1]].parent:
                 chain.append(features.FEATURES_BY_NAME[chain[-1]].parent)
             enabled = {features.FEATURES_BY_NAME[n].question: True for n in chain}
-            assert post_gen.resolve(answers(**enabled)) == flags(*chain)
+            # Computed features (e.g. redis) follow from what is switched on.
+            computed = [f.name for f in features.FEATURES if f.computed_from and set(f.computed_from) & set(chain)]
+            assert post_gen.resolve(answers(**enabled)) == flags(*chain, *computed)
+
+    def test_redis_is_computed_from_its_services(self):
+        for question in (
+            "include_redis_cache",
+            "include_redis_rate_limit",
+            "include_redis_token_blacklist",
+            "include_celery",
+        ):
+            assert post_gen.resolve(answers(**{question: True}))["redis"] is True
+        assert post_gen.resolve(answers())["redis"] is False
+        assert post_gen.resolve(answers(include_gcs=True))["redis"] is False
 
     def test_child_without_parent_is_rejected(self):
         with pytest.raises(SystemExit, match="requires its parent feature 'firebase'"):
