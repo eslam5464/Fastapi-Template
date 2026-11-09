@@ -55,7 +55,9 @@ Complete guide for local development environment setup and daily development tas
 <!-- --- FEATURE[gcs] END --- -->
 - Apple Pay (App Store Server API) integration
 - Security middleware (CSRF, security headers)
-- Token blacklisting and logout
+<!-- --- FEATURE[redis_token_blacklist] START --- -->
+- Token blacklisting and logout ([integrations/token-revocation.md](integrations/token-revocation.md))
+<!-- --- FEATURE[redis_token_blacklist] END --- -->
 - Cache decorators
 - Development best practices
 - Common troubleshooting

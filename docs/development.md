@@ -1045,33 +1045,12 @@ Adds rate limiting information to responses (see [integrations/rate-limiting.md]
 
 <!-- --- FEATURE[redis_rate_limit] END --- -->
 
+<!-- --- FEATURE[redis_token_blacklist] START --- -->
 ### Token Blacklisting (Logout)
 
-The template implements secure token revocation using Redis-based blacklisting.
+See [integrations/token-revocation.md](integrations/token-revocation.md).
 
-#### How Token Blacklisting Works
-
-```python
-from app.services.cache.token_blacklist import token_blacklist
-
-# When user logs out, the token is added to blacklist
-async def logout(token: str, user_id: int):
-    # Add token to blacklist with TTL matching token expiration
-    await token_blacklist.add_token(token, user_id)
-
-# During authentication, check if token is blacklisted
-async def validate_token(token: str) -> bool:
-    if await token_blacklist.is_blacklisted(token):
-        raise HTTPException(status_code=401, detail="Token has been revoked")
-    return True
-```
-
-#### Blacklist Features
-
-- **Automatic Expiration**: Blacklisted tokens are automatically removed after their natural expiration time
-- **User-Based Revocation**: Revoke all tokens for a specific user (e.g., password change)
-- **Memory Efficient**: Uses Redis sorted sets with automatic cleanup
-- **Graceful Degradation**: If Redis is unavailable, tokens are still validated by expiration
+<!-- --- FEATURE[redis_token_blacklist] END --- -->
 
 ### Cache Decorators
 

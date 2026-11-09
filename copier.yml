@@ -54,6 +54,12 @@ include_redis_rate_limit:
   default: false
   when: "{{ services == 'custom' }}"
 
+include_redis_token_blacklist:
+  type: bool
+  help: "Include the Redis token blacklist, so logout revokes tokens? Without it, logged-out tokens stay valid until they expire."
+  default: false
+  when: "{{ services == 'custom' }}"
+
 include_celery:
   type: bool
   help: "Include Celery background jobs (worker, beat, sync DB engine)? Uses Redis as the broker."
@@ -132,4 +138,4 @@ _tasks:
      "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_redis_rate_limit': include_redis_rate_limit, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]

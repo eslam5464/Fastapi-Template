@@ -19,7 +19,11 @@ from app.schemas import (
     Token,
 )
 from app.services.auth_service import AuthService
+
+# --- FEATURE[redis_token_blacklist] START ---
 from app.services.cache.token_blacklist import token_blacklist
+
+# --- FEATURE[redis_token_blacklist] END ---
 from app.services.exceptions.auth import ValidationError
 from app.services.types.auth import TokenPairDict
 
@@ -90,8 +94,8 @@ async def refresh_token(
     responses={
         status.HTTP_401_UNAUTHORIZED: {"model": responses.UnauthorizedResponse},
     },
-    summary="Logout and revoke token",
-    description="Revoke the current access token. After logout, the token cannot be used again.",
+    summary="Logout",
+    description="Log out. When token revocation is enabled, the access token is revoked and cannot be used again.",
 )
 async def logout(
     token: Annotated[str, Depends(oauth2_scheme)],
@@ -99,10 +103,11 @@ async def logout(
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
 ) -> LogoutResponse:
     """
-    Logout endpoint that revokes the current access token.
+    Logout endpoint.
 
-    The token is added to a blacklist in Redis with TTL matching
-    the remaining token lifetime.
+    With token revocation, the access token is added to a blacklist with a TTL
+    matching its remaining lifetime and `revoked` is true; without it, `revoked`
+    is false and the token stays valid until it expires.
 
     Reference:
         https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html
@@ -112,6 +117,7 @@ async def logout(
         # token stays valid until it expires.
         revoked = False
 
+        # --- FEATURE[redis_token_blacklist] START ---
         revoke_payload = await auth_service.get_logout_revoke_payload(token)
 
         # Add token to blacklist
@@ -120,6 +126,7 @@ async def logout(
             ttl_seconds=revoke_payload["ttl_seconds"],
         )
         revoked = True
+        # --- FEATURE[redis_token_blacklist] END ---
 
         # Return validated Pydantic response
         return LogoutResponse(message="Successfully logged out", revoked=revoked)

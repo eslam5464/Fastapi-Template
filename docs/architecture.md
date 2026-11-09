@@ -666,7 +666,9 @@ class NotFoundError(BaseAPIException):
 - **Password Hashing**: Argon2 via pwdlib (modern, secure alternative to bcrypt)
 - **JWT Tokens**: Signed with HS256 algorithm using secret key
 - **Token Expiration**: Automatic token invalidation (1 hour access, 24 hours refresh)
+<!-- --- FEATURE[redis_token_blacklist] START --- -->
 - **Token Blacklisting**: Redis-based token revocation for logout functionality
+<!-- --- FEATURE[redis_token_blacklist] END --- -->
 
 ### Authorization Levels
 

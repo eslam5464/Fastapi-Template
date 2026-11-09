@@ -6,7 +6,9 @@ from .manager import cache_manager
 from .rate_limiter import rate_limiter
 
 # --- FEATURE[redis_rate_limit] END ---
+# --- FEATURE[redis_token_blacklist] START ---
 from .token_blacklist import token_blacklist
+# --- FEATURE[redis_token_blacklist] END ---
 
 __all__ = [
     "BaseRedisClient",
@@ -15,5 +17,7 @@ __all__ = [
     # --- FEATURE[redis_rate_limit] START ---
     "rate_limiter",
     # --- FEATURE[redis_rate_limit] END ---
+    # --- FEATURE[redis_token_blacklist] START ---
     "token_blacklist",
+    # --- FEATURE[redis_token_blacklist] END ---
 ]

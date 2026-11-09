@@ -7,7 +7,7 @@ Full reference for what's built into this template: what each integration does, 
 | Feature | Optional extra | Section |
 |---|---|---|
 | 🚀 Core (FastAPI, Postgres, Alembic, logging, docs) | — always installed | [Core](#-core) |
-| 🔐 Authentication (JWT, Argon2, blacklisting) | `cache` for blacklisting | [Authentication](#-authentication) |
+| 🔐 Authentication (JWT, Argon2, blacklisting) | blacklisting chosen at generation (`include_redis_token_blacklist`) | [Authentication](#-authentication) |
 | 🔒 Security middleware (CSRF, headers, rate limiting) | rate limiting chosen at generation (`include_redis_rate_limit`) | [Security middleware](#-security-middleware) |
 | ⚡ Caching | `cache` | [Caching](#-caching) |
 | ⚙️ Background jobs (Celery) | chosen at generation (`include_celery`) | [Background jobs](#-background-jobs--task-queue) |
@@ -46,10 +46,13 @@ uv sync --extra apple-services
 
 ## 🔐 Authentication
 
-*Requires `cache` for token blacklisting.*
-
 - **JWT-based auth** — access + refresh tokens, implemented in `app/services/auth_service.py`. Password hashing via Argon2 (`pwdlib`).
-- **Token blacklisting** — secure logout support, backed by Redis (`app/services/cache/token_blacklist.py`).
+<!-- --- FEATURE[redis_token_blacklist] START --- -->
+- **Token blacklisting** — logout revokes the token, backed by Redis (`app/services/cache/token_blacklist.py`). Guide: [integrations/token-revocation.md](integrations/token-revocation.md).
+<!-- --- FEATURE[redis_token_blacklist] END --- -->
+<!-- --- FEATURE[!redis_token_blacklist] START --- -->
+- **Logout** — logout returns `revoked: false` and the access token stays valid until it expires (no token blacklist).
+<!-- --- FEATURE[!redis_token_blacklist] END --- -->
 - **Protected routes** — dependency-injected via `app/api/v1/deps/` / `app/api/v2/deps/`.
 
 ## 🔒 Security middleware
