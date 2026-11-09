@@ -90,6 +90,31 @@ def test_excluded_docs_are_not_checked(tmp_path):
     assert check_variants.check_tree(root, MINIMAL) == []
 
 
+def _snapshot(rel: str, body: str) -> str:
+    header = check_variants.skill_assets.PROJECT_NOTICE.format(
+        start=check_variants.skill_assets.NOTICE_START, end=check_variants.skill_assets.NOTICE_END, rel=rel
+    )
+    return check_variants.skill_assets.join(header, rel, body)
+
+
+SNAPSHOT_DIR = check_variants.skill_assets.CANONICAL_ASSETS.as_posix()
+
+
+def test_reports_snapshot_of_a_missing_file(tmp_path):
+    root = _tree(tmp_path, {f"{SNAPSHOT_DIR}/app/gone.py": _snapshot("app/gone.py", "X = 1\n")})
+    problems = check_variants.check_tree(root, MINIMAL)
+    assert any("which this variant does not ship" in p for p in problems)
+
+
+def test_reports_snapshot_that_differs_from_its_file(tmp_path):
+    root = _tree(
+        tmp_path,
+        {"app/x.py": "X = 2\n", f"{SNAPSHOT_DIR}/app/x.py": _snapshot("app/x.py", "X = 1\n")},
+    )
+    problems = check_variants.check_tree(root, MINIMAL)
+    assert any("differs from app/x.py" in p for p in problems)
+
+
 def test_reports_syntax_error(tmp_path):
     root = _tree(tmp_path, {"app/x.py": "def (:\n"})
     problems = check_variants.check_tree(root, MINIMAL)

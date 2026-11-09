@@ -167,6 +167,8 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 # A key ending in "/" is a directory (deleted with its whole tree when the
 # expression is false). Every key must exist in the template repository.
 PATHS: dict[str, str] = {
+    # The skill's eval prompts test the template itself: template repo only.
+    ".claude/skills/fastapi-template-architect/evals/": "_template",
     # The Archify diagram of the template itself (every service on): template repo only.
     "docs/architecture/fastapi-template.architecture.html": "_template",
     "docs/architecture/fastapi-template.architecture.json": "_template",
@@ -203,8 +205,6 @@ PATHS: dict[str, str] = {
     "tests/api/v1/endpoints/rate_limit_wiring_test.py": "redis_rate_limit",
     "tests/main_rate_limit_test.py": "redis_rate_limit",
     "docs/integrations/rate-limiting.md": "redis_rate_limit",
-    ".claude/skills/fastapi-template-architect/assets/app/api/v1/deps/rate_limit.py": "redis_rate_limit",
-    ".agents/skills/fastapi-template-architect/assets/app/api/v1/deps/rate_limit.py": "redis_rate_limit",
     "app/services/task_queue/": "celery",
     "app/core/db_sync.py": "celery",
     "tests/services/task_queue/": "celery",

@@ -113,12 +113,12 @@ command, just with real dependencies installed).
 
 ## `.github/workflows/` — what each one does
 
-- **`ci.yml`** — two jobs. `lint`: installs `uv`, `uv sync --all-groups --all-extras
-  --frozen`, caches `~/.cache/pre-commit`, runs `pre-commit run --all-files
-  --show-diff-on-failure` as a required check (catches contributors who never installed
-  pre-commit locally). `test`: real `postgres:18-alpine` + `redis:8-alpine` service
-  containers, installs `libpq-dev` in projects with Celery (its sync/psycopg engine needs
-  libpq at *import* time, matching the Dockerfile's `postgresql-libs`), copies
+- **`ci.yml`** — two jobs. `lint`: installs `uv`, `uv sync --all-groups --frozen`,
+  caches `~/.cache/pre-commit`, runs `pre-commit run --all-files --show-diff-on-failure`
+  as a required check (catches contributors who never installed pre-commit locally).
+  `test`: a real `postgres:18-alpine` service container (plus `redis:8-alpine` in
+  projects with a Redis-backed service), installs `libpq-dev` in projects with Celery
+  (its sync/psycopg engine needs libpq at *import* time, matching the Dockerfile's `postgresql-libs`), copies
   `.env.example` → `.env` with a few `sed` overrides to match the service containers'
   credentials, creates a `_test`-suffixed database, runs `alembic upgrade head` then
   `pytest`, then posts a coverage PR comment (green ≥ 90%, orange ≥ 70%) via
@@ -137,8 +137,9 @@ command, just with real dependencies installed).
   project), any change must keep every matrix leg green.
 
 Apple Pay test-credential generation used to be a separate CI-only step in `ci.yml`; it
-was removed in favor of `tests/conftest.py`'s self-contained, import-time
-`_ensure_apple_pay_test_credentials()` (see
+was removed in favor of the self-contained, import-time
+`ensure_apple_pay_test_credentials()` call at the top of `tests/conftest.py` (from
+`tests/apple_pay_credentials.py`, in projects with Apple Pay; see
 [testing-conventions.md](testing-conventions.md)) — the git history literally shows this
 simplification (`"Remove unused APPLE_PAY_CI_MARKERS..."`, `"Refactor CI workflow and
 remove Apple Pay credential generation step"`). Don't reintroduce a CI-only credential

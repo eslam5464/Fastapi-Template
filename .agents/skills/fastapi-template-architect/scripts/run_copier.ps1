@@ -5,10 +5,8 @@
 .DESCRIPTION
   Assembles the real copier.yml answers into one command instead of relying on
   copier's interactive prompts (which don't work well when Claude is driving this),
-  and prints the follow-up `uv sync --extra ...` command for whatever optional
-  integrations the caller chose. See ../SKILL.md and
-  ../references/copier-template-mechanics.md for what each answer controls, and
-  ../references/optional-integrations.md for why extras are separate from this.
+  and prints the follow-up setup steps. See ../SKILL.md and
+  ../references/copier-template-mechanics.md for what each answer controls.
 
 .EXAMPLE
   ./run_copier.ps1 -Target C:\Users\me\projects\acme-orders `
@@ -16,12 +14,14 @@
     -ProjectDescription "Order management backend" `
     -AuthorName "Jane Doe" -AuthorEmail "jane@example.com" `
     -GithubUsername "janedoe" -PythonVersion "3.14" `
-    -Features "backblaze,apple_pay" -Extras "email,cache"
+    -Features "redis_cache,resend,apple_pay"
 
 .NOTES
   -Features lists the Copier service toggles to switch on (each name maps to
   `--data include_<name>=true`, plus `--data services=custom`). Leave it out for the
   minimal base. -IncludeApplePay $true is kept as an alias for -Features apple_pay.
+  There are no extras: a chosen service's packages are regular dependencies of the
+  generated project.
 #>
 
 param(
@@ -35,8 +35,7 @@ param(
     [string]$GithubUsername = "",
     [string]$PythonVersion = "3.14",
     [string]$Features = "",
-    [bool]$IncludeApplePay = $false,
-    [string]$Extras = ""
+    [bool]$IncludeApplePay = $false
 )
 
 $copierArgs = @(
@@ -97,11 +96,6 @@ Write-Host ""
 Write-Host "Generation complete. Next steps:"
 Write-Host "  cd '$Target'"
 Write-Host "  uv sync --all-groups"
-if ($Extras) {
-    foreach ($e in $Extras -split ",") {
-        Write-Host "  uv sync --extra $($e.Trim())"
-    }
-}
 Write-Host "  pre-commit install"
 Write-Host "  pre-commit install --hook-type commit-msg"
 Write-Host "  Copy-Item .env.example .env   # then fill it in yourself - never let an assistant fill in secrets"

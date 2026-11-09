@@ -1,8 +1,9 @@
 # --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
-# Verbatim copy of Dockerfile from eslam5464/Fastapi-Template, taken 2026-10-11.
-# The real repo is the source of truth; this is a fallback/reference copy
-# for offline scaffolding and Extend/Audit-mode pattern-matching. It can drift
-# from the live repo over time - prefer driving the real Copier template
+# Copy of Dockerfile from eslam5464/Fastapi-Template, taken 2026-11-09,
+# with every optional service included (a generated project only has the
+# services chosen for it). The real repo is the source of truth; this is a
+# fallback/reference copy for offline scaffolding and Extend/Audit-mode
+# pattern-matching. Prefer driving the real Copier template
 # (see references/copier-template-mechanics.md) whenever that's available.
 # --- END SNAPSHOT NOTICE ---
 
@@ -29,21 +30,20 @@ WORKDIR /app
 COPY pyproject.toml uv.lock* ./
 
 # Create virtual environment at /app/.venv and install dependencies
-# The `cache` extra provides the `redis` package, which app/services/cache/*
-# imports unconditionally at startup (it is not in the main dependencies).
-RUN uv sync --frozen --no-dev --extra cache
+RUN uv sync --frozen --no-dev
 
 # Production stage
 FROM python:3.14-alpine AS production
 
-# Install runtime dependencies only
+# Install runtime dependencies only (wget is used by the HEALTHCHECK)
+RUN apk add --no-cache wget
 # binutils (ld/objdump) + the libpq.so symlink let ctypes.util.find_library("pq")
-# locate libpq on musl, which psycopg's pure-Python wrapper requires at import
-# time (postgresql-dev would pull ~500 MB of toolchain instead of ~25 MB).
+# locate libpq on musl, which psycopg's pure-Python wrapper (the Celery sync
+# engine's driver) requires at import time (postgresql-dev would pull ~500 MB of
+# toolchain instead of ~25 MB).
 RUN apk add --no-cache \
     postgresql-libs \
     binutils \
-    wget \
     && ln -sf libpq.so.5 /usr/lib/libpq.so
 
 # Set environment variables

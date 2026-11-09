@@ -183,6 +183,10 @@ project, or `-a claude-code` / `-a codex` to target one agent specifically. This
 real, general-purpose skill installer, not something built for this repo — it works
 the same way for anyone else's skills too.
 
+A skill installed this way (or copied, below) carries reference copies of key template
+files in its `assets/` folder, shown with every optional service included. In a project
+generated from this template, those copies match the services that project has.
+
 > GitHub Copilot support in that CLI is unverified as of this writing — Copilot's own
 > docs don't describe a native skills-folder mechanism yet. If `-a github-copilot`
 > doesn't do anything for you, use the Copilot-specific files below instead.

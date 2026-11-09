@@ -1,60 +1,17 @@
 # --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
-# Verbatim copy of tests/conftest.py from eslam5464/Fastapi-Template, taken 2026-08-30.
-# The real repo is the source of truth; this is a fallback/reference copy
-# for offline scaffolding and Extend/Audit-mode pattern-matching. It can drift
-# from the live repo over time - prefer driving the real Copier template
+# Copy of tests/conftest.py from eslam5464/Fastapi-Template, taken 2026-11-09,
+# with every optional service included (a generated project only has the
+# services chosen for it). The real repo is the source of truth; this is a
+# fallback/reference copy for offline scaffolding and Extend/Audit-mode
+# pattern-matching. Prefer driving the real Copier template
 # (see references/copier-template-mechanics.md) whenever that's available.
 # --- END SNAPSHOT NOTICE ---
 
-import os
-from pathlib import Path
-from typing import AsyncGenerator
+from tests.apple_pay_credentials import ensure_apple_pay_test_credentials
 
+ensure_apple_pay_test_credentials()
 
-def _ensure_apple_pay_test_credentials() -> None:
-    """
-    Generate throwaway Apple Pay test credentials before any `app.*` module is imported.
-
-    `app/services/payments/apple_pay.py` builds a module-level `ApplePay()` singleton at
-    import time, which eagerly PEM-parses the private key (and, for webhook/receipt
-    verification, reads the root certificate file's bytes). Real Apple API calls are
-    always mocked in tests, but these files still need to exist and be syntactically
-    valid just to *import* the module — `.env.example`'s Apple Pay values are
-    intentionally empty/placeholder (real credentials, not runnable as-is).
-
-    Generating them here (module scope, before the `app.*` imports below) rather than in
-    a fixture means they exist before pytest even starts collecting test modules — a
-    fixture would run too late, since the crash happens at import time. This runs
-    identically locally and in CI/CD; no separate CI-only credential-generation step
-    needed. The env vars set here take precedence over whatever `.env` has, since
-    pydantic-settings resolves environment variables before dotenv file values.
-    """
-    creds_dir = Path(__file__).resolve().parent.parent / ".apple_pay_test_credentials"
-    creds_dir.mkdir(exist_ok=True)
-
-    key_path = creds_dir / "test_key.p8"
-    if not key_path.exists():
-        from cryptography.hazmat.primitives import serialization
-        from cryptography.hazmat.primitives.asymmetric import ec
-
-        key = ec.generate_private_key(ec.SECP256R1())
-        key_path.write_bytes(
-            key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=serialization.NoEncryption(),
-            )
-        )
-
-    cert_path = creds_dir / "test_root_ca.cer"
-    if not cert_path.exists():
-        cert_path.write_text("dummy cert content for tests\n")
-
-    os.environ["APPLE_PAY_STORE_PRIVATE_KEY_PATH"] = str(key_path)
-    os.environ["APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH"] = str(cert_path)
-
-
-_ensure_apple_pay_test_credentials()
+from typing import AsyncGenerator  # noqa: E402
 
 import pytest  # noqa: E402
 from faker import Faker  # noqa: E402
@@ -140,7 +97,9 @@ async def test_app() -> AsyncGenerator[FastAPI, None]:
 @pytest.fixture
 async def client(test_app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
     """Create an async HTTP client for testing."""
-    async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://test") as ac:
+    # base_url's host must be in ALLOWED_HOSTS (see .env.example) so the
+    # TrustedHostMiddleware on the app lets test requests through.
+    async with AsyncClient(transport=ASGITransport(app=test_app), base_url="http://localhost") as ac:
         yield ac
 
 
@@ -169,8 +128,8 @@ async def db_session(test_app: FastAPI) -> AsyncGenerator[AsyncSession, None]:
 async def user(db_session: AsyncSession, faker: Faker, pre_hashed_password: str) -> User:
     """Create a test user."""
     user_data = UserCreate(
-        email=faker.safe_email(),
-        username=faker.user_name(),
+        email=faker.unique.safe_email(),
+        username=faker.unique.user_name(),
         hashed_password=pre_hashed_password,
         first_name=faker.first_name(),
         last_name=faker.last_name(),
@@ -187,8 +146,8 @@ async def other_user(
 ) -> User:
     """Create another test user."""
     user_data = UserCreate(
-        email=faker.safe_email(),
-        username=faker.user_name(),
+        email=faker.unique.safe_email(),
+        username=faker.unique.user_name(),
         hashed_password=pre_hashed_password,
         first_name=faker.first_name(),
         last_name=faker.last_name(),

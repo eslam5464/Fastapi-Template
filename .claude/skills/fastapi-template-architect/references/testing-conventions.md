@@ -70,15 +70,17 @@ test doesn't error, it just silently uses production wiring.
 
 ## The "expensive singleton at import time" trick
 
-`../assets/tests/conftest.py` opens with `_ensure_apple_pay_test_credentials()`, called
-at **module import time**, before any `app.*` import:
+In a project with Apple Pay, `tests/conftest.py` opens with
+`ensure_apple_pay_test_credentials()` (defined in `tests/apple_pay_credentials.py`),
+called at **module import time**, before any `app.*` import (projects without Apple Pay
+have neither the call nor the module):
 
 ```python
-def _ensure_apple_pay_test_credentials() -> None:
-    """Generate throwaway Apple Pay test credentials before any `app.*` module is imported. ..."""
-    ...
+from tests.apple_pay_credentials import ensure_apple_pay_test_credentials
 
-_ensure_apple_pay_test_credentials()
+ensure_apple_pay_test_credentials()
+
+from typing import AsyncGenerator  # noqa: E402
 
 import pytest  # noqa: E402
 ...
@@ -144,11 +146,11 @@ any custom query.
 
 ## CI execution model
 
-`ci.yml`'s `test` job spins up **real** `postgres:18-alpine` and `redis:8-alpine` service
-containers (not mocks/sqlite) — copies `.env.example` → `.env`, overrides a few values
+`ci.yml`'s `test` job spins up a **real** `postgres:18-alpine` service container, plus
+`redis:8-alpine` in projects with a Redis-backed service (not mocks/sqlite) — copies `.env.example` → `.env`, overrides a few values
 via `sed` to match the service containers' credentials, creates a `_test`-suffixed
 database, runs `alembic upgrade head`, then `pytest`, then posts a coverage PR comment
 (green ≥ 90%, orange ≥ 70%). Local development should match this: run against a real
-Postgres + Redis, not a lighter substitute, since the app's async engine, schema-scoped
-metadata, and Redis-backed services (cache/rate-limit/blacklist) all assume the real
-thing.
+Postgres (and Redis, when the project has it), not a lighter substitute, since the
+app's async engine, schema-scoped metadata, and Redis-backed services
+(cache/rate-limit/blacklist) all assume the real thing.
