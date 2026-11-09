@@ -52,9 +52,13 @@ async def build_report(org_id: int) -> dict:
     ...
 ```
 
-`cache_result` caches the return value under `"<key_prefix>:<function name>:<hash of the
-arguments>"`. Values are stored with `pickle`, so only cache data your own code
-produced, never anything a client can write into Redis.
+`cache_result` caches the return value under
+`"<key_prefix>:<module>.<function qualname>:<SHA-256 of the arguments' repr()>"`
+(`build_cache_key()` in the same module), so every worker and every restart computes the
+same key. Arguments therefore need stable reprs: an object with the default repr (which
+contains its memory address) gets a new key per instance and is never served from the
+cache. Values are stored with `pickle`, so only cache data your own code produced, never
+anything a client can write into Redis.
 
 ## Production
 
