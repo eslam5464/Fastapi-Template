@@ -54,6 +54,11 @@ FEATURES: tuple[Feature, ...] = (
         ),
     ),
     Feature(
+        "redis_token_blacklist",
+        question="include_redis_token_blacklist",
+        forbidden=(r"token_blacklist", r"TokenBlacklist"),
+    ),
+    Feature(
         "celery",
         question="include_celery",
         imports=("celery", "faker"),
@@ -116,6 +121,13 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 # A key ending in "/" is a directory (deleted with its whole tree when the
 # expression is false). Every key must exist in the template repository.
 PATHS: dict[str, str] = {
+    "app/services/cache/token_blacklist.py": "redis_token_blacklist",
+    "tests/services/cache/token_blacklist_test.py": "redis_token_blacklist",
+    "tests/main_token_blacklist_test.py": "redis_token_blacklist",
+    "tests/api/conftest.py": "redis_token_blacklist",
+    "tests/api/v1/deps/token_revocation_test.py": "redis_token_blacklist",
+    "tests/api/v1/endpoints/logout_revocation_test.py": "redis_token_blacklist",
+    "docs/integrations/token-revocation.md": "redis_token_blacklist",
     "app/services/cache/rate_limiter.py": "redis_rate_limit",
     "app/core/exceptions/rate_limiter.py": "redis_rate_limit",
     "app/core/types.py": "redis_rate_limit",

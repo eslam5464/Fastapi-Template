@@ -12,7 +12,11 @@ from app.core.config import settings
 from app.models.user import User
 from app.repos.user import UserRepo
 from app.schemas import TokenData, UserCreate
+
+# --- FEATURE[redis_token_blacklist] START ---
 from app.services.cache.token_blacklist import token_blacklist
+
+# --- FEATURE[redis_token_blacklist] END ---
 from app.services.exceptions.auth import (
     DuplicateResourceError,
     ResourceNotFoundError,
@@ -360,9 +364,11 @@ class AuthService:
         if token_type != "access":  # nosec B105
             raise ValidationError("Token has invalid claims")
 
+        # --- FEATURE[redis_token_blacklist] START ---
         jti: str | None = payload.get("jti")
         if jti and await token_blacklist.is_revoked(jti):
             raise ValidationError("Token has been revoked")
+        # --- FEATURE[redis_token_blacklist] END ---
 
         try:
             token_data = TokenData(
@@ -373,10 +379,12 @@ class AuthService:
         except TypeError, ValueError, JWTClaimsError:
             raise ValidationError("Token has invalid claims")
 
+        # --- FEATURE[redis_token_blacklist] START ---
         # Check if all user tokens were revoked (e.g., password change)
         revocation_time = await token_blacklist.get_user_revocation_time(str(token_data.user_id))
         if revocation_time and issued_at and issued_at < revocation_time:
             raise ValidationError("Token has been revoked")
+        # --- FEATURE[redis_token_blacklist] END ---
 
         user = await self.user_repo.get_by_id(token_data.user_id)
         if user is None:
@@ -413,9 +421,11 @@ class AuthService:
         if token_type != "refresh":  # nosec B105
             raise ValidationError("Invalid token type. Expected refresh token.")
 
+        # --- FEATURE[redis_token_blacklist] START ---
         jti: str | None = payload.get("jti")
         if jti and await token_blacklist.is_revoked(jti):
             raise ValidationError("Refresh token has been revoked")
+        # --- FEATURE[redis_token_blacklist] END ---
 
         try:
             user_id = self._parse_user_id(user_id)

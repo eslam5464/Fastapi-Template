@@ -21,7 +21,10 @@ This API template includes the following services:
 
 ### Core Services
 
-- **Authentication** - JWT-based user authentication with token blacklisting
+- **Authentication** - JWT-based user authentication
+<!-- --- FEATURE[redis_token_blacklist] START --- -->
+- **Token revocation** - logout puts the token on a Redis blacklist
+<!-- --- FEATURE[redis_token_blacklist] END --- -->
 - **User Management** - User registration and profile management
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - **Rate Limiting** - Redis-based sliding window rate limiting with microsecond precision
@@ -185,7 +188,7 @@ Get a new access token using a refresh token.
 
 #### POST /api/v1/auth/logout
 
-Revoke the current access token. After logout, the token cannot be used again.
+Log out. When token revocation is enabled, the access token is revoked and cannot be used again; otherwise it stays valid until it expires.
 
 **Headers**:
 
@@ -198,7 +201,7 @@ Authorization: Bearer <access_token>
 ```json
 {
   "message": "Successfully logged out",
-  "revoked_at": "2025-01-19T10:30:00Z"
+  "revoked": true
 }
 ```
 
@@ -213,7 +216,10 @@ curl -X POST "http://localhost:8799/api/v1/auth/logout" \
   -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 ```
 
-**Note**: This endpoint uses token blacklisting via Redis. Revoked tokens are stored until their natural expiration time, after which they are automatically cleaned up.
+**Note**: `revoked` is `false` when the project has no token revocation.
+<!-- --- FEATURE[redis_token_blacklist] START --- -->
+Revoked tokens are kept on a Redis blacklist until their natural expiration time ([integrations/token-revocation.md](integrations/token-revocation.md)).
+<!-- --- FEATURE[redis_token_blacklist] END --- -->
 
 ### Health Endpoints
 

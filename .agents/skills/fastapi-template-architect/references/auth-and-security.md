@@ -34,6 +34,13 @@ since they aren't snapshotted in `assets/`).
 
 ## Token blacklist (Redis-backed revocation)
 
+Present only in projects generated with the `include_redis_token_blacklist` Copier
+toggle (guide: `docs/integrations/token-revocation.md`). **Without it, logout cannot
+revoke anything:** `POST /v1/auth/logout` still validates the token but returns
+`revoked: false`, and the access token stays valid until it expires. Say so when a
+user asks about logout or session security in such a project, and recommend short
+token lifetimes or adding the blacklist.
+
 `app/services/cache/token_blacklist.py` exposes `revoke_token(jti, ttl)`,
 `is_revoked(jti)`, `revoke_all_user_tokens(user_id, ttl)` (marker-based — for
 password-change-triggered mass revocation), and `get_user_revocation_time`. It's a

@@ -31,7 +31,10 @@ from app.services.cache.manager import cache_manager
 from app.services.cache.rate_limiter import rate_limiter
 
 # --- FEATURE[redis_rate_limit] END ---
+# --- FEATURE[redis_token_blacklist] START ---
 from app.services.cache.token_blacklist import token_blacklist
+
+# --- FEATURE[redis_token_blacklist] END ---
 
 
 async def _check_cache_manager() -> None:
@@ -60,6 +63,7 @@ async def _check_rate_limiter() -> None:
 # --- FEATURE[redis_rate_limit] END ---
 
 
+# --- FEATURE[redis_token_blacklist] START ---
 async def _check_token_blacklist() -> None:
     """Warn (outside LOCAL) when the token blacklist is not reachable; startup continues."""
     if settings.current_environment != Environment.LOCAL:
@@ -71,13 +75,18 @@ async def _check_token_blacklist() -> None:
             logger.success("TokenBlacklist is healthy.")
 
 
+# --- FEATURE[redis_token_blacklist] END ---
+
+
 async def _check_dependencies():
     """Check essential dependencies before starting the app"""
     await _check_cache_manager()
     # --- FEATURE[redis_rate_limit] START ---
     await _check_rate_limiter()
     # --- FEATURE[redis_rate_limit] END ---
+    # --- FEATURE[redis_token_blacklist] START ---
     await _check_token_blacklist()
+    # --- FEATURE[redis_token_blacklist] END ---
 
 
 async def _close_cache_manager() -> None:
@@ -94,9 +103,13 @@ async def _close_rate_limiter() -> None:
 # --- FEATURE[redis_rate_limit] END ---
 
 
+# --- FEATURE[redis_token_blacklist] START ---
 async def _close_token_blacklist() -> None:
     await token_blacklist.close()
     logger.success("TokenBlacklist connection closed.")
+
+
+# --- FEATURE[redis_token_blacklist] END ---
 
 
 async def _shutdown_dependencies():
@@ -105,7 +118,9 @@ async def _shutdown_dependencies():
     # --- FEATURE[redis_rate_limit] START ---
     await _close_rate_limiter()
     # --- FEATURE[redis_rate_limit] END ---
+    # --- FEATURE[redis_token_blacklist] START ---
     await _close_token_blacklist()
+    # --- FEATURE[redis_token_blacklist] END ---
 
 
 @asynccontextmanager

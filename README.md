@@ -11,7 +11,13 @@ A production-ready FastAPI project template with modern best practices, async su
 
 - **🚀 FastAPI** - Modern, fast web framework for building APIs, with versioned routers (`/v1`, `/v2`)
 - **📊 PostgreSQL** - Async database integration with SQLAlchemy 2.0 and Alembic migrations
-- **🔐 JWT Authentication** - Secure token-based authentication with token blacklisting
+- **🔐 JWT Authentication** - Secure token-based authentication
+<!-- --- FEATURE[redis_token_blacklist] START --- -->
+- **🚫 Token revocation** - logout puts the token on a Redis blacklist
+<!-- --- FEATURE[redis_token_blacklist] END --- -->
+<!-- --- FEATURE[!redis_token_blacklist] START --- -->
+- **⚠️ Logout does not revoke tokens** - without the token blacklist, a logged-out access token stays valid until it expires; keep expiry times short
+<!-- --- FEATURE[!redis_token_blacklist] END --- -->
 - **🏗️ Clean Architecture** - Repository pattern, dependency injection, and enforced module boundaries (tach)
 - **🔒 Security** - CSRF and security headers middleware
 <!-- --- FEATURE[redis_rate_limit] START --- -->
@@ -135,7 +141,7 @@ uvx copier copy gh:eslam5464/Fastapi-Template <new-project-dir> --trust
 
 **Alternative:** if you'd rather have `copier` installed permanently (e.g. for `copier update` later), use `uv tool install copier` instead. On Windows, that installs into a user tools directory that's often **not yet on PATH** in your *current* terminal session — if you see `'copier' is not recognized as an internal or external command` right after installing, either open a **new** terminal window, or run `uv tool update-shell` and then restart the terminal. The `uvx` command above sidesteps the PATH issue entirely since it doesn't need `copier` installed anywhere persistent.
 
-You'll be prompted for a project name, description, author name/email, GitHub username, Python version, and whether to keep the minimal base or choose optional services one by one (currently rate limiting, Celery, Firebase, Firestore, Google Cloud Storage, BackBlaze B2, Resend, Brevo, OpenObserve and Apple Pay); running `copier copy ... --defaults` gives you the minimal base. Everything identity-specific — the `pyproject.toml` name, Docker container names, the Postgres schema, `README.md`, `LICENSE`, `CODEOWNERS` — is filled in automatically; see [docs/features.md](docs/features.md) for what ships by default versus what's opt-in.
+You'll be prompted for a project name, description, author name/email, GitHub username, Python version, and whether to keep the minimal base or choose optional services one by one (currently rate limiting, the token blacklist, Celery, Firebase, Firestore, Google Cloud Storage, BackBlaze B2, Resend, Brevo, OpenObserve and Apple Pay); running `copier copy ... --defaults` gives you the minimal base. Everything identity-specific — the `pyproject.toml` name, Docker container names, the Postgres schema, `README.md`, `LICENSE`, `CODEOWNERS` — is filled in automatically; see [docs/features.md](docs/features.md) for what ships by default versus what's opt-in.
 
 `--trust` is required because generation runs a small post-processing script (`scripts/generate/post_gen.py`) that substitutes your answers into the copied files, removes unused Apple Pay files when you opt out, regenerates `uv.lock`, and runs `git init` for you.
 
@@ -277,7 +283,9 @@ The template includes a complete JWT-based authentication system:
 - User registration and login
 - Access and refresh tokens
 - Password hashing with Argon2 (via pwdlib)
+<!-- --- FEATURE[redis_token_blacklist] START --- -->
 - Token blacklisting for secure logout
+<!-- --- FEATURE[redis_token_blacklist] END --- -->
 - Protected routes with dependency injection
 
 ### Example Usage
