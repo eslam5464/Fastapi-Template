@@ -23,7 +23,6 @@ if str(TEST_DIR) not in sys.path:
 
 import features  # noqa: E402
 import markers  # noqa: E402
-import post_gen  # noqa: E402
 
 # copier.yml questions that are about project identity, not optional features.
 IDENTITY_QUESTIONS = {
@@ -92,19 +91,6 @@ def test_tasks_features_json_keys_match_manifest():
     assert keys == {"services"} | _feature_questions()
 
 
-def _all_answer_combinations():
-    """Every valid custom answer set, plus the minimal base."""
-    questions = sorted(_feature_questions())
-    yield {"services": "minimal", **dict.fromkeys(questions, False)}
-    for values in itertools.product([False, True], repeat=len(questions)):
-        raw = {"services": "custom", **dict(zip(questions, values))}
-        try:
-            post_gen.resolve(raw)
-        except SystemExit:
-            continue  # e.g. a child feature switched on without its parent
-        yield raw
-
-
 def _copier_excluded(rel: str, patterns: list[str]) -> bool:
     """Approximate Copier's _exclude matching: a pattern matches the path or any of its parts."""
     parts = rel.split("/")
@@ -131,11 +117,64 @@ def tracked_files() -> list[str]:
     ]
 
 
-@pytest.mark.parametrize("raw", list(_all_answer_combinations()), ids=lambda raw: str(sorted(raw.items())))
-def test_engine_accepts_every_answer_combination(raw, tracked_files, tmp_path):
-    """The marker pass must succeed (no MarkerError) for every valid answer set."""
+def _marker_feature_names(text: str) -> set[str]:
+    """Feature names used in a file's FEATURE[...] marker expressions."""
+    return {name for expr in re.findall(r"FEATURE\[([^\]]+)\]", text) for name in re.split(r"[|&!]", expr) if name}
+
+
+def _owning_paths(rel: str) -> list[str]:
+    """PATHS entries that cover rel: the file itself or a folder above it."""
+    return [key for key in features.PATHS if key == rel or (key.endswith("/") and rel.startswith(key))]
+
+
+def test_every_marked_file_strips_for_every_combination_of_its_features(tracked_files):
+    """The marker pass succeeds (no MarkerError) for every answer set.
+
+    A file's markers can only fail on the features that file mentions (its
+    marker expressions and the PATHS entries that own it), so trying every
+    combination of those per file covers every answer set without copying the
+    whole template for each one. Whole-tree runs of the CI variants are in
+    check_variants_test.py.
+    """
+    names_all = [feature.name for feature in features.FEATURES]
+    checked = 0
     for rel in tracked_files:
-        dst = tmp_path / rel
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(REPO_ROOT / rel, dst)
-    markers.apply(tmp_path, post_gen.resolve(raw))
+        path = REPO_ROOT / rel
+        if markers._is_excluded(rel, features.SCAN_EXCLUDE):
+            continue
+        style = markers.style_for(path)
+        if style is None:
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        owners = _owning_paths(rel)
+        names = _marker_feature_names(text)
+        if not names:
+            continue
+        for key in owners:
+            names |= _marker_feature_names(f"FEATURE[{features.PATHS[key]}]")
+        names = sorted(names)
+        for values in itertools.product([False, True], repeat=len(names)):
+            flags = dict.fromkeys(names_all, False)
+            flags.update(zip(names, values))
+            if any(not markers._eval_expr(features.PATHS[key], flags, False, key, 0) for key in owners):
+                continue  # the file is deleted for this answer set, never processed
+            markers.process_text(text, flags, style, rel)
+        checked += 1
+    assert checked > 0, "no marked files found"
+
+
+def test_engine_runs_on_the_whole_template_for_minimal_and_everything(tracked_files, tmp_path):
+    """One whole-tree run each with every feature off and every feature on (PATHS, near-miss scan)."""
+    for flags in (
+        {feature.name: False for feature in features.FEATURES},
+        {feature.name: feature.name != "_template" for feature in features.FEATURES},
+    ):
+        root = tmp_path / str(len(list(tmp_path.iterdir())))
+        for rel in tracked_files:
+            dst = root / rel
+            dst.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(REPO_ROOT / rel, dst)
+        markers.apply(root, flags)
