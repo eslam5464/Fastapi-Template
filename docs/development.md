@@ -440,26 +440,12 @@ Configure via `.env`:
 LOG_LEVEL=DEBUG  # or INFO, WARNING, ERROR, CRITICAL
 ```
 
+<!-- --- FEATURE[openobserve] START --- -->
 #### Centralized Log Aggregation (Optional)
 
-For production deployments, configure remote log shipping:
+Logs can be shipped to OpenObserve without blocking requests; see [integrations/openobserve.md](integrations/openobserve.md).
 
-```bash
-# Add to .env for centralized logging
-OPENOBSERVE_URL=https://observe.example.com
-OPENOBSERVE_ACCESS_KEY=your_base64_token
-OPENOBSERVE_ORG_ID=your_organization
-OPENOBSERVE_STREAM_NAME=fastapi_logs
-OPENOBSERVE_BATCH_SIZE=10
-OPENOBSERVE_FLUSH_INTERVAL=5.0
-```
-
-Benefits:
-
-- Non-blocking: doesn't slow down your application
-- Batched: reduces network overhead
-- Resilient: continues local logging if remote service unavailable
-- Searchable: query logs across all application instances
+<!-- --- FEATURE[openobserve] END --- -->
 
 #### Multi-Worker Considerations
 

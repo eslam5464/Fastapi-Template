@@ -661,10 +661,14 @@ The template includes a production-grade logging infrastructure designed for mul
 Add to production `.env`:
 
 ```env
-# Basic logging
 LOG_LEVEL=INFO
+```
 
-# Centralized log aggregation (Optional - OpenObserve, Grafana Loki, etc.)
+<!-- --- FEATURE[openobserve] START --- -->
+Centralized log aggregation with OpenObserve (see [integrations/openobserve.md](integrations/openobserve.md)):
+
+```env
+LOG_TO_OPENOBSERVE=True
 OPENOBSERVE_URL=https://observe.yourdomain.com
 OPENOBSERVE_ACCESS_KEY=your_base64_encoded_token
 OPENOBSERVE_ORG_ID=production
@@ -672,6 +676,7 @@ OPENOBSERVE_STREAM_NAME=fastapi-app
 OPENOBSERVE_BATCH_SIZE=50
 OPENOBSERVE_FLUSH_INTERVAL=5.0
 ```
+<!-- --- FEATURE[openobserve] END --- -->
 
 <!-- --- FEATURE[resend|brevo] START --- -->
 #### Email Provider Setup for Production
@@ -793,25 +798,12 @@ async def health_check():
 
 ### Centralized Log Aggregation Options
 
+<!-- --- FEATURE[openobserve] START --- -->
 #### OpenObserve (Recommended)
 
-Open-source observability platform with excellent performance:
+Open-source observability platform; this project ships logs to it natively. Setup and production notes: [integrations/openobserve.md](integrations/openobserve.md).
 
-```bash
-# Deploy OpenObserve (Docker)
-docker run -d \
-  --name openobserve \
-  -p 5080:5080 \
-  -v /data/openobserve:/data \
-  public.ecr.aws/zinclabs/openobserve:latest
-
-# Generate auth token (base64 encode: username:password)
-echo -n "admin:ComplexPassword123" | base64
-
-# Configure in application .env
-OPENOBSERVE_URL=https://observe.yourdomain.com
-OPENOBSERVE_ACCESS_KEY=YWRtaW46Q29tcGxleFBhc3N3b3JkMTIz
-```
+<!-- --- FEATURE[openobserve] END --- -->
 
 #### Grafana Loki
 

@@ -77,6 +77,12 @@ FEATURES: tuple[Feature, ...] = (
         forbidden=(r"(?i)brevo",),
     ),
     Feature(
+        "openobserve",
+        question="include_openobserve",
+        imports=("httpx",),
+        forbidden=(r"(?i)openobserve",),
+    ),
+    Feature(
         "apple_pay",
         question="include_apple_pay",
         imports=("appstoreserverlibrary", "cryptography"),
@@ -90,6 +96,9 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 # A key ending in "/" is a directory (deleted with its whole tree when the
 # expression is false). Every key must exist in the template repository.
 PATHS: dict[str, str] = {
+    "app/core/openobserve.py": "openobserve",
+    "tests/core/openobserve_test.py": "openobserve",
+    "docs/integrations/openobserve.md": "openobserve",
     "app/services/email/": "resend|brevo",
     "app/services/email/resend.py": "resend",
     "app/services/email/brevo.py": "brevo",
@@ -135,7 +144,6 @@ BASE_IMPORTS: tuple[str, ...] = (
     "faker",
     "fastapi",
     "gunicorn",
-    "httpx",
     "jose",
     "loguru",
     "pwdlib",
