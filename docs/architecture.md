@@ -331,6 +331,7 @@ Redis-based caching and rate limiting infrastructure:
 - **Graceful Degradation**: Continues operation even if Redis is unavailable
 - **Shared Connection Pool**: Efficient Redis connection management
 
+<!-- --- FEATURE[redis_rate_limit] START --- -->
 **RateLimiter** - Sliding window rate limiting:
 
 - **Sliding Window Algorithm**: Accurate request counting using Redis sorted sets with microsecond precision
@@ -352,9 +353,11 @@ Redis-based caching and rate limiting infrastructure:
 - **Authenticated User Endpoints**: 300 req/min per user (user-based)
 - **Custom Endpoints**: Configurable limits with custom prefixes
 
+<!-- --- FEATURE[redis_rate_limit] END --- -->
+
 **Redis Connection Pooling**:
 
-- **Shared Pool**: All Redis clients (CacheManager, RateLimiter) share a connection pool
+- **Shared Pool**: All Redis clients share a connection pool
 - **Resource Efficiency**: Maximum 50 connections across all clients
 - **Automatic Management**: Connection pooling, health checks, and graceful shutdown
 

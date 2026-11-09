@@ -38,7 +38,9 @@ Complete guide for local development environment setup and daily development tas
 - Code quality tools (Black, pre-commit hooks)
 - Testing strategies and execution
 - Debugging techniques
-- Rate limiting configuration
+<!-- --- FEATURE[redis_rate_limit] START --- -->
+- Rate limiting configuration ([integrations/rate-limiting.md](integrations/rate-limiting.md))
+<!-- --- FEATURE[redis_rate_limit] END --- -->
 <!-- --- FEATURE[backblaze] START --- -->
 - BackBlaze B2 integration guide ([integrations/backblaze.md](integrations/backblaze.md))
 <!-- --- FEATURE[backblaze] END --- -->
@@ -75,7 +77,9 @@ Comprehensive API documentation including all endpoints, request/response format
 - Error handling and status codes
 - Authentication implementation
 - CORS configuration
+<!-- --- FEATURE[redis_rate_limit] START --- -->
 - Rate limiting (implemented with Redis sliding window)
+<!-- --- FEATURE[redis_rate_limit] END --- -->
 - Complete usage examples (curl, Python, JavaScript)
 
 **Best for**: Frontend developers, API consumers, integration developers, testing APIs.

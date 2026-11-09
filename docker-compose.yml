@@ -49,12 +49,14 @@ services:
       - CACHE_TTL_SHORT
       - CACHE_TTL_LONG
       - CACHE_TTL_VERY_LONG
+      # --- FEATURE[redis_rate_limit] START ---
       - RATE_LIMIT_ENABLED
       - RATE_LIMIT_DEFAULT
       - RATE_LIMIT_WINDOW
       - RATE_LIMIT_STRICT
       - RATE_LIMIT_LENIENT
       - RATE_LIMIT_USER
+      # --- FEATURE[redis_rate_limit] END ---
       - SECRET_KEY
       - ACCESS_TOKEN_EXPIRE_SECONDS
       - REFRESH_TOKEN_EXPIRE_SECONDS

@@ -1,3 +1,4 @@
+# --- FEATURE[redis_rate_limit] START ---
 class RateLimitPrefix:
     """
     Centralized registry of all rate limit key prefixes.
@@ -72,6 +73,9 @@ class RateLimitPrefix:
             raise ValueError(
                 f"Rate limit prefix '{prefix}' is already registered. Existing prefixes: {cls.all_prefixes()}"
             )
+
+
+# --- FEATURE[redis_rate_limit] END ---
 
 
 class FieldSizes:

@@ -113,6 +113,7 @@ class Settings(BaseSettings):
     cache_ttl_long: int  # Long cache TTL in seconds
     cache_ttl_very_long: int  # Very long cache TTL in seconds
 
+    # --- FEATURE[redis_rate_limit] START ---
     # Rate limiting settings (requests per window)
     rate_limit_enabled: bool
     rate_limit_default: int = 100  # Default limit for general API endpoints
@@ -120,6 +121,7 @@ class Settings(BaseSettings):
     rate_limit_strict: int = 10  # Strict limit for authentication endpoints
     rate_limit_lenient: int = 1000  # Lenient limit for public endpoints
     rate_limit_user: int = 300  # Limit for authenticated user endpoints
+    # --- FEATURE[redis_rate_limit] END ---
 
     # Token security settings
     secret_key: str = Field(

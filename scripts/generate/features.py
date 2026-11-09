@@ -40,6 +40,20 @@ FEATURES: tuple[Feature, ...] = (
     # when generating a project.
     Feature("_template"),
     Feature(
+        "redis_rate_limit",
+        question="include_redis_rate_limit",
+        forbidden=(
+            r"rate_limiter",
+            r"\bRateLimiter\b",
+            r"RateLimitPrefix",
+            r"RateLimitInfoDict",
+            r"RateLimitHeaderMiddleware",
+            r"RATE_LIMIT_",
+            r"\brate_limit_\w+",
+            r"deps\.rate_limit\b",
+        ),
+    ),
+    Feature(
         "celery",
         question="include_celery",
         imports=("celery", "faker"),
@@ -102,6 +116,19 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 # A key ending in "/" is a directory (deleted with its whole tree when the
 # expression is false). Every key must exist in the template repository.
 PATHS: dict[str, str] = {
+    "app/services/cache/rate_limiter.py": "redis_rate_limit",
+    "app/core/exceptions/rate_limiter.py": "redis_rate_limit",
+    "app/core/types.py": "redis_rate_limit",
+    "app/api/v1/deps/rate_limit.py": "redis_rate_limit",
+    "app/middleware/rate_limit.py": "redis_rate_limit",
+    "tests/services/cache/rate_limiter_test.py": "redis_rate_limit",
+    "tests/api/v1/deps/rate_limit_part1_test.py": "redis_rate_limit",
+    "tests/api/v1/deps/rate_limit_part2_test.py": "redis_rate_limit",
+    "tests/api/v1/endpoints/rate_limit_wiring_test.py": "redis_rate_limit",
+    "tests/main_rate_limit_test.py": "redis_rate_limit",
+    "docs/integrations/rate-limiting.md": "redis_rate_limit",
+    ".claude/skills/fastapi-template-architect/assets/app/api/v1/deps/rate_limit.py": "redis_rate_limit",
+    ".agents/skills/fastapi-template-architect/assets/app/api/v1/deps/rate_limit.py": "redis_rate_limit",
     "app/services/task_queue/": "celery",
     "app/core/db_sync.py": "celery",
     "tests/services/task_queue/": "celery",

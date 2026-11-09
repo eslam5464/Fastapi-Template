@@ -1,5 +1,5 @@
 # --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
-# Verbatim copy of app/main.py from eslam5464/Fastapi-Template, taken 2026-11-06.
+# Verbatim copy of app/main.py from eslam5464/Fastapi-Template, taken 2026-11-09.
 # The real repo is the source of truth; this is a fallback/reference copy
 # for offline scaffolding and Extend/Audit-mode pattern-matching. It can drift
 # from the live repo over time - prefer driving the real Copier template
@@ -19,10 +19,18 @@ from app.core.config import Environment, settings
 from app.core.logger import configure_uvicorn_logging, setup_logger, shutdown_logger
 from app.middleware.csrf import CSRFMiddleware
 from app.middleware.logging import LoggingMiddleware
+
+# --- FEATURE[redis_rate_limit] START ---
 from app.middleware.rate_limit import RateLimitHeaderMiddleware
+
+# --- FEATURE[redis_rate_limit] END ---
 from app.middleware.security_headers import SecurityHeadersMiddleware
 from app.services.cache.manager import cache_manager
+
+# --- FEATURE[redis_rate_limit] START ---
 from app.services.cache.rate_limiter import rate_limiter
+
+# --- FEATURE[redis_rate_limit] END ---
 from app.services.cache.token_blacklist import token_blacklist
 
 
@@ -37,6 +45,7 @@ async def _check_cache_manager() -> None:
         logger.success("CacheManager is healthy.")
 
 
+# --- FEATURE[redis_rate_limit] START ---
 async def _check_rate_limiter() -> None:
     """Fail startup when rate limiting is enabled but its store is not reachable."""
     rate_limiter_healthy = await rate_limiter.health_check()
@@ -46,6 +55,9 @@ async def _check_rate_limiter() -> None:
         raise RuntimeError("RateLimiter is not healthy.")
     else:
         logger.success("RateLimiter is healthy.")
+
+
+# --- FEATURE[redis_rate_limit] END ---
 
 
 async def _check_token_blacklist() -> None:
@@ -62,7 +74,9 @@ async def _check_token_blacklist() -> None:
 async def _check_dependencies():
     """Check essential dependencies before starting the app"""
     await _check_cache_manager()
+    # --- FEATURE[redis_rate_limit] START ---
     await _check_rate_limiter()
+    # --- FEATURE[redis_rate_limit] END ---
     await _check_token_blacklist()
 
 
@@ -71,9 +85,13 @@ async def _close_cache_manager() -> None:
     logger.success("CacheManager connection closed.")
 
 
+# --- FEATURE[redis_rate_limit] START ---
 async def _close_rate_limiter() -> None:
     await rate_limiter.close()
     logger.success("RateLimiter connection closed.")
+
+
+# --- FEATURE[redis_rate_limit] END ---
 
 
 async def _close_token_blacklist() -> None:
@@ -84,7 +102,9 @@ async def _close_token_blacklist() -> None:
 async def _shutdown_dependencies():
     """Shutdown essential dependencies gracefully"""
     await _close_cache_manager()
+    # --- FEATURE[redis_rate_limit] START ---
     await _close_rate_limiter()
+    # --- FEATURE[redis_rate_limit] END ---
     await _close_token_blacklist()
 
 
@@ -165,8 +185,10 @@ app.add_middleware(SecurityHeadersMiddleware)
 # Set CSRF protection middleware (header-based)
 app.add_middleware(CSRFMiddleware)
 
+# --- FEATURE[redis_rate_limit] START ---
 # Set rate limit header middleware
 app.add_middleware(RateLimitHeaderMiddleware)
+# --- FEATURE[redis_rate_limit] END ---
 
 # Set logging middleware
 app.add_middleware(LoggingMiddleware)

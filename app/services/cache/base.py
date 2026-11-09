@@ -44,7 +44,7 @@ class BaseRedisClient(ABC):
     Abstract base class for Redis clients with shared connection handling.
 
     Provides core Redis connection initialization, health checks, and availability checks
-    that are inherited by all Redis-based services (CacheManager, RateLimiter, etc.).
+    that are inherited by all Redis-based services in this package.
     """
 
     _redis_client: Redis | None = None
