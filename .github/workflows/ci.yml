@@ -30,7 +30,7 @@ jobs:
         run: uv python install "$(cat .python-version)"
 
       - name: Install dependencies
-        run: uv sync --all-groups --all-extras --frozen
+        run: uv sync --all-groups --frozen
 
       # Runs the exact same hooks defined in .pre-commit-config.yaml (ruff, tach,
       # mypy, bandit, detect-secrets, check-jsonschema) as a required status check -
@@ -105,7 +105,7 @@ jobs:
         run: uv python install "$(cat .python-version)"
 
       - name: Install dependencies
-        run: uv sync --all-groups --all-extras --frozen
+        run: uv sync --all-groups --frozen
 
       - name: Configure environment
         run: |

@@ -26,8 +26,10 @@ A production-ready FastAPI project template with modern best practices, async su
 - **🐳 Docker Compose** - Backend and Postgres ready to run
 - **🧪 CI & Testing** - Pytest with coverage gating, plus lint/type/security checks in GitHub Actions
 
+<!-- --- FEATURE[redis_cache|celery|backblaze|gcs|firebase|apple_pay|resend|brevo] START --- -->
 Plus optional integrations:
 
+<!-- --- FEATURE[redis_cache|celery|backblaze|gcs|firebase|apple_pay|resend|brevo] END --- -->
 <!-- --- FEATURE[redis_cache] START --- -->
 - caching
 <!-- --- FEATURE[redis_cache] END --- -->
@@ -86,11 +88,8 @@ For the full list of integrations and services, see **[docs/features.md](docs/fe
    Install dependencies
 
    ```bash
-   # Install dependencies
+   # Install dependencies (the services chosen at generation are regular dependencies)
    uv sync --all-groups
-
-   # Install optional integrations as needed
-   uv sync --all-groups --all-extras
 
    # Install pre-commit hooks
    pre-commit install
@@ -100,7 +99,6 @@ For the full list of integrations and services, see **[docs/features.md](docs/fe
 
    ```bash
    uv sync --all-groups --native-tls
-   uv sync --native-tls --all-extras
    ```
 
 3. **Set up environment variables**
@@ -244,6 +242,9 @@ Detailed documentation is available in the [docs/](docs/) folder:
 
 ## 🏛️ Architecture
 
+See **[Architecture Overview](docs/architecture/overview.md)** for the layers, request flow and module boundaries.
+
+<!-- --- FEATURE[_template] START --- -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/fastapi-template.architecture.visual-check.1440x900.dark.png">
   <img src="docs/architecture/fastapi-template.architecture.visual-check.1440x900.light.png" alt="FastAPI Template runtime architecture diagram: client through the API gateway, versioned routers, service layer, repository/ORM, PostgreSQL, Redis-backed caching and rate limiting, and an optional Celery worker, all inside a Docker Compose trusted network." width="800">
@@ -251,7 +252,9 @@ Detailed documentation is available in the [docs/](docs/) folder:
 
 *Screenshot of the interactive diagram — client → API Gateway → versioned API → Service Layer → Repository/ORM → PostgreSQL, with Redis-backed caching/rate-limiting/token-blacklisting and an optional Celery worker for background jobs, all inside the Docker Compose trusted network.*
 
-See **[Architecture Overview](docs/architecture/overview.md)** for the full write-up. The interactive version lives at [`docs/architecture/fastapi-template.architecture.html`](docs/architecture/fastapi-template.architecture.html) — download it and open it locally for guided views, theme toggling, and per-node source links (GitHub renders `.html` files as source, not a live page, so the link above won't run it in-browser).
+The interactive version of this diagram lives at [`docs/architecture/fastapi-template.architecture.html`](docs/architecture/fastapi-template.architecture.html) — download it and open it locally for guided views, theme toggling, and per-node source links (GitHub renders `.html` files as source, not a live page, so the link above won't run it in-browser).
+
+<!-- --- FEATURE[_template] END --- -->
 
 ## 🏗️ Project Structure
 
@@ -407,25 +410,54 @@ REFRESH_TOKEN_EXPIRE_SECONDS=2592000
 BACKEND_HOST=localhost
 BACKEND_PORT=8799
 CURRENT_ENVIRONMENT=local
+```
 
-# Redis (for caching and rate limiting)
+<!-- --- FEATURE[redis] START --- -->
+Redis (shared by the Redis-backed services this project uses):
+
+```env
 REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASS=your-redis-password
+```
 
-# Rate Limiting
+<!-- --- FEATURE[redis] END --- -->
+<!-- --- FEATURE[redis_rate_limit] START --- -->
+Rate limiting:
+
+```env
 RATE_LIMIT_ENABLED=true
 RATE_LIMIT_DEFAULT=100
 RATE_LIMIT_WINDOW=60
+```
 
-# Celery & Background Tasks
+<!-- --- FEATURE[redis_rate_limit] END --- -->
+<!-- --- FEATURE[celery] START --- -->
+Celery and background tasks:
+
+```env
 ENABLE_DATA_SEEDING=false
 SEEDING_USER_COUNT=100
+```
 
-# Email Providers
+<!-- --- FEATURE[celery] END --- -->
+<!-- --- FEATURE[resend] START --- -->
+Resend:
+
+```env
 RESEND_API_KEY=your_resend_api_key_here
+```
+
+<!-- --- FEATURE[resend] END --- -->
+<!-- --- FEATURE[brevo] START --- -->
+Brevo:
+
+```env
 BREVO_API_KEY=your_brevo_api_key_here
 ```
+
+<!-- --- FEATURE[brevo] END --- -->
+`.env.example` lists every variable this project uses.
 
 ## 📦 Dependencies
 

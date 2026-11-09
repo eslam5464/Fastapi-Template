@@ -7,7 +7,7 @@ picklable Python object, and `app/services/cache/decorators.py` provides the
 
 The cache is included when the project is generated with
 `--data services=custom --data include_redis_cache=true` (or by answering "yes" to the
-cache question). Choosing it (or rate limiting, the token blacklist or Celery) also adds
+cache question). Choosing it, or any other Redis-backed service, also adds
 Redis: the `redis` dependency, the `REDIS_*` settings, and the Redis service in
 `docker-compose.yml` and in the generated CI.
 

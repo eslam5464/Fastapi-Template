@@ -184,17 +184,15 @@ jobs:
 
       # Production dependencies only: fails when application code imports a
       # package that only the test or dev groups install.
-      # TODO(phase 4): drop --all-extras once every service is a feature and the
-      # extras are gone.
       - name: Import every app module with production dependencies only
         working-directory: /tmp/baked
         run: |
-          uv sync --locked --no-dev --all-extras
+          uv sync --locked --no-dev
           uv run --no-sync python "$GITHUB_WORKSPACE/scripts/generate/ci_checks.py" import-app
 
       - name: Install all dependency groups
         working-directory: /tmp/baked
-        run: uv sync --locked --all-groups --all-extras
+        run: uv sync --locked --all-groups
 
       - name: Cache pre-commit environments
         uses: actions/cache@v4

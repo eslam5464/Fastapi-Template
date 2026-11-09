@@ -60,5 +60,7 @@ Example:
 - 401: Authentication failure
 - 403: Forbidden/CSRF violations
 - 404: Not found
+<!-- --- FEATURE[redis_rate_limit] START --- -->
 - 429: Rate limited
+<!-- --- FEATURE[redis_rate_limit] END --- -->
 - 500: Unexpected server error

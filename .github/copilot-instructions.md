@@ -18,7 +18,7 @@ a violation fails `tach check` (pre-commit hook and CI).
 |---|---|---|---|
 | API | `app/api/` | Routing, domain→HTTP exception translation, final `except Exception` + `logger.exception(...)` | Deps, Schemas, Core |
 | Deps | `app/api/*/deps/` | Session ownership, repo/service wiring, atomic-transaction orchestration | Services, Repos, Schemas, Core |
-| Service | `app/services/` | Business logic, domain exceptions, `TypedDict` I/O contracts | Repos, `app/services/types`, Cache |
+| Service | `app/services/` | Business logic, domain exceptions, `TypedDict` I/O contracts | Repos, `app/services/types`, shared clients (e.g. a cache) |
 | Repository | `app/repos/` | CRUD, query building, `auto_commit` support | Models, Schemas |
 | Schema | `app/schemas/` | Pydantic v2 validation/serialization | Core (enums only) |
 | Model | `app/models/` | SQLAlchemy ORM mapping | Core (`Base` only) |

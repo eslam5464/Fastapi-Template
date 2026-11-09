@@ -25,6 +25,9 @@ class Feature:
         imports: Third-party top-level module names the feature may import.
         forbidden: Regex strings that must not appear in a bake when the
             feature is off.
+        doc_forbidden: Extra regex strings checked only in the prose docs
+            (README.md, docs/), for wording the code tokens don't cover
+            (e.g. "Apple Pay", or links to the feature's integration guide).
     """
 
     name: str
@@ -33,6 +36,7 @@ class Feature:
     computed_from: tuple[str, ...] = ()
     imports: tuple[str, ...] = ()
     forbidden: tuple[str, ...] = ()
+    doc_forbidden: tuple[str, ...] = ()
 
 
 FEATURES: tuple[Feature, ...] = (
@@ -50,6 +54,10 @@ FEATURES: tuple[Feature, ...] = (
             r"cache_ttl_",
             r"CACHE_(ENABLED|TTL)",
         ),
+        doc_forbidden=(
+            r"integrations/caching",
+            r"(?i)redis cache",
+        ),
     ),
     Feature(
         "redis_rate_limit",
@@ -64,17 +72,20 @@ FEATURES: tuple[Feature, ...] = (
             r"\brate_limit_\w+",
             r"deps\.rate_limit\b",
         ),
+        doc_forbidden=(r"integrations/rate-limiting", r"X-RateLimit"),
     ),
     Feature(
         "redis_token_blacklist",
         question="include_redis_token_blacklist",
         forbidden=(r"token_blacklist", r"TokenBlacklist"),
+        doc_forbidden=(r"integrations/token-revocation",),
     ),
     Feature(
         "celery",
         question="include_celery",
         imports=("celery", "faker"),
         forbidden=(r"(?i)celery", r"psycopg", r"db_sync", r"db_url_sync", r"task_queue", r"(?i)data_seeding"),
+        doc_forbidden=(r"integrations/celery",),
     ),
     # Computed: on when any Redis-backed service is chosen. Listed after its
     # sources, since post_gen.resolve() computes features in manifest order.
@@ -89,6 +100,7 @@ FEATURES: tuple[Feature, ...] = (
         question="include_firebase",
         imports=("firebase_admin",),
         forbidden=(r"(?i)firebase",),
+        doc_forbidden=(r"integrations/firebase",),
     ),
     Feature(
         "firestore",
@@ -96,18 +108,27 @@ FEATURES: tuple[Feature, ...] = (
         parent="firebase",
         imports=("google",),
         forbidden=(r"(?i)firestore",),
+        doc_forbidden=(r"integrations/firestore",),
     ),
     Feature(
         "gcs",
         question="include_gcs",
         imports=("gcloud", "aiofiles"),
-        forbidden=(r"gcloud", r"aiofiles", r"google_bucket", r"gcs_exceptions", r"\b[Gg][Cc][Ss]\b"),
+        forbidden=(r"gcloud[.-]", r"aiofiles", r"google_bucket", r"gcs_exceptions", r"\b[Gg][Cc][Ss]\b"),
+        doc_forbidden=(
+            r"integrations/gcs",
+            r"(?i)google cloud storage",
+        ),
     ),
     Feature(
         "backblaze",
         question="include_backblaze",
         imports=("b2sdk",),
         forbidden=(r"b2sdk", r"BackBlaze", r"back_blaze"),
+        doc_forbidden=(
+            r"integrations/backblaze",
+            r"(?i)backblaze",
+        ),
     ),
     Feature(
         "resend",
@@ -126,12 +147,17 @@ FEATURES: tuple[Feature, ...] = (
         question="include_openobserve",
         imports=("httpx",),
         forbidden=(r"(?i)openobserve",),
+        doc_forbidden=(r"integrations/openobserve",),
     ),
     Feature(
         "apple_pay",
         question="include_apple_pay",
         imports=("appstoreserverlibrary", "cryptography"),
         forbidden=(r"appstoreserverlibrary", r"ApplePay", r"(?i)apple_pay"),
+        doc_forbidden=(
+            r"integrations/apple-pay",
+            r"(?i)apple pay",
+        ),
     ),
 )
 
@@ -141,6 +167,15 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 # A key ending in "/" is a directory (deleted with its whole tree when the
 # expression is false). Every key must exist in the template repository.
 PATHS: dict[str, str] = {
+    # The Archify diagram of the template itself (every service on): template repo only.
+    "docs/architecture/fastapi-template.architecture.html": "_template",
+    "docs/architecture/fastapi-template.architecture.json": "_template",
+    "docs/architecture/fastapi-template.architecture.visual-check.html": "_template",
+    "docs/architecture/fastapi-template.architecture.visual-check.json": "_template",
+    "docs/architecture/fastapi-template.architecture.visual-check.1440x900.dark.png": "_template",
+    "docs/architecture/fastapi-template.architecture.visual-check.1440x900.light.png": "_template",
+    "docs/architecture/fastapi-template.architecture.visual-check.2048x1320.dark.png": "_template",
+    "docs/architecture/fastapi-template.architecture.visual-check.2048x1320.light.png": "_template",
     "app/services/cache/": "redis",
     "app/services/cache/manager.py": "redis_cache",
     "app/services/cache/decorators.py": "redis_cache",

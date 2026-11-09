@@ -2,7 +2,7 @@
 
 ## System Purpose
 
-FastAPI Template provides a reusable backend foundation for authenticated APIs with layered architecture, async persistence, Redis-backed operational capabilities, and production-oriented middleware.
+FastAPI Template provides a reusable backend foundation for authenticated APIs with layered architecture, async persistence, and production-oriented middleware.
 
 ## Component Map
 
@@ -15,7 +15,7 @@ FastAPI Template provides a reusable backend foundation for authenticated APIs w
 | Model Layer (app/models) | ORM table mapping | Shared base model and entity models |
 | Schema Layer (app/schemas) | Validation and serialization | Pydantic request/response contracts |
 | Core Layer (app/core) | Config, db setup, HTTP exceptions, utilities | Lowest dependency layer |
-| Middleware Layer (app/middleware) | Security, CSRF, logging, rate limit headers | Applied in root app order |
+| Middleware Layer (app/middleware) | Security headers, CSRF, logging | Applied in root app order |
 
 ## Tech Stack
 
@@ -27,10 +27,28 @@ FastAPI Template provides a reusable backend foundation for authenticated APIs w
 | ORM | SQLAlchemy 2 async |
 | Database | PostgreSQL |
 | Migrations | Alembic |
-| Cache / Rate Limit / Token Revocation | Redis |
-| Background Jobs | Celery |
-| Auth | JWT + refresh tokens + blacklist |
+| Auth | JWT + refresh tokens |
 | Testing | pytest + anyio |
+
+<!-- --- FEATURE[redis|celery] START --- -->
+Optional services in this project:
+
+<!-- --- FEATURE[redis|celery] END --- -->
+<!-- --- FEATURE[redis] START --- -->
+- **Redis** — backs the services below that need it
+<!-- --- FEATURE[redis] END --- -->
+<!-- --- FEATURE[redis_cache] START --- -->
+  - cache (`app/services/cache/manager.py`)
+<!-- --- FEATURE[redis_cache] END --- -->
+<!-- --- FEATURE[redis_rate_limit] START --- -->
+  - rate limiting (`app/services/cache/rate_limiter.py`)
+<!-- --- FEATURE[redis_rate_limit] END --- -->
+<!-- --- FEATURE[redis_token_blacklist] START --- -->
+  - token revocation on logout (`app/services/cache/token_blacklist.py`)
+<!-- --- FEATURE[redis_token_blacklist] END --- -->
+<!-- --- FEATURE[celery] START --- -->
+- **Celery** — background jobs (`app/services/task_queue/`), with Redis as the broker
+<!-- --- FEATURE[celery] END --- -->
 
 ## API Versioning and Docs Isolation
 
@@ -46,7 +64,7 @@ This keeps OpenAPI schemas isolated by version and allows independent evolution 
 
 ## Request Data Flow
 
-1. Request reaches root app middleware chain (security headers, CSRF, rate-limit headers, logging).
+1. Request reaches root app middleware chain (security headers, CSRF, logging).
 2. Request is routed to root endpoints (for example /health) or a mounted version app (/v1 or /v2).
 3. Endpoint dependencies assemble service objects and repositories with request-scoped session.
 4. Service executes business logic and calls repositories as needed.
@@ -56,7 +74,9 @@ This keeps OpenAPI schemas isolated by version and allows independent evolution 
 
 - SecurityHeadersMiddleware uses route-aware CSP so Swagger/ReDoc can load safely on versioned docs paths.
 - CSRFMiddleware exempts auth and versioned docs/openapi paths.
+<!-- --- FEATURE[redis_rate_limit] START --- -->
 - RateLimitHeaderMiddleware injects rate-limit headers when dependency state exists.
+<!-- --- FEATURE[redis_rate_limit] END --- -->
 - LoggingMiddleware records request lifecycle metadata.
 
 ## Current Constraints

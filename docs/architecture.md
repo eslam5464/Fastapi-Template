@@ -28,82 +28,102 @@ This FastAPI template follows clean architecture principles with a focus on main
 
 ```text
 app/
-├── main.py                 # Application entry point
+├── main.py                 # Application entry point (lifespan, middleware, routers)
+├── web.py                  # Gunicorn application runner
 ├── api/                    # API layer
-│   ├── routes.py           # Main API router
-│   └── v1/                 # API version 1
-│       ├── router.py       # Version router
-│       ├── deps/           # Dependencies
-│       │   ├── auth.py     # Authentication dependencies
-│       │   └── rate_limit.py # Rate limiting dependencies
-│       └── endpoints/      # Endpoint modules
-│           ├── auth.py     # Authentication endpoints
-│           └── user.py     # User endpoints
-├── core/                   # Core business logic
-│   ├── config.py           # Configuration management
-│   ├── db.py               # Database connection
-│   ├── auth.py             # Authentication utilities
-│   ├── constants.py        # Application constants and enums
+│   ├── routes.py           # Unversioned routes (/health)
+│   ├── v1/                 # API version 1
+│   │   ├── router.py       # Version router
+│   │   ├── deps/
+│   │   │   └── auth.py     # Authentication dependencies
+│   │   └── endpoints/
+│   │       ├── auth.py     # Authentication endpoints
+│   │       └── user.py     # User endpoints
+│   └── v2/
+│       └── router.py       # Version 2 router
+├── core/                   # Settings, infrastructure, shared helpers
+│   ├── config.py           # Settings (pydantic-settings)
+│   ├── db.py               # Async engine and sessions
+│   ├── constants.py        # Application constants
 │   ├── logger.py           # Logging configuration
 │   ├── responses.py        # Standard API responses
-│   ├── types.py            # TypedDict definitions
 │   ├── utils.py            # Utility functions
-│   └── exceptions/         # Custom exceptions (folder)
+│   ├── credentials/        # Credential models of the integrations
+│   └── exceptions/
 │       ├── base.py         # Base exception classes
-│       ├── http_exceptions.py  # HTTP-related exceptions
-│       ├── rate_limiter.py # Rate limiting exceptions
-│       ├── firebase_exceptions.py # Firebase exceptions
-│       ├── gcs_exceptions.py # Google Cloud Storage exceptions
-│       ├── back_blaze_exceptions.py # BackBlaze B2 exceptions
-│       └── apple_pay.py    # Apple Pay exceptions
-├── models/                 # Data models (SQLAlchemy)
-│   ├── base.py             # Base model class
-│   └── user.py             # User model
-├── schemas/                # Data schemas (Pydantic)
-│   ├── base.py             # Base schema classes
-│   ├── user.py             # User schemas
-│   ├── token.py            # Token schemas
-│   ├── health_check.py     # Health check schemas
-│   ├── back_blaze_bucket.py # BackBlaze B2 schemas
-│   ├── google_bucket.py    # Google Cloud Storage schemas
-│   ├── firebase.py         # Firebase schemas
-│   └── apple_pay.py        # Apple Pay schemas
+│       ├── domain.py       # Domain exceptions
+│       └── http_exceptions.py  # HTTP exceptions
+├── models/                 # SQLAlchemy models
+│   ├── base.py
+│   └── user.py
+├── schemas/                # Pydantic schemas
+│   ├── base.py
+│   ├── user.py
+│   ├── token.py
+│   └── health_check.py
 ├── repos/                  # Repository layer
-│   ├── base.py             # Base repository class
-│   └── user.py             # User repository
-├── services/               # Business logic and external services
-│   ├── back_blaze_b2.py    # BackBlaze B2 cloud storage service
-│   ├── gcs.py              # Google Cloud Storage service
-│   ├── firebase.py         # Firebase authentication & messaging
-│   ├── firestore.py        # Firestore NoSQL database
-│   ├── email/              # Email delivery services
-│   │   ├── base.py         # Abstract email service base class
-│   │   ├── resend.py       # Resend provider implementation
-│   │   ├── brevo.py        # Brevo provider implementation
-│   │   └── static/html/    # HTML email templates
-│   ├── cache/              # Caching services
-│   │   ├── base.py         # Redis connection base
-│   │   ├── manager.py      # Cache manager service
-│   │   ├── rate_limiter.py # Rate limiting service
-│   │   ├── token_blacklist.py # Token blacklist for logout
-│   │   └── decorators.py   # Caching decorators
-│   ├── payments/           # Payment services
-│   │   └── apple_pay.py    # Apple Pay App Store Server API
-│   └── task_queue/         # Celery background jobs
-│       ├── __init__.py     # Celery app configuration
-│       ├── celery_config.py # Beat schedule configuration
-│       └── tasks/          # Task implementations
-│           └── user_tasks.py # User seeding tasks
-├── middleware/             # Custom middleware
+│   ├── base.py
+│   └── user.py
+├── services/               # Business logic
+│   ├── auth_service.py     # Authentication service
+│   ├── exceptions/         # Service-layer exceptions
+│   └── types/              # Service-layer TypedDicts
+├── middleware/
 │   ├── logging.py          # Request logging middleware
 │   ├── csrf.py             # CSRF protection middleware
-│   ├── rate_limit.py       # Rate limit headers middleware
 │   └── security_headers.py # Security headers middleware
 └── alembic/                # Database migrations
-    ├── env.py              # Alembic environment
-    ├── script.py.mako      # Migration template
-    └── versions/           # Migration files
+    ├── env.py
+    ├── script.py.mako
+    └── versions/
 ```
+
+<!-- --- FEATURE[redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] START --- -->
+Optional service files in this project:
+
+<!-- --- FEATURE[redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] END --- -->
+<!-- --- FEATURE[redis] START --- -->
+- `app/services/cache/base.py` — shared Redis connection pool (`BaseRedisClient`)
+<!-- --- FEATURE[redis] END --- -->
+<!-- --- FEATURE[redis_cache] START --- -->
+- `app/services/cache/manager.py`, `decorators.py` — Redis cache ([guide](integrations/caching.md))
+<!-- --- FEATURE[redis_cache] END --- -->
+<!-- --- FEATURE[redis_rate_limit] START --- -->
+- `app/services/cache/rate_limiter.py`, `app/api/v1/deps/rate_limit.py`, `app/middleware/rate_limit.py`, `app/core/exceptions/rate_limiter.py`, `app/core/types.py` — rate limiting ([guide](integrations/rate-limiting.md))
+<!-- --- FEATURE[redis_rate_limit] END --- -->
+<!-- --- FEATURE[redis_token_blacklist] START --- -->
+- `app/services/cache/token_blacklist.py` — token revocation ([guide](integrations/token-revocation.md))
+<!-- --- FEATURE[redis_token_blacklist] END --- -->
+<!-- --- FEATURE[celery] START --- -->
+- `app/services/task_queue/` (`celery_config.py`, `tasks/`), `app/core/db_sync.py` — Celery background jobs ([guide](integrations/celery.md))
+<!-- --- FEATURE[celery] END --- -->
+<!-- --- FEATURE[firebase] START --- -->
+- `app/services/firebase.py`, `app/schemas/firebase.py`, `app/core/credentials/firebase.py`, `app/core/exceptions/firebase_exceptions.py` — Firebase ([guide](integrations/firebase.md))
+<!-- --- FEATURE[firebase] END --- -->
+<!-- --- FEATURE[firestore] START --- -->
+- `app/services/firestore.py` — Firestore ([guide](integrations/firestore.md))
+<!-- --- FEATURE[firestore] END --- -->
+<!-- --- FEATURE[gcs] START --- -->
+- `app/services/gcs.py`, `app/schemas/google_bucket.py`, `app/core/exceptions/gcs_exceptions.py` — Google Cloud Storage ([guide](integrations/gcs.md))
+<!-- --- FEATURE[gcs] END --- -->
+<!-- --- FEATURE[backblaze] START --- -->
+- `app/services/back_blaze_b2.py`, `app/schemas/back_blaze_bucket.py`, `app/core/exceptions/back_blaze_exceptions.py` — BackBlaze B2 ([guide](integrations/backblaze.md))
+<!-- --- FEATURE[backblaze] END --- -->
+<!-- --- FEATURE[resend|brevo] START --- -->
+- `app/services/email/` (`base.py`, `static/` templates), `app/services/types/email.py`, `app/services/exceptions/email.py` — email ([guide](integrations/email.md))
+<!-- --- FEATURE[resend|brevo] END --- -->
+<!-- --- FEATURE[resend] START --- -->
+  - `app/services/email/resend.py` — Resend provider
+<!-- --- FEATURE[resend] END --- -->
+<!-- --- FEATURE[brevo] START --- -->
+  - `app/services/email/brevo.py` — Brevo provider
+<!-- --- FEATURE[brevo] END --- -->
+<!-- --- FEATURE[openobserve] START --- -->
+- `app/core/openobserve.py` — OpenObserve log shipping ([guide](integrations/openobserve.md))
+<!-- --- FEATURE[openobserve] END --- -->
+<!-- --- FEATURE[apple_pay] START --- -->
+- `app/services/payments/apple_pay.py`, `app/core/credentials/apple_pay.py`, `app/core/exceptions/apple_pay.py` — Apple Pay ([guide](integrations/apple-pay.md))
+<!-- --- FEATURE[apple_pay] END --- -->
 
 ## Layer Architecture
 
@@ -112,7 +132,7 @@ app/
 **Responsibility**: Handle HTTP requests and responses
 
 - **Routes**: Define API endpoints and their grouping
-- **Dependencies**: Provide authentication, database sessions, rate limiting, etc.
+- **Dependencies**: Provide authentication, database sessions and other shared request dependencies
 - **Endpoints**: Implement specific API operations
 - **Validation**: Input validation using Pydantic schemas
 
@@ -258,8 +278,10 @@ class BackBlaze:
 ```
 <!-- --- FEATURE[backblaze] END --- -->
 
+<!-- --- FEATURE[backblaze|firebase|resend|brevo|redis] START --- -->
 **Available Services**:
 
+<!-- --- FEATURE[backblaze|firebase|resend|brevo|redis] END --- -->
 <!-- --- FEATURE[backblaze] START --- -->
 #### BackBlaze B2 Cloud Storage
 
@@ -311,7 +333,12 @@ NoSQL document database integration:
 Provider-based email delivery with shared contracts and strict validation:
 
 - **Base Contract**: Abstract base service for consistent provider behavior
-- **Providers**: Resend and Brevo implementations
+<!-- --- FEATURE[resend] START --- -->
+- **Provider**: Resend (`app/services/email/resend.py`)
+<!-- --- FEATURE[resend] END --- -->
+<!-- --- FEATURE[brevo] START --- -->
+- **Provider**: Brevo (`app/services/email/brevo.py`)
+<!-- --- FEATURE[brevo] END --- -->
 - **Validation**: Pydantic request/response models for payload safety
 - **Templates**: File-based HTML templates under `app/services/email/static/html`
 - **Error Handling**: Domain-specific service exceptions
@@ -363,6 +390,8 @@ Redis-based infrastructure shared by the cache, rate limiting and the token blac
 - **Shared Pool**: All Redis clients share a connection pool
 - **Resource Efficiency**: Maximum 50 connections across all clients
 - **Automatic Management**: Connection pooling, health checks, and graceful shutdown
+
+<!-- --- FEATURE[redis] END --- -->
 
 ## Data Flow
 
@@ -440,10 +469,6 @@ class Settings(BaseSettings):
     access_token_expire_seconds: int = 3600
     refresh_token_expire_seconds: int = 86400
 
-    # Email providers
-    resend_api_key: SecretStr
-    brevo_api_key: SecretStr
-
     # Server
     backend_host: str = "0.0.0.0"
     backend_port: int = 8799
@@ -496,8 +521,6 @@ The template implements a sophisticated logging infrastructure built with Loguru
 - **Request Flow Analysis**: Debug complex operations by filtering all logs for a specific request ID
 
 ### Dual Output Strategy
-
-<!-- --- FEATURE[redis] END --- -->
 
 #### Console Output (Development-Friendly)
 
@@ -654,9 +677,11 @@ class NotFoundError(BaseAPIException):
 
 ### Caching Strategy
 
-- **Query Caching**: Frequently accessed data
-- **Session Caching**: User session information
-- **Configuration Caching**: Static configuration data
+- **Configuration**: settings are read once at import (`app.core.config.settings`)
+- **Frequently read data**: cache in the service layer, behind a small interface, when a profile shows it is worth it
+<!-- --- FEATURE[redis_cache] START --- -->
+- **Redis cache**: `cache_manager` / `@cache_result` ([guide](integrations/caching.md))
+<!-- --- FEATURE[redis_cache] END --- -->
 
 ### Database Optimization
 
@@ -688,7 +713,9 @@ class NotFoundError(BaseAPIException):
 - **CORS Policy**: Configured origin restrictions
 - **CSRF Protection**: Middleware-based CSRF token validation
 - **Security Headers**: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
+<!-- --- FEATURE[redis_rate_limit] START --- -->
 - **Rate Limiting**: Redis-based sliding window algorithm with microsecond precision
+<!-- --- FEATURE[redis_rate_limit] END --- -->
 
 ## Deployment Architecture
 

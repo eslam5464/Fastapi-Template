@@ -11,8 +11,11 @@ The integration is included when the project is generated with
 `--data services=custom --data include_firebase=true` (or by answering "yes" to the
 Firebase question). It adds `firebase-admin` to the project's dependencies and the
 `FIREBASE_*` settings to `app/core/config.py`, `.env.example` and the backend service in
-`docker-compose.yml`. Firestore is a separate choice under it, see
-[firestore.md](firestore.md).
+`docker-compose.yml`.
+
+<!-- --- FEATURE[firestore] START --- -->
+Firestore is a separate choice under it, see [firestore.md](firestore.md).
+<!-- --- FEATURE[firestore] END --- -->
 
 ## Setup
 

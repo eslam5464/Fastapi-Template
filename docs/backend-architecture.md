@@ -727,7 +727,7 @@ class ResourceService:
 - **Minimal dependencies**: Keep each service lightweight for portability and Python-version migration
 - **Threshold**: If a service constructor takes **>5 repositories**, it’s doing too much — split into smaller services
 
-> **Infrastructure services**: Not all services follow the repo-injection pattern. Infrastructure services like `firebase.py`, `gcs.py`, `back_blaze_b2.py`, and `firestore.py` wrap external SDKs and don't use repositories. They live in `app/services/` alongside domain services and are typically used by deps or other services directly.
+> **Infrastructure services**: Not all services follow the repo-injection pattern. Infrastructure services wrap external SDKs (a storage bucket, a push or email provider, a document store) and don't use repositories. They live in `app/services/` alongside domain services and are typically used by deps or other services directly.
 
 #### Service Design Pattern: Standalone vs Abstract Base
 
@@ -2365,7 +2365,10 @@ The middleware layer adds **cross-cutting HTTP concerns** that run on every requ
 | **CSRF Protection** | `csrf.py` | Double-submit cookie pattern with `X-CSRF-Token` header validation |
 | **Request Logging** | `logging.py` | Logs request/response details with sanitized bodies; redacts sensitive fields |
 | **Security Headers** | `security_headers.py` | Adds OWASP-recommended headers (HSTS, CSP, X-Frame-Options, etc.) |
-| **Rate Limit Headers** | `rate_limit.py` | Injects `X-RateLimit-*` headers from rate limit dependency state |
+
+<!-- --- FEATURE[redis_rate_limit] START --- -->
+With rate limiting, `rate_limit.py` (`RateLimitHeaderMiddleware`) injects `X-RateLimit-*` headers from the rate limit dependency state.
+<!-- --- FEATURE[redis_rate_limit] END --- -->
 
 #### Key Characteristics
 
@@ -2385,9 +2388,12 @@ Middleware is registered in `app/main.py`. Order matters — outermost middlewar
 app.add_middleware(CORSMiddleware, ...)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CSRFMiddleware)
-app.add_middleware(RateLimitHeaderMiddleware)
 app.add_middleware(LoggingMiddleware)
 ```
+
+<!-- --- FEATURE[redis_rate_limit] START --- -->
+With rate limiting, `app.add_middleware(RateLimitHeaderMiddleware)` sits between the CSRF and logging middleware.
+<!-- --- FEATURE[redis_rate_limit] END --- -->
 
 ---
 
@@ -4065,11 +4071,13 @@ This appendix binds the generic guidance above to this repository's concrete imp
 
 Current registration order in `app/main.py`:
 
-1. `CORSMiddleware`
-2. `SecurityHeadersMiddleware`
-3. `CSRFMiddleware`
-4. `RateLimitHeaderMiddleware`
-5. `LoggingMiddleware`
+- `CORSMiddleware`
+- `SecurityHeadersMiddleware`
+- `CSRFMiddleware`
+<!-- --- FEATURE[redis_rate_limit] START --- -->
+- `RateLimitHeaderMiddleware`
+<!-- --- FEATURE[redis_rate_limit] END --- -->
+- `LoggingMiddleware`
 
 ### Exception Translation in Practice
 

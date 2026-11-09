@@ -33,8 +33,10 @@ This API template includes the following services:
 - **Caching** - High-performance Redis caching with shared connection pooling
 <!-- --- FEATURE[redis_cache] END --- -->
 
+<!-- --- FEATURE[backblaze|gcs|firebase|apple_pay|resend|brevo] START --- -->
 ### Integrated Services
 
+<!-- --- FEATURE[backblaze|gcs|firebase|apple_pay|resend|brevo] END --- -->
 <!-- --- FEATURE[backblaze] START --- -->
 - **BackBlaze B2 Cloud Storage** - File storage and management service (available as a service layer, can be integrated into custom endpoints)
 <!-- --- FEATURE[backblaze] END --- -->
@@ -52,11 +54,13 @@ This API template includes the following services:
 - **Apple Pay** - App Store Server API integration for in-app purchase verification (available as a service layer)
 <!-- --- FEATURE[apple_pay] END --- -->
 <!-- --- FEATURE[resend|brevo] START --- -->
-- **Email Delivery (Resend/Brevo)** - Provider-based email service layer with Pydantic-validated payloads and template support (available as a service layer)
+- **Email Delivery** - Provider-based email service layer with Pydantic-validated payloads and template support (available as a service layer)
 <!-- --- FEATURE[resend|brevo] END --- -->
 
+<!-- --- FEATURE[backblaze|gcs|firebase|apple_pay] START --- -->
 For integration examples:
 
+<!-- --- FEATURE[backblaze|gcs|firebase|apple_pay] END --- -->
 <!-- --- FEATURE[backblaze] START --- -->
 - [BackBlaze B2 Integration](./integrations/backblaze.md)
 <!-- --- FEATURE[backblaze] END --- -->

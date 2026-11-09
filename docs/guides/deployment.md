@@ -14,7 +14,11 @@
 | CURRENT_ENVIRONMENT | Runtime environment selector |
 | SECRET_KEY | JWT signing secret |
 | POSTGRES_* | Database connection settings |
-| REDIS_URL | Cache/rate-limit/token blacklist backend |
+
+<!-- --- FEATURE[redis] START --- -->
+Also set `REDIS_HOST`, `REDIS_PORT`, `REDIS_USER` and `REDIS_PASS` for the Redis-backed services.
+<!-- --- FEATURE[redis] END --- -->
+Every optional service's variables are listed in `.env.example`.
 
 ## Deploy Steps
 

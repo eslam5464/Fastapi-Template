@@ -4,7 +4,9 @@
 
 - Python 3.14+
 - PostgreSQL 12+
+<!-- --- FEATURE[redis] START --- -->
 - Redis
+<!-- --- FEATURE[redis] END --- -->
 - uv
 
 ## Clone
@@ -28,7 +30,7 @@ uv sync --all-groups
 copy .env.example .env
 ```
 
-Update .env values for database, redis, and secrets.
+Update the .env values (database, secrets, and the settings of any optional service this project includes).
 
 ## Database
 
