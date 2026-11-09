@@ -431,13 +431,7 @@ BREVO_API_KEY=your_brevo_api_key_here
 
 Core dependencies (FastAPI, SQLAlchemy, Alembic, Pydantic, Uvicorn) are always installed. The packages of the optional services chosen when the project was generated are regular dependencies too, so `uv sync` installs everything the project uses.
 
-<!-- --- FEATURE[apple_pay] START --- -->
-```bash
-uv sync --extra apple-services
-```
-<!-- --- FEATURE[apple_pay] END --- -->
-
-See **[docs/features.md](docs/features.md)** for what each extra provides and how to configure it.
+See **[docs/features.md](docs/features.md)** for what each service provides and how to configure it.
 
 ## 🤝 Contributing
 

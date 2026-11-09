@@ -60,37 +60,12 @@ See the Production section of [integrations/gcs.md](integrations/gcs.md).
 
 <!-- --- FEATURE[gcs] END --- -->
 
+<!-- --- FEATURE[apple_pay] START --- -->
 #### Apple Pay (App Store Server API) Setup for Production
 
-If your application uses Apple Pay for in-app purchase verification:
+See the Setup and Production sections of [integrations/apple-pay.md](integrations/apple-pay.md).
 
-1. **App Store Connect Setup**
-
-   - Log in to [App Store Connect](https://appstoreconnect.apple.com)
-   - Navigate to Users and Access → Keys → App Store Connect API
-   - Generate a new API key with appropriate permissions
-   - Download the private key (`.p8` file) - this can only be downloaded once
-2. **Environment Configuration**
-
-   ```env
-   APPLE_PAY_STORE_PRIVATE_KEY_ID=your_key_id
-   APPLE_PAY_STORE_PRIVATE_KEY=-----KEY-----
-   APPLE_PAY_STORE_ISSUER_ID=your_issuer_id
-   APPLE_PAY_STORE_BUNDLE_ID=com.your.app.bundle
-   APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH=/path/to/AppleRootCA-G3.cer
-   ```
-3. **Download Apple Root Certificate**
-
-   - Download from [Apple PKI](https://www.apple.com/certificateauthority/)
-   - Use `AppleRootCA-G3.cer` for production
-   - Store securely and reference via `APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH`
-4. **Security Best Practices**
-
-   - Never commit private keys to version control
-   - Use secrets management (AWS Secrets Manager, HashiCorp Vault, etc.)
-   - Rotate keys periodically
-   - Monitor for unauthorized transaction verification attempts
-   - Implement server-side receipt validation
+<!-- --- FEATURE[apple_pay] END --- -->
 
 ### Security Considerations
 

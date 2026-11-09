@@ -15,10 +15,9 @@ direct inspection).
   asyncpg, pydantic/pydantic-settings, `pwdlib[argon2]`,
   pyjwt + python-jose, loguru, gunicorn, `uvicorn[standard]`, uvloop/httptools on
   non-Windows platforms, yarl.
-- **Optional extras** (`uv sync --extra <name>`, see
-  [optional-integrations.md](optional-integrations.md)): `apple-services`.
-  Services chosen at generation time (Redis and the cache, Celery, Firebase, GCS, ...)
-  are core dependencies of the projects that include them instead.
+- **No optional extras**: the services chosen at generation time (Redis and the cache,
+  Celery, Firebase, GCS, Apple Pay, ...) are core dependencies of the projects that
+  include them (see [optional-integrations.md](optional-integrations.md)).
 - **`dependency-groups`** (not extras — dev/test tooling, `uv sync --all-groups`):
   `test` (anyio, faker, httpx, pytest, pytest-cov), `dev` (bandit[toml], commitizen,
   detect-secrets, mypy, ruff, tach, types-aiofiles), `template` (copier — only relevant

@@ -62,7 +62,9 @@ log/
 # Test
 .pytest_cache/
 .hypothesis/
+# --- FEATURE[apple_pay] START ---
 .apple_pay_test_credentials/
+# --- FEATURE[apple_pay] END ---
 
 # Alembic
 versions/__pycache__/

@@ -10,6 +10,9 @@ dependencies = [
     "aiofiles>=25.1.0",
     # --- FEATURE[gcs] END ---
     "alembic>=1.16.5",
+    # --- FEATURE[apple_pay] START ---
+    "app-store-server-library[async]>=2.0.0",
+    # --- FEATURE[apple_pay] END ---
     "asyncpg>=0.30.0",
     # --- FEATURE[celery] START ---
     "celery[redis]>=5.3.1",
@@ -58,13 +61,6 @@ dependencies = [
     "uvloop>=0.21.0 ; sys_platform == 'linux'",
     "yarl>=1.20.1",
 ]
-
-# --- FEATURE[apple_pay] START ---
-[project.optional-dependencies]
-apple-services = [
-    "app-store-server-library[async]>=2.0.0",
-]
-# --- FEATURE[apple_pay] END ---
 
 [dependency-groups]
 test = [

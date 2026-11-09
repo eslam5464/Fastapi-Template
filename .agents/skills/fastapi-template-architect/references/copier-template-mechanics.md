@@ -159,8 +159,8 @@ declined (today: the Redis cache, rate limiting, the token blacklist, Celery, Fi
 Brevo, OpenObserve and Apple Pay). Redis is a computed feature: never asked, on when the
 cache, rate limiting, the token blacklist or Celery is chosen, and then it brings the
 `redis` dependency, the `REDIS_*` settings and the Redis service in compose and CI. A
-chosen service's packages are regular dependencies of the generated project; only Apple
-Pay's still sits in an extra (`apple-services`) until it moves too.
+chosen service's packages are regular dependencies of the generated project; there are
+no `pyproject.toml` extras any more.
 
 ## `template-ci.yml` — the self-verification loop
 

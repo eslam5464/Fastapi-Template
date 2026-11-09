@@ -25,7 +25,7 @@ an extra as equivalent to "generating the project with/without" that feature.
 | Cache, rate limiting, token blacklist (Redis) | — (Copier toggles; Redis is computed from them and Celery) | `app/services/cache/{base,manager,decorators,rate_limiter,token_blacklist}.py` | Fails open / no-op in `LOCAL` |
 | Firebase, Firestore, GCS, BackBlaze | — (Copier toggles, below) | `app/services/{firebase,firestore,gcs,back_blaze_b2}.py` | Not usable until credentials are set |
 | Task queue | — (Copier toggle `include_celery`) | `app/services/task_queue/{celery_config.py, tasks/user_tasks.py}` | Inert unless a worker/beat process is actually started |
-| Apple Pay | `apple-services` | `app/services/payments/apple_pay.py` | **Removable at generation time** — the one real toggle |
+| Apple Pay | — (Copier toggle `include_apple_pay`) | `app/services/payments/apple_pay.py` | Not usable until credentials are set |
 
 ## Email (Copier toggles, not an extra)
 
@@ -118,15 +118,15 @@ A new background task follows the same shape: sync session factory, not the asyn
 used by request-handling code — mixing them is a common mistake when porting logic from
 an endpoint/service into a Celery task.
 
-## Apple Pay (`apple-services` extra — the one real toggle)
+## Apple Pay (`include_apple_pay` Copier toggle)
 
 `app/services/payments/apple_pay.py` wraps `app-store-server-library[async]` for App
 Store receipt/subscription verification, credentials modeled by
-`ApplePayStoreCredentials` in `app/core/credentials.py`. It's the **only** integration
-wrapped in `# --- APPLE_PAY_*_START/END ---` marker blocks across `pyproject.toml`
-(extras + mypy overrides), `config.py` (settings + computed property), `credentials.py`,
-`.env.example`, and `README.md` — meaning `post_gen.py` can surgically delete it when a
-user opts out at generation time (see
+`ApplePayStoreCredentials` in `app/core/credentials/apple_pay.py` (guide:
+`docs/integrations/apple-pay.md`). Like every optional service it is a Copier toggle:
+its files are listed in the feature manifest and its settings, env vars, compose
+variables, dependency and docs are `FEATURE[apple_pay]` blocks, so a project generated
+without it has none of them (see
 [copier-template-mechanics.md](copier-template-mechanics.md)). It also builds a
 **module-level singleton at import time** that eagerly PEM-parses its private key — this
 is why `tests/conftest.py` has to generate throwaway credentials *before* any `app.*`
