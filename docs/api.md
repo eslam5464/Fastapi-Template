@@ -23,7 +23,9 @@ This API template includes the following services:
 
 - **Authentication** - JWT-based user authentication with token blacklisting
 - **User Management** - User registration and profile management
+<!-- --- FEATURE[redis_rate_limit] START --- -->
 - **Rate Limiting** - Redis-based sliding window rate limiting with microsecond precision
+<!-- --- FEATURE[redis_rate_limit] END --- -->
 - **Caching** - High-performance Redis caching with shared connection pooling
 
 ### Integrated Services
@@ -387,60 +389,12 @@ For 422 status codes, the response includes field-specific errors:
 }
 ```
 
+<!-- --- FEATURE[redis_rate_limit] START --- -->
 ## Rate Limiting
 
-The API implements production-ready rate limiting using Redis with a sliding window algorithm and microsecond precision.
+Limits, response headers, the 429 response and configuration: see [integrations/rate-limiting.md](integrations/rate-limiting.md).
 
-### Rate Limit Tiers
-
-| Endpoint Type                        | Limit    | Window | Description          |
-| ------------------------------------ | -------- | ------ | -------------------- |
-| Authentication (`/login`, `/signup`) | 10 req   | 1 min  | Strict limit per IP  |
-| General API                          | 100 req  | 1 min  | Default limit per IP |
-| Public endpoints                     | 1000 req | 1 min  | Lenient limit per IP |
-| Authenticated user endpoints         | 300 req  | 1 min  | Per user ID          |
-
-### Rate Limit Response Headers
-
-All rate-limited endpoints include these headers:
-
-```http
-X-RateLimit-Limit: 100          # Maximum requests allowed
-X-RateLimit-Remaining: 73       # Requests remaining in window
-X-RateLimit-Reset: 1701234567   # Unix timestamp when limit resets
-```
-
-### Rate Limit Exceeded Response
-
-When the limit is exceeded, clients receive HTTP 429:
-
-```http
-HTTP/1.1 429 Too Many Requests
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 0
-X-RateLimit-Reset: 1701234567
-```
-
-```json
-{
-  "detail": "Rate limit exceeded. Please slow down your requests."
-}
-```
-
-### Configuration
-
-Rate limiting can be configured via environment variables:
-
-```env
-RATE_LIMIT_ENABLED=true     # Enable/disable rate limiting
-RATE_LIMIT_DEFAULT=100      # General API endpoints
-RATE_LIMIT_WINDOW=60        # Time window in seconds
-RATE_LIMIT_STRICT=10        # Authentication endpoints
-RATE_LIMIT_LENIENT=1000     # Public endpoints
-RATE_LIMIT_USER=300         # Authenticated user endpoints
-```
-
-**Note**: Rate limiting requires Redis. If Redis is unavailable, the system fails open (allows requests) to prevent service disruption
+<!-- --- FEATURE[redis_rate_limit] END --- -->
 
 ## API Versioning
 

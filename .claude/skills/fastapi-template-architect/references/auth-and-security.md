@@ -80,6 +80,10 @@ than loosening `DEFAULT_CSP` globally.
 
 ## Rate limiting — sliding window over Redis
 
+Present only in projects generated with the `include_redis_rate_limit` Copier toggle
+(guide: `docs/integrations/rate-limiting.md`). Without it the auth and user routes have
+no request limits, so recommend a limit at the reverse proxy or gateway instead.
+
 `app/api/v1/deps/rate_limit.py` (`../assets/`) implements a **sliding-window algorithm**
 via Redis sorted sets (`ZADD`/`ZREMRANGEBYSCORE`/`ZCARD`, microsecond-precision scores).
 Named tiers, each a FastAPI dependency:

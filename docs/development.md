@@ -561,176 +561,12 @@ async def get_user_profile(user_id: str):
     return user_data
 ```
 
+<!-- --- FEATURE[redis_rate_limit] START --- -->
 ### Rate Limiting
 
-The template includes a production-ready rate limiting system using Redis and sliding window algorithm.
+See [integrations/rate-limiting.md](integrations/rate-limiting.md).
 
-#### Quick Start
-
-Apply pre-configured rate limiters to endpoints using FastAPI dependencies:
-
-```python
-from fastapi import APIRouter, Depends
-from app.api.v1.deps.rate_limit import (
-    rate_limit_auth,    # Strict: 10 req/min (for login, signup)
-    rate_limit_api,     # Default: 100 req/min (for general API)
-    rate_limit_public,  # Lenient: 1000 req/min (for public data)
-    rate_limit_user,    # User-based: 300 req/min (for authenticated)
-)
-
-router = APIRouter()
-
-# IP-based rate limiting for authentication
-@router.post("/login", dependencies=[Depends(rate_limit_auth)])
-async def login(credentials: LoginForm):
-    # Limited to 10 requests per minute per IP
-    pass
-
-# IP-based rate limiting for public API
-@router.get("/posts", dependencies=[Depends(rate_limit_api)])
-async def list_posts():
-    # Limited to 100 requests per minute per IP
-    pass
-
-# User-based rate limiting for authenticated endpoints
-@router.get("/profile", dependencies=[Depends(rate_limit_user)])
-async def get_profile(current_user: User = Depends(get_current_user)):
-    # Limited to 300 requests per minute per user
-    # Multiple users on same IP each get their own quota
-    pass
-```
-
-#### Custom Rate Limits
-
-Create custom rate limiters for specific endpoints:
-
-```python
-from app.api.v1.deps.rate_limit import create_rate_limit
-
-# Custom limit for heavy operations (5 requests per 5 minutes)
-heavy_limit = create_rate_limit(limit=5, window=300, prefix="heavy")
-
-@router.post("/export", dependencies=[Depends(heavy_limit)])
-async def export_large_file():
-    pass
-
-# Custom user-based limit (20 uploads per minute per user)
-upload_limit = create_rate_limit(
-    limit=20,
-    window=60,
-    prefix="upload",
-    use_user_id=True
-)
-
-@router.post("/upload", dependencies=[Depends(upload_limit)])
-async def upload_file(current_user: User = Depends(get_current_user)):
-    pass
-```
-
-#### Rate Limit Response Headers
-
-All rate-limited endpoints automatically include headers in responses:
-
-```http
-X-RateLimit-Limit: 100          # Maximum requests allowed
-X-RateLimit-Remaining: 73       # Requests remaining in window
-X-RateLimit-Reset: 1701234567   # Unix timestamp when limit resets
-```
-
-When limit is exceeded, clients receive HTTP 429:
-
-```http
-HTTP/1.1 429 Too Many Requests
-X-RateLimit-Limit: 100
-X-RateLimit-Remaining: 0
-X-RateLimit-Reset: 1701234567
-
-{
-  "detail": "Rate limit exceeded. Please slow down your requests."
-}
-```
-
-#### Environment Variables
-
-Configure rate limits in `.env`:
-
-```env
-# Rate limiting settings
-RATE_LIMIT_ENABLED=true     # Enable/disable rate limiting (true/false)
-RATE_LIMIT_DEFAULT=100      # General API endpoints (requests per window)
-RATE_LIMIT_WINDOW=60        # Time window in seconds
-RATE_LIMIT_STRICT=10        # Authentication endpoints
-RATE_LIMIT_LENIENT=1000     # Public endpoints
-RATE_LIMIT_USER=300         # Authenticated user endpoints
-```
-
-#### Rate Limiting Strategies
-
-**IP-Based** (for unauthenticated endpoints):
-
-- Login, signup, password reset: 10 req/min per IP
-- Public API endpoints: 100 req/min per IP
-- Health checks, documentation: 1000 req/min per IP
-
-**User-Based** (for authenticated endpoints):
-
-- User profile, settings: 300 req/min per user
-- Solves shared IP problem (office/cafe networks)
-- Each user gets independent quota regardless of IP
-
-#### Available Prefixes
-
-Rate limit keys use prefixes to separate quotas by endpoint group:
-
-```python
-from app.core.constants import RateLimitPrefix
-
-# Pre-defined prefixes
-RateLimitPrefix.AUTH      # "ratelimit:auth:"    - Authentication
-RateLimitPrefix.USER      # "ratelimit:user:"    - User endpoints
-RateLimitPrefix.API       # "ratelimit:api:"     - General API
-RateLimitPrefix.PUBLIC    # "ratelimit:public:"  - Public endpoints
-RateLimitPrefix.EXPORT    # "ratelimit:export:"  - File exports
-RateLimitPrefix.UPLOAD    # "ratelimit:upload:"  - File uploads
-RateLimitPrefix.SEARCH    # "ratelimit:search:"  - Search queries
-RateLimitPrefix.ADMIN     # "ratelimit:admin:"   - Admin operations
-```
-
-Add custom prefixes to `app/core/constants.py` to avoid collisions.
-
-#### Local Development
-
-Rate limiting can be controlled via the `RATE_LIMIT_ENABLED` setting:
-
-**To disable rate limiting** (default for local development):
-
-```env
-RATE_LIMIT_ENABLED=false
-```
-
-- No Redis connection required
-- All requests allowed (no limits enforced)
-- Useful for development without Redis setup
-
-**To test rate limiting locally**:
-
-```env
-RATE_LIMIT_ENABLED=true
-CURRENT_ENVIRONMENT=local
-```
-
-- Requires Redis to be running
-- Full rate limiting functionality available
-- Test rate limits before deploying to production
-
-#### High-Frequency Requests
-
-The rate limiter uses **microsecond precision** for timestamp tracking:
-
-- Accurately counts multiple requests within the same second
-- Prevents duplicate member issues in Redis sorted sets
-- Supports high-frequency API usage (e.g., real-time applications)
-- Each request gets a unique identifier: `{microseconds}:{hash}`
+<!-- --- FEATURE[redis_rate_limit] END --- -->
 
 ### Async Best Practices
 
@@ -1202,9 +1038,12 @@ Automatically adds security headers to all responses:
 - `X-XSS-Protection: 1; mode=block` - XSS filter (legacy browsers)
 - `Strict-Transport-Security` - HSTS for HTTPS enforcement (production only)
 
+<!-- --- FEATURE[redis_rate_limit] START --- -->
 #### Rate Limit Headers Middleware
 
-Adds rate limiting information to responses (see [Rate Limiting](#rate-limiting) section).
+Adds rate limiting information to responses (see [integrations/rate-limiting.md](integrations/rate-limiting.md)).
+
+<!-- --- FEATURE[redis_rate_limit] END --- -->
 
 ### Token Blacklisting (Logout)
 

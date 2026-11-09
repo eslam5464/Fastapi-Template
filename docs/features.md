@@ -8,7 +8,7 @@ Full reference for what's built into this template: what each integration does, 
 |---|---|---|
 | 🚀 Core (FastAPI, Postgres, Alembic, logging, docs) | — always installed | [Core](#-core) |
 | 🔐 Authentication (JWT, Argon2, blacklisting) | `cache` for blacklisting | [Authentication](#-authentication) |
-| 🔒 Security middleware (CSRF, headers, rate limiting) | `cache` for rate limiting | [Security middleware](#-security-middleware) |
+| 🔒 Security middleware (CSRF, headers, rate limiting) | rate limiting chosen at generation (`include_redis_rate_limit`) | [Security middleware](#-security-middleware) |
 | ⚡ Caching | `cache` | [Caching](#-caching) |
 | ⚙️ Background jobs (Celery) | chosen at generation (`include_celery`) | [Background jobs](#-background-jobs--task-queue) |
 | ☁️ Cloud storage (BackBlaze B2, GCS) | chosen at generation (`include_backblaze`, `include_gcs`) | [Cloud storage](#-cloud-storage) |
@@ -54,13 +54,13 @@ uv sync --extra apple-services
 
 ## 🔒 Security middleware
 
-*Rate limiting and CSRF token storage require `cache`.*
-
 All in `app/middleware/`:
 
 - **CSRF protection** (`csrf.py`)
 - **Security headers** (`security_headers.py`)
-- **Rate limiting** (`rate_limit.py`) — sliding-window algorithm with microsecond precision, Redis-backed.
+<!-- --- FEATURE[redis_rate_limit] START --- -->
+- **Rate limiting** (`rate_limit.py`) — sliding-window algorithm with microsecond precision, Redis-backed. Guide: [integrations/rate-limiting.md](integrations/rate-limiting.md).
+<!-- --- FEATURE[redis_rate_limit] END --- -->
 - **Request logging** (`logging.py`)
 
 ## ⚡ Caching

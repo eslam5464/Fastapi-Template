@@ -12,7 +12,7 @@ substitute for the real source.
 **The extras below are not Copier generation-time toggles** — only the services with an
 `include_*` question are (today `include_firebase`, `include_firestore`, `include_gcs`,
 `include_backblaze`, `include_resend`, `include_brevo`, `include_openobserve`,
-`include_celery` and `include_apple_pay`, see
+`include_celery`, `include_redis_rate_limit` and `include_apple_pay`, see
 [copier-template-mechanics.md](copier-template-mechanics.md)). Their code ships in every
 generated project regardless. "Enabling" one of these for a project means: install its
 `uv sync --extra <name>`, and fill in its `.env` config block. Don't present installing
@@ -44,6 +44,10 @@ when at least one is chosen, and the chosen SDKs are core dependencies (guide:
 `docs/integrations/email.md`).
 
 ## Cache / rate limiting / token blacklist (`cache` extra, Redis-backed)
+
+Rate limiting is now the `include_redis_rate_limit` Copier toggle: without it,
+`rate_limiter.py`, the rate-limit dependencies and middleware, `RateLimitPrefix`,
+`app/core/types.py` and the `RATE_LIMIT_*` settings are not generated.
 
 `app/services/cache/manager.py`'s `CacheManager` is a pickle-serialized generic
 key-value cache (`get/set/delete/delete_pattern/exists`) — pickle is used deliberately
