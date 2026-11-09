@@ -37,6 +37,7 @@ Create a production `.env` file from the `.env.example` template
 ### External Services Configuration
 
 <!-- --- FEATURE[backblaze] START --- -->
+
 #### BackBlaze B2 Setup for Production
 
 See the Production section of [integrations/backblaze.md](integrations/backblaze.md).
@@ -44,6 +45,7 @@ See the Production section of [integrations/backblaze.md](integrations/backblaze
 <!-- --- FEATURE[backblaze] END --- -->
 
 <!-- --- FEATURE[firebase] START --- -->
+
 #### Firebase Setup for Production
 
 See the Production sections of [integrations/firebase.md](integrations/firebase.md) and, for Firestore security rules, [integrations/firestore.md](integrations/firestore.md).
@@ -51,6 +53,7 @@ See the Production sections of [integrations/firebase.md](integrations/firebase.
 <!-- --- FEATURE[firebase] END --- -->
 
 <!-- --- FEATURE[gcs] START --- -->
+
 #### Google Cloud Storage (GCS) Setup for Production
 
 See the Production section of [integrations/gcs.md](integrations/gcs.md).
@@ -67,7 +70,6 @@ If your application uses Apple Pay for in-app purchase verification:
    - Navigate to Users and Access → Keys → App Store Connect API
    - Generate a new API key with appropriate permissions
    - Download the private key (`.p8` file) - this can only be downloaded once
-
 2. **Environment Configuration**
 
    ```env
@@ -77,13 +79,11 @@ If your application uses Apple Pay for in-app purchase verification:
    APPLE_PAY_STORE_BUNDLE_ID=com.your.app.bundle
    APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH=/path/to/AppleRootCA-G3.cer
    ```
-
 3. **Download Apple Root Certificate**
 
    - Download from [Apple PKI](https://www.apple.com/certificateauthority/)
    - Use `AppleRootCA-G3.cer` for production
    - Store securely and reference via `APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH`
-
 4. **Security Best Practices**
 
    - Never commit private keys to version control
@@ -505,27 +505,26 @@ sudo chmod 600 /etc/ssl/private/yourdomain.key
 
 1. **Prepare Application**:
 
-    ```python
-    # requirements.txt (generated from pyproject.toml)
-    # Procfile
-    web: gunicorn app.main:app -w 4 -k uvicorn.workers.UnicornWorker --bind 0.0.0.0:8799
-    ```
-
+   ```python
+   # requirements.txt (generated from pyproject.toml)
+   # Procfile
+   web: gunicorn app.main:app -w 4 -k uvicorn.workers.UnicornWorker --bind 0.0.0.0:8799
+   ```
 2. **Deploy**:
 
-    ```bash
-    # Install EB CLI
-    pip install awsebcli
+   ```bash
+   # Install EB CLI
+   pip install awsebcli
 
-    # Initialize EB application
-    eb init
+   # Initialize EB application
+   eb init
 
-    # Create environment
-    eb create production
+   # Create environment
+   eb create production
 
-    # Deploy
-    eb deploy
-    ```
+   # Deploy
+   eb deploy
+   ```
 
 #### Using EC2 + RDS
 
@@ -665,6 +664,7 @@ LOG_LEVEL=INFO
 ```
 
 <!-- --- FEATURE[openobserve] START --- -->
+
 Centralized log aggregation with OpenObserve (see [integrations/openobserve.md](integrations/openobserve.md)):
 
 ```env
@@ -676,9 +676,11 @@ OPENOBSERVE_STREAM_NAME=fastapi-app
 OPENOBSERVE_BATCH_SIZE=50
 OPENOBSERVE_FLUSH_INTERVAL=5.0
 ```
+
 <!-- --- FEATURE[openobserve] END --- -->
 
 <!-- --- FEATURE[resend|brevo] START --- -->
+
 #### Email Provider Setup for Production
 
 See the Production section of [integrations/email.md](integrations/email.md).
@@ -799,6 +801,7 @@ async def health_check():
 ### Centralized Log Aggregation Options
 
 <!-- --- FEATURE[openobserve] START --- -->
+
 #### OpenObserve (Recommended)
 
 Open-source observability platform; this project ships logs to it natively. Setup and production notes: [integrations/openobserve.md](integrations/openobserve.md).
@@ -1014,27 +1017,23 @@ grep "ERROR" /var/log/fastapi-app/app.log | grep -o "PID:[0-9]*" | sort | uniq -
    - Verify connection string in logs
    - Check firewall rules
    - Look for connection errors in logs: `grep "database\|connection" /var/log/fastapi-app/app.log`
-
 2. **High Memory Usage**:
 
    - Monitor with `htop` or `ps`
    - Check for memory leaks
    - Optimize database queries
    - Review logs for repeated error patterns that might indicate resource leaks
-
 3. **Slow Response Times**:
 
    - Enable query logging
    - Use APM tools
    - Check server resources
    - Search logs for requests taking too long: `grep "duration\|took" /var/log/fastapi-app/app.log`
-
 4. **SSL Certificate Issues**:
 
    - Check certificate expiration
    - Verify certificate chain
    - Test with SSL Labs
-
 5. **Worker Process Crashes**:
 
    - Check system logs: `journalctl -u fastapi-app`
