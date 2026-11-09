@@ -126,6 +126,7 @@ jobs:
           sed -i 's/^REDIS_USER=.*/REDIS_USER=/' .env
           # --- FEATURE[redis] END ---
 
+      # --- FEATURE[apple_pay] START ---
       # `app/services/payments/apple_pay.py` constructs a module-level ApplePay()
       # singleton at import time, which eagerly PEM-parses the private key. Real
       # API calls are always mocked in tests, but the key still has to be a
@@ -135,6 +136,7 @@ jobs:
       # as-is) — `tests/apple_pay_credentials.py`'s `ensure_apple_pay_test_credentials()`
       # generates throwaway ones automatically (locally and here in CI) before any
       # app module is imported, so no separate CI step is needed for this anymore.
+      # --- FEATURE[apple_pay] END ---
 
       - name: Create test database
         run: |

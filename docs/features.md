@@ -13,16 +13,12 @@ Full reference for what's built into this template: what each integration does, 
 | ⚙️ Background jobs (Celery) | chosen at generation (`include_celery`) | [Background jobs](#-background-jobs--task-queue) |
 | ☁️ Cloud storage (BackBlaze B2, GCS) | chosen at generation (`include_backblaze`, `include_gcs`) | [Cloud storage](#-cloud-storage) |
 | 🔥 Firebase (Auth, Firestore) | chosen at generation (`include_firebase`, `include_firestore`) | [Firebase](#-firebase) |
-| 💳 Apple Pay | `apple-services` | [Apple Pay](#-apple-pay) |
+| 💳 Apple Pay | chosen at generation (`include_apple_pay`) | [Apple Pay](#-apple-pay) |
 | 📧 Email (Brevo, Resend) | chosen at generation (`include_brevo`, `include_resend`) | [Email](#-email) |
 | 🧪 Testing & quality tooling | dev/test groups | [Testing & quality tooling](#-testing--quality-tooling) |
 | 🌍 Environment management | — always installed | [Environment management](#-environment-management) |
 
-Install optional extras individually as needed:
-
-```bash
-uv sync --extra apple-services
-```
+Optional services are chosen when the project is generated; a chosen service's packages are regular dependencies, so `uv sync` installs everything the project uses.
 
 ---
 
@@ -106,14 +102,16 @@ All in `app/middleware/`:
 - **Included** when the project is generated with `include_firebase` (and `include_firestore`); `firebase-admin` is then a regular dependency.
 <!-- --- FEATURE[firebase] END --- -->
 
+<!-- --- FEATURE[apple_pay] START --- -->
 ## 💳 Apple Pay
 
 - **Module:** `app/services/payments/apple_pay.py`
 - **App Store Server API integration** — in-app purchase and subscription verification.
 - **Credentials:** modeled by `ApplePayStoreCredentials` in `app/core/credentials/apple_pay.py`.
-- **Install:** `uv sync --extra apple-services`
+- **Included** when the project is generated with `include_apple_pay`; `app-store-server-library` is then a regular dependency. Guide: [integrations/apple-pay.md](integrations/apple-pay.md).
 - **Configure:** `APPLE_PAY_STORE_PRIVATE_KEY_PATH`, `APPLE_PAY_STORE_ROOT_CERTIFICATE_PATH`, plus key/issuer/bundle IDs in `.env`
-- **Note:** this is the one feature generated projects can opt out of entirely — see [Using This as a Template](../README.md#-using-this-as-a-template) in the main README.
+
+<!-- --- FEATURE[apple_pay] END --- -->
 
 <!-- --- FEATURE[resend|brevo] START --- -->
 ## 📧 Email

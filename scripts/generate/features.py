@@ -131,7 +131,7 @@ FEATURES: tuple[Feature, ...] = (
         "apple_pay",
         question="include_apple_pay",
         imports=("appstoreserverlibrary", "cryptography"),
-        forbidden=(r"appstoreserverlibrary", r"ApplePay"),
+        forbidden=(r"appstoreserverlibrary", r"ApplePay", r"(?i)apple_pay"),
     ),
 )
 
@@ -215,6 +215,7 @@ PATHS: dict[str, str] = {
     "app/core/credentials/apple_pay.py": "apple_pay",
     "tests/services/payments/": "apple_pay",
     "tests/apple_pay_credentials.py": "apple_pay",
+    "docs/integrations/apple-pay.md": "apple_pay",
 }
 
 # Third-party top-level modules every generated project may import (checked by
