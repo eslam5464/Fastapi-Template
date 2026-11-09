@@ -6,8 +6,94 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-11-09
+
+### Changed defaults
+
+This release changes what a new project contains when it is generated with the default
+answers. Projects generated before 1.3.0 are not affected (each one is an independent
+copy, and `copier update` is not supported).
+
+- `copier copy --defaults`, or pressing Enter at every question, now generates a **minimal
+  base**: FastAPI with versioned routers, async PostgreSQL (SQLAlchemy 2, Alembic), JWT
+  auth with the User model, the middleware stack (CORS, trusted hosts, security headers,
+  CSRF, request logging), Loguru logging, `/health`, Docker (backend and database) and CI.
+  No optional service is included.
+- The new first question, `services`, picks `minimal` (the default) or `custom`. With
+  `custom`, each optional service is its own yes/no question, and each one defaults to no:
+  the Redis cache, rate limiting, the token blacklist, Celery, Firebase (and Firestore,
+  asked only after Firebase), Google Cloud Storage, BackBlaze B2, Resend, Brevo,
+  OpenObserve and Apple Pay. Without prompts:
+  `--data services=custom --data include_<service>=true`.
+- A declined service is removed completely: its code, tests, settings, `.env.example`
+  entries, `docker-compose.yml` and CI entries, docs and dependencies.
+- `include_apple_pay` now defaults to `false`, and like every service question it needs
+  `services=custom`. An `include_*=true` answer with `services=minimal` is an error.
+- Redis is never asked. It is added (the `redis` dependency, the `REDIS_*` settings and the
+  Redis service in compose and CI) when the cache, rate limiting, the token blacklist or
+  Celery is chosen.
+- The `pyproject.toml` extras are gone. A chosen service's packages are regular
+  dependencies, so `uv sync --all-groups` installs everything the project uses;
+  `--extra` and `--all-extras` are no longer needed.
+- Security: a project without rate limiting has no request limits on its auth routes, and
+  a project without the token blacklist cannot revoke tokens on logout (logout returns
+  `revoked: false` and the access token stays valid until it expires; keep expiry times
+  short). The generated README and `docs/features.md` say so.
+
+### Added
+
+- Feature manifest (`scripts/generate/features.py`) and marker engine
+  (`scripts/generate/markers.py`): whole-line feature markers and per-path rules
+  strip every declined service at generation time, with no Jinja in the source tree, so
+  the template repo stays a runnable app with every service on.
+- One integration guide per service under `docs/integrations/`, included only when the
+  service is.
+- Template CI builds its matrix from the manifest (minimal, everything, each service
+  alone, everything but one service) and runs each generated variant's own pre-commit
+  hooks, migrations and full test suite (failing on skipped tests) and boots it, plus a
+  Python 3.9 job for the generator, a Windows bake and a Docker Compose smoke test.
+- `scripts/generate/check_variants.py`: a fast offline check of every variant (parsing,
+  import closure, leftover names of declined services in code and docs, ruff), also run
+  as a test.
+- `scripts/generate/skill_assets.py`: the fastapi-template-architect skill's `assets/`
+  snapshots are clean copies with every service included in the template repo, and are
+  rebuilt from each generated project's own files.
+- Tests for the Celery configuration and seed task, the rate-limit and token-revocation
+  wiring, and `tests/core/config_env_test.py` (every required setting is in
+  `.env.example` and in the compose backend environment).
+
+### Changed
+
+- Optional service code is split so each service can be removed on its own: per-service
+  credential modules under `app/core/credentials/`, `app/core/openobserve.py`,
+  `app/core/db_sync.py` (Celery's sync engine), and one test package or file per service.
+- The docs, the README and the Copilot prompts describe only the services a project
+  includes.
+- The fastapi-template-architect skill, its references and `run_copier.sh`/`.ps1`
+  describe the service questions; `--extras` is replaced by `--features`.
+- The Archify architecture diagram files are kept in the template repo only.
+
 ### Fixed
 
+- `@cache_result` built its keys with Python's per-process randomized `hash()`, so
+  cached results were never shared between workers or restarts; keys are now stable
+  across processes and include the function's module.
+- The Celery seed task imported `faker` at runtime, which only the test group installed.
+- Apple Pay's import-time credential bootstrap in `tests/conftest.py` needed
+  `cryptography`, so the test suite could not start without the Apple Pay packages; it
+  moved to `tests/apple_pay_credentials.py`.
+- OpenObserve log shipping disabled itself in production because `httpx` was not a main
+  dependency; `httpx` is now a main dependency and `LOG_TO_OPENOBSERVE` defaults to false.
+- The GCS exceptions module imported `google.api_core`, which only Firebase installs.
+- The rate-limit dependency imported the whole cache package (cache manager and token
+  blacklist included) instead of the rate limiter alone.
+- Removed the unused `pyjwt` and `aiohttp` dependencies, dead upload helpers, a duplicate
+  v2 router and an `alembic.ini` hook that called `black`, which is not installed.
+- `post_gen.py` fails loudly when an expected text replacement is missing, keeps line
+  endings (CRLF-safe), runs on Python 3.9+, refreshes `.secrets.baseline` line numbers
+  after stripping, and the generated CI's Docker health check no longer depends on the
+  project name.
+- The generated CI creates its test database with `asyncpg` instead of `psycopg`.
 - Added missing Celery worker/beat scripts (`scripts/celery_worker.sh`, `scripts/celery_worker.bat`, `scripts/celery_beat.sh`, `scripts/celery_beat.bat`) referenced in README and docs
 - Moved `pre-commit` from runtime dependencies to the `dev` dependency group in `pyproject.toml`
 - Removed unused `security_bcrypt_rounds` setting from `app/core/config.py` (passwords use Argon2 via pwdlib)
@@ -16,7 +102,7 @@ The format is based on Keep a Changelog.
 - Dockerfile: `COPY ./app ./` with `WORKDIR /app` flattened the package so `uvicorn app.main:app` could not import `app`; the app now copies to `/app/app`, and `alembic.ini` + `pyproject.toml` are copied into the production stage (`alembic upgrade head` in CMD failed with `No 'script_location' key found`, and `app/core/config.py` reads `pyproject.toml` at startup)
 - Dockerfile: HEALTHCHECK probed `http://127.0.0.1:8080/`; it now probes `http://127.0.0.1:8799/health`, matching the app's port and health route
 - Dockerfile: production stage now installs `binutils` and creates the `libpq.so` symlink so `ctypes.util.find_library("pq")` can locate libpq on musl — the pure-Python `psycopg` wrapper raised `ImportError: libpq library not found` at import time (`postgresql-dev` would add ~500 MB; this adds ~25 MB)
-- Dockerfile: `uv sync --frozen --no-dev` did not install `redis` (it lives in the optional `cache` extra), so importing `app/services/cache/*` crashed the container at startup; the sync now includes `--extra cache`
+- Dockerfile: `uv sync --frozen --no-dev` did not install `redis` (then an optional extra), so importing `app/services/cache/*` crashed the container at startup; `redis` is now a regular dependency of every project that uses it
 - `docker-compose.yml`: backend `image: python:3.14-alpine` made the build retag the upstream base image locally (poisoning every later `FROM python:3.14-alpine` build with the app's layers and non-root USER); the built image is now named `fastapi_template_backend`
 - `docker-compose.yml`: db healthcheck `["CMD-SHELL", "pg_isready", "-d", "${POSTGRES_DB}"]` silently dropped every argument after the first; it now runs a single-string `pg_isready -U $POSTGRES_USER -d $POSTGRES_DB` against the configured user/db
 - `docker-compose.yml`: backend `environment:` omitted settings `app/core/config.py` requires (Firebase, Redis, cache TTLs, rate-limit flag, Apple Pay, data seeding, email keys), failing pydantic validation at startup; the backend now receives the full environment from the env file with only `POSTGRES_HOST=db` and `REDIS_HOST=redis` overridden for the compose network
