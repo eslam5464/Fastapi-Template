@@ -60,7 +60,9 @@ Complete guide for local development environment setup and daily development tas
 <!-- --- FEATURE[redis_token_blacklist] START --- -->
 - Token blacklisting and logout ([integrations/token-revocation.md](integrations/token-revocation.md))
 <!-- --- FEATURE[redis_token_blacklist] END --- -->
-- Cache decorators
+<!-- --- FEATURE[redis_cache] START --- -->
+- Cache decorators ([integrations/caching.md](integrations/caching.md))
+<!-- --- FEATURE[redis_cache] END --- -->
 - Development best practices
 - Common troubleshooting
 
@@ -148,7 +150,7 @@ This template is built with:
 - **pwdlib** - Password hashing with Argon2
 - **Loguru** - Structured logging with centralized aggregation
 <!-- --- FEATURE[redis] START --- -->
-- **Redis** - Backs the cache, rate limiting, the token blacklist and the Celery broker
+- **Redis** - Backs the Redis-based services this project uses
 <!-- --- FEATURE[redis] END --- -->
 <!-- --- FEATURE[celery] START --- -->
 - **Celery** - Background task processing
@@ -158,7 +160,7 @@ This template is built with:
 - **B2SDK** - BackBlaze B2 cloud storage integration
 <!-- --- FEATURE[backblaze] END --- -->
 <!-- --- FEATURE[firebase] START --- -->
-- **Firebase Admin** - Firebase authentication, FCM, and Firestore
+- **Firebase Admin** - Firebase authentication and FCM
 <!-- --- FEATURE[firebase] END --- -->
 <!-- --- FEATURE[gcs] START --- -->
 - **Google Cloud Storage** - GCS bucket integration
@@ -166,9 +168,12 @@ This template is built with:
 <!-- --- FEATURE[apple_pay] START --- -->
 - **App Store Server API** - Apple Pay in-app purchase verification
 <!-- --- FEATURE[apple_pay] END --- -->
-<!-- --- FEATURE[resend|brevo] START --- -->
-- **Brevo / Resend** - Email delivery provider integrations
-<!-- --- FEATURE[resend|brevo] END --- -->
+<!-- --- FEATURE[resend] START --- -->
+- **Resend** - Email delivery provider
+<!-- --- FEATURE[resend] END --- -->
+<!-- --- FEATURE[brevo] START --- -->
+- **Brevo** - Email delivery provider
+<!-- --- FEATURE[brevo] END --- -->
 
 ---
 

@@ -34,8 +34,10 @@ The FastAPI Template supports multiple deployment strategies:
 
 Create a production `.env` file from the `.env.example` template
 
+<!-- --- FEATURE[backblaze|firebase|gcs|apple_pay] START --- -->
 ### External Services Configuration
 
+<!-- --- FEATURE[backblaze|firebase|gcs|apple_pay] END --- -->
 <!-- --- FEATURE[backblaze] START --- -->
 
 #### BackBlaze B2 Setup for Production
@@ -48,7 +50,11 @@ See the Production section of [integrations/backblaze.md](integrations/backblaze
 
 #### Firebase Setup for Production
 
-See the Production sections of [integrations/firebase.md](integrations/firebase.md) and, for Firestore security rules, [integrations/firestore.md](integrations/firestore.md).
+See the Production section of [integrations/firebase.md](integrations/firebase.md).
+
+<!-- --- FEATURE[firestore] START --- -->
+For Firestore security rules, see [integrations/firestore.md](integrations/firestore.md).
+<!-- --- FEATURE[firestore] END --- -->
 
 <!-- --- FEATURE[firebase] END --- -->
 
@@ -166,19 +172,12 @@ services:
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=fastapi_app
       - POSTGRES_DB_SCHEMA=fastapi_template
-      - B2_APPLICATION_KEY_ID=${B2_APPLICATION_KEY_ID}
-      - B2_APPLICATION_KEY=${B2_APPLICATION_KEY}
-      - B2_BUCKET_NAME=${B2_BUCKET_NAME}
-      - RESEND_API_KEY=${RESEND_API_KEY}
-      - BREVO_API_KEY=${BREVO_API_KEY}
     env_file:
-      - .env.prod
+      - .env.prod # the rest of the settings (see .env.example)
     volumes:
       - ./logs:/var/log/fastapi-app
-      - ./uploads:/app/uploads # Temporary storage for file uploads before B2 sync
     depends_on:
       - db
-      - redis
     networks:
       - app-network
 
@@ -193,15 +192,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
-    networks:
-      - app-network
-
-  redis:
-    image: redis:7-alpine
-    container_name: fastapi-redis
-    restart: unless-stopped
-    volumes:
-      - redis_data:/data
     networks:
       - app-network
 
@@ -222,12 +212,37 @@ services:
 
 volumes:
   postgres_data:
-  redis_data:
 
 networks:
   app-network:
     driver: bridge
 ```
+
+<!-- --- FEATURE[redis] START --- -->
+The Redis-backed services need a Redis service, and the app must depend on it:
+
+```yaml
+services:
+  app:
+    depends_on:
+      - db
+      - redis
+
+  redis:
+    image: redis:8-alpine
+    container_name: fastapi-redis
+    restart: unless-stopped
+    command: ["redis-server", "--requirepass", "${REDIS_PASS}"]
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+
+volumes:
+  redis_data:
+```
+
+<!-- --- FEATURE[redis] END --- -->
 
 ### Building and Running
 
@@ -598,31 +613,12 @@ work_mem = 4MB
 maintenance_work_mem = 64MB
 ```
 
+<!-- --- FEATURE[redis_cache] START --- -->
 #### Caching Strategy
 
-```python
-# Redis configuration
-import redis
-from functools import wraps
+See [integrations/caching.md](integrations/caching.md) for the project's Redis cache.
 
-redis_client = redis.Redis(host='localhost', port=6379, db=0)
-
-def cache_result(expiration=300):
-    def decorator(func):
-        @wraps(func)
-        async def wrapper(*args, **kwargs):
-            cache_key = f"{func.__name__}:{hash(str(args) + str(kwargs))}"
-            cached = redis_client.get(cache_key)
-
-            if cached:
-                return json.loads(cached)
-
-            result = await func(*args, **kwargs)
-            redis_client.setex(cache_key, expiration, json.dumps(result))
-            return result
-        return wrapper
-    return decorator
-```
+<!-- --- FEATURE[redis_cache] END --- -->
 
 ## Monitoring and Logging
 
@@ -874,11 +870,9 @@ find $BACKUP_DIR -name "backup_*.sql.gz" -mtime +30 -delete
 
 # Upload to S3 (optional)
 aws s3 cp $BACKUP_DIR/backup_$DATE.sql.gz s3://your-backup-bucket/postgresql/
-
-# Or upload to BackBlaze B2
-b2 upload-file your-bucket-name $BACKUP_DIR/backup_$DATE.sql.gz backups/postgresql/backup_$DATE.sql.gz
 ```
 
+<!-- --- FEATURE[backblaze] START --- -->
 ### BackBlaze B2 for Backups
 
 Using BackBlaze B2 for application backups:
@@ -906,6 +900,8 @@ b2 download-file-by-name your-backup-bucket backups/backup_$DATE.sql.gz /path/to
 - Keep weekly backups for 4 weeks
 - Keep monthly backups for 12 months
 - Configure via BackBlaze web console
+
+<!-- --- FEATURE[backblaze] END --- -->
 
 ### Automated Backup Cron Job
 

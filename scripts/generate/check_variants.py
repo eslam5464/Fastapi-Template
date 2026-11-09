@@ -46,9 +46,13 @@ import features  # noqa: E402
 import variants  # noqa: E402
 
 FIRST_PARTY = ("app", "tests")
-# Where forbidden tokens of disabled features are looked for. Docs are not
-# scanned yet: they still describe every service and are reworked per feature.
-FORBIDDEN_SCOPE = ("app/**", "tests/**", "main.py", "*.toml", ".env.example")
+# Where forbidden tokens of disabled features are looked for.
+FORBIDDEN_SCOPE = ("app/**", "tests/**", "main.py", "*.toml", ".env.example", "README.md", "docs/**")
+# The prose docs, also checked against each feature's doc_forbidden patterns.
+DOC_SCOPE = ("README.md", "docs/**")
+# Not checked: a domain-agnostic architecture guide whose Redis/Celery/cache
+# mentions are illustrative patterns, and the template's own release history.
+DOC_EXCLUDE = ("docs/backend-architecture.md", "docs/changelog/**")
 
 IDENTITY_ARGS = [
     "--project-name",
@@ -131,12 +135,9 @@ def check_tree(root: Path, raw: dict) -> list[str]:
     for name in enabled:
         allowed |= set(features.FEATURES_BY_NAME[name].imports)
     test_allowed = allowed | set(features.TEST_IMPORTS)
-    forbidden = [
-        re.compile(pattern)
-        for feature in features.FEATURES
-        if feature.name != "_template" and feature.name not in enabled
-        for pattern in feature.forbidden
-    ]
+    disabled = [feature for feature in features.FEATURES if feature.name != "_template" and feature.name not in enabled]
+    forbidden = [re.compile(pattern) for feature in disabled for pattern in feature.forbidden]
+    doc_forbidden = forbidden + [re.compile(pattern) for feature in disabled for pattern in feature.doc_forbidden]
 
     for path in sorted(root.rglob("*")):
         if not path.is_file() or ".git" in path.parts or ".venv" in path.parts:
@@ -168,12 +169,16 @@ def check_tree(root: Path, raw: dict) -> list[str]:
             except yaml.YAMLError as exc:
                 problems.append(f"{rel}: invalid YAML: {exc}")
 
-        if forbidden and any(fnmatch.fnmatch(rel, glob) for glob in FORBIDDEN_SCOPE):
+        if any(fnmatch.fnmatch(rel, glob) for glob in DOC_EXCLUDE):
+            continue
+        is_doc = any(fnmatch.fnmatch(rel, glob) for glob in DOC_SCOPE)
+        patterns = doc_forbidden if is_doc else forbidden
+        if patterns and any(fnmatch.fnmatch(rel, glob) for glob in FORBIDDEN_SCOPE):
             try:
                 text = path.read_text(encoding="utf-8")
             except UnicodeDecodeError:
                 continue
-            for pattern in forbidden:
+            for pattern in patterns:
                 match = pattern.search(text)
                 if match:
                     line = text.count("\n", 0, match.start()) + 1

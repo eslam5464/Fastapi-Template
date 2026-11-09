@@ -1,4 +1,4 @@
-# Email (Resend, Brevo)
+# Email
 
 `app/services/email/` holds a provider-agnostic email layer:
 
@@ -10,9 +10,8 @@
   `EmailSendFailedError`, `EmailProviderError`, `EmailTemplateError`
 
 Each provider is its own choice when the project is generated
-(`--data services=custom --data include_resend=true` and/or `--data include_brevo=true`,
-or "yes" to the matching question). The shared layer is included when at least one
-provider is.
+(`--data services=custom --data include_<provider>=true`, or "yes" to the matching
+question). The shared layer is included when at least one provider is.
 
 ## Providers
 

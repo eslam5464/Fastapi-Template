@@ -1,30 +1,49 @@
 # 🧩 Features & Integrations
 
-Full reference for what's built into this template: what each integration does, which module implements it, which optional extra (if any) it needs, and how to configure it. [`README.md`](../README.md) only lists the headline items — this is the complete picture.
+Full reference for what's built into this project: what each feature does, which module implements it, and how to configure it. [`README.md`](../README.md) only lists the headline items — this is the complete picture.
 
 ## 📋 Quick Reference
 
-| Feature | Optional extra | Section |
-|---|---|---|
-| 🚀 Core (FastAPI, Postgres, Alembic, logging, docs) | — always installed | [Core](#-core) |
-| 🔐 Authentication (JWT, Argon2, blacklisting) | blacklisting chosen at generation (`include_redis_token_blacklist`) | [Authentication](#-authentication) |
-| 🔒 Security middleware (CSRF, headers, rate limiting) | rate limiting chosen at generation (`include_redis_rate_limit`) | [Security middleware](#-security-middleware) |
-| ⚡ Caching | chosen at generation (`include_redis_cache`) | [Caching](#-caching) |
-| ⚙️ Background jobs (Celery) | chosen at generation (`include_celery`) | [Background jobs](#-background-jobs--task-queue) |
-| ☁️ Cloud storage (BackBlaze B2, GCS) | chosen at generation (`include_backblaze`, `include_gcs`) | [Cloud storage](#-cloud-storage) |
-| 🔥 Firebase (Auth, Firestore) | chosen at generation (`include_firebase`, `include_firestore`) | [Firebase](#-firebase) |
-| 💳 Apple Pay | chosen at generation (`include_apple_pay`) | [Apple Pay](#-apple-pay) |
-| 📧 Email (Brevo, Resend) | chosen at generation (`include_brevo`, `include_resend`) | [Email](#-email) |
-| 🧪 Testing & quality tooling | dev/test groups | [Testing & quality tooling](#-testing--quality-tooling) |
-| 🌍 Environment management | — always installed | [Environment management](#-environment-management) |
+- 🚀 [Core](#-core) — FastAPI, Postgres, Alembic, logging, docs (always included)
+- 🔐 [Authentication](#-authentication) — JWT, Argon2
+- 🔒 [Security middleware](#-security-middleware) — CSRF, security headers
+<!-- --- FEATURE[redis_cache] START --- -->
+- ⚡ [Caching](#-caching) — Redis cache
+<!-- --- FEATURE[redis_cache] END --- -->
+<!-- --- FEATURE[celery] START --- -->
+- ⚙️ [Background jobs](#-background-jobs--task-queue) — Celery
+<!-- --- FEATURE[celery] END --- -->
+<!-- --- FEATURE[gcs] START --- -->
+- ☁️ [Cloud storage](#-cloud-storage) — Google Cloud Storage
+<!-- --- FEATURE[gcs] END --- -->
+<!-- --- FEATURE[backblaze] START --- -->
+- ☁️ [Cloud storage](#-cloud-storage) — BackBlaze B2
+<!-- --- FEATURE[backblaze] END --- -->
+<!-- --- FEATURE[firebase] START --- -->
+- 🔥 [Firebase](#-firebase) — Authentication, users, push notifications
+<!-- --- FEATURE[firestore] START --- -->
+- 🔥 [Firestore](#-firebase) — document database
+<!-- --- FEATURE[firestore] END --- -->
+<!-- --- FEATURE[firebase] END --- -->
+<!-- --- FEATURE[apple_pay] START --- -->
+- 💳 [Apple Pay](#-apple-pay) — App Store Server API
+<!-- --- FEATURE[apple_pay] END --- -->
+<!-- --- FEATURE[resend] START --- -->
+- 📧 [Email](#-email) — Resend
+<!-- --- FEATURE[resend] END --- -->
+<!-- --- FEATURE[brevo] START --- -->
+- 📧 [Email](#-email) — Brevo
+<!-- --- FEATURE[brevo] END --- -->
+- 🧪 [Testing & quality tooling](#-testing--quality-tooling)
+- 🌍 [Environment management](#-environment-management)
 
-Optional services are chosen when the project is generated; a chosen service's packages are regular dependencies, so `uv sync` installs everything the project uses.
+Optional services are chosen when the project is generated (Copier's `services=custom` questions); a chosen service's packages are regular dependencies, so `uv sync` installs everything the project uses.
 
 ---
 
 ## 🚀 Core
 
-*Always installed — no extra required.*
+*Always included.*
 
 - **FastAPI** — async web framework. Versioned routers mounted at `/v1` and `/v2` (`app/api/v1/`, `app/api/v2/`), each with its own interactive docs (`/v1/docs`, `/v2/docs`).
 - **Async PostgreSQL** — SQLAlchemy 2.0 async engine (`asyncpg`) for the app, configured in `app/core/db.py` from `settings.db_url`.
@@ -88,7 +107,7 @@ All in `app/middleware/`:
 <!-- --- FEATURE[gcs] START --- -->
 - **Google Cloud Storage** — `app/services/gcs.py`, schemas in `app/schemas/google_bucket.py`. Guide: [integrations/gcs.md](integrations/gcs.md).
 <!-- --- FEATURE[gcs] END --- -->
-- **Included** when the project is generated with them (`include_backblaze`, `include_gcs`); their SDKs are then regular dependencies.
+- **Included** because they were chosen when the project was generated; their SDKs are then regular dependencies.
 <!-- --- FEATURE[backblaze|gcs] END --- -->
 
 <!-- --- FEATURE[firebase] START --- -->
@@ -99,7 +118,7 @@ All in `app/middleware/`:
 - **Firestore** — `app/services/firestore.py` — Firestore database access. Guide: [integrations/firestore.md](integrations/firestore.md).
 <!-- --- FEATURE[firestore] END --- -->
 - **Credentials:** modeled by `FirebaseServiceAccount` in `app/core/credentials/firebase.py`, from the `FIREBASE_*` settings.
-- **Included** when the project is generated with `include_firebase` (and `include_firestore`); `firebase-admin` is then a regular dependency.
+- **Included** when the project is generated with `include_firebase`; `firebase-admin` is then a regular dependency.
 <!-- --- FEATURE[firebase] END --- -->
 
 <!-- --- FEATURE[apple_pay] START --- -->
@@ -123,7 +142,7 @@ All in `app/middleware/`:
 <!-- --- FEATURE[resend] START --- -->
 - **Resend:** `app/services/email/resend.py`, configured with `RESEND_API_KEY`.
 <!-- --- FEATURE[resend] END --- -->
-- **Included** when the project is generated with `include_brevo` and/or `include_resend`; the provider SDK is then a regular dependency.
+- **Included** when at least one email provider was chosen at generation; each chosen provider's SDK is then a regular dependency.
 <!-- --- FEATURE[resend|brevo] END --- -->
 
 ## 🧪 Testing & quality tooling
@@ -137,10 +156,10 @@ All in `app/middleware/`:
 - **detect-secrets** — secret-leak scanning.
 - **tach** — module boundary enforcement (see `tach.toml`).
 - **pre-commit** — runs all of the above locally before commit; `commitizen` additionally lints commit messages against Conventional Commits (see [Contributing](guides/contributing.md)).
-- **CI** — GitHub Actions runs the same lint/type/security suite plus the full test suite against real Postgres + Redis containers, with a coverage badge/comment posted per PR (green ≥90%, orange ≥70%).
+- **CI** — GitHub Actions runs the same lint/type/security suite plus the full test suite against real service containers (Postgres, plus any other service the project uses), with a coverage badge/comment posted per PR (green ≥90%, orange ≥70%).
 
 ## 🌍 Environment management
 
-*Always installed — no extra required.*
+*Always included.*
 
 Multi-environment configuration via `pydantic-settings` (`app/core/config.py`), reading from `.env`: `local`, `dev`, `stg` (staging), `prd` (production). See `.env.example` for the full variable list.

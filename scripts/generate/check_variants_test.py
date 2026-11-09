@@ -68,6 +68,28 @@ def test_reports_forbidden_token_of_disabled_feature(tmp_path):
     assert any("of a disabled feature" in p for p in problems)
 
 
+def test_reports_doc_wording_of_disabled_feature(tmp_path):
+    root = _tree(tmp_path, {"docs/guide.md": "Payments go through Apple Pay.\n"})
+    problems = check_variants.check_tree(root, MINIMAL)
+    assert any("of a disabled feature" in p for p in problems)
+
+
+def test_doc_wording_is_allowed_outside_the_docs(tmp_path):
+    root = _tree(tmp_path, {"app/x.py": "# Payments go through Apple Pay.\n"})
+    assert check_variants.check_tree(root, MINIMAL) == []
+
+
+def test_excluded_docs_are_not_checked(tmp_path):
+    root = _tree(
+        tmp_path,
+        {
+            "docs/backend-architecture.md": "Use Redis and Celery for background jobs.\n",
+            "docs/changelog/CHANGELOG.md": "- Added Apple Pay.\n",
+        },
+    )
+    assert check_variants.check_tree(root, MINIMAL) == []
+
+
 def test_reports_syntax_error(tmp_path):
     root = _tree(tmp_path, {"app/x.py": "def (:\n"})
     problems = check_variants.check_tree(root, MINIMAL)

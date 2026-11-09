@@ -34,11 +34,8 @@ cd FastApi-Template
 # Install uv if you haven't already
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Create and activate virtual environment with dependencies
-uv sync
-
-# Optional integrations (install only what you use)
-uv sync --all-extras
+# Create the virtual environment with every dependency this project uses
+uv sync --all-groups
 
 # Activate the environment
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
@@ -91,11 +88,25 @@ CORS_ORIGINS=localhost,0.0.0.0
 
 # Logging
 LOG_LEVEL=DEBUG
+```
 
-# Email Providers
+<!-- --- FEATURE[resend] START --- -->
+Resend:
+
+```env
 RESEND_API_KEY=your_resend_api_key_here
+```
+
+<!-- --- FEATURE[resend] END --- -->
+<!-- --- FEATURE[brevo] START --- -->
+Brevo:
+
+```env
 BREVO_API_KEY=your_brevo_api_key_here
 ```
+
+<!-- --- FEATURE[brevo] END --- -->
+`.env.example` lists every variable this project uses.
 
 ### 4. Database Setup
 
@@ -543,28 +554,12 @@ async def get_users_paginated(
     return result.scalars().all()
 ```
 
+<!-- --- FEATURE[redis_cache] START --- -->
 ### Caching
 
-```python
-# Using the CacheManager service
-from app.services.cache import cache_manager
+See [integrations/caching.md](integrations/caching.md).
 
-async def get_user_profile(user_id: str):
-    # Try to get from cache first
-    cache_key = f"user:profile:{user_id}"
-    cached_data = await cache_manager.get(cache_key)
-
-    if cached_data:
-        return cached_data
-
-    # Fetch from database if not cached
-    user_data = await fetch_user_from_db(user_id)
-
-    # Store in cache with TTL
-    await cache_manager.set(cache_key, user_data, expire=300)
-
-    return user_data
-```
+<!-- --- FEATURE[redis_cache] END --- -->
 
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 ### Rate Limiting
