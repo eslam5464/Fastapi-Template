@@ -12,13 +12,12 @@ direct inspection).
   `app/services/auth_service.py` and `scripts/generate/post_gen.py`). Don't downgrade the
   Python version floor without also removing/rewriting that syntax.
 - **Core dependencies** (always installed): fastapi, `sqlalchemy[asyncio]`, alembic,
-  asyncpg, `psycopg[binary]`/psycopg (platform-split — async engine uses asyncpg, the
-  sync engine used by Celery uses psycopg), pydantic/pydantic-settings, `pwdlib[argon2]`,
+  asyncpg, pydantic/pydantic-settings, `pwdlib[argon2]`,
   pyjwt + python-jose, loguru, gunicorn, `uvicorn[standard]`, uvloop/httptools on
   non-Windows platforms, yarl.
 - **Optional extras** (`uv sync --extra <name>`, see
-  [optional-integrations.md](optional-integrations.md)): `cache`, `task-queue`,
-  `apple-services`. Services chosen at generation time (Firebase, GCS, BackBlaze, email, ...)
+  [optional-integrations.md](optional-integrations.md)): `cache`, `apple-services`.
+  Services chosen at generation time (Celery, Firebase, GCS, BackBlaze, email, ...)
   are core dependencies of the projects that include them instead.
 - **`dependency-groups`** (not extras — dev/test tooling, `uv sync --all-groups`):
   `test` (anyio, faker, httpx, pytest, pytest-cov), `dev` (bandit[toml], commitizen,
@@ -119,8 +118,8 @@ command, just with real dependencies installed).
   --frozen`, caches `~/.cache/pre-commit`, runs `pre-commit run --all-files
   --show-diff-on-failure` as a required check (catches contributors who never installed
   pre-commit locally). `test`: real `postgres:18-alpine` + `redis:8-alpine` service
-  containers, installs `libpq-dev` (needed because the sync/psycopg engine needs libpq at
-  *import* time, matching the Dockerfile's `postgresql-dev`/`postgresql-libs`), copies
+  containers, installs `libpq-dev` in projects with Celery (its sync/psycopg engine needs
+  libpq at *import* time, matching the Dockerfile's `postgresql-libs`), copies
   `.env.example` → `.env` with a few `sed` overrides to match the service containers'
   credentials, creates a `_test`-suffixed database, runs `alembic upgrade head` then
   `pytest`, then posts a coverage PR comment (green ≥ 90%, orange ≥ 70%) via

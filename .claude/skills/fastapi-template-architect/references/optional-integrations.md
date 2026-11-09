@@ -11,7 +11,8 @@ substitute for the real source.
 
 **The extras below are not Copier generation-time toggles** — only the services with an
 `include_*` question are (today `include_firebase`, `include_firestore`, `include_gcs`,
-`include_backblaze`, `include_resend`, `include_brevo` and `include_apple_pay`, see
+`include_backblaze`, `include_resend`, `include_brevo`, `include_openobserve`,
+`include_celery` and `include_apple_pay`, see
 [copier-template-mechanics.md](copier-template-mechanics.md)). Their code ships in every
 generated project regardless. "Enabling" one of these for a project means: install its
 `uv sync --extra <name>`, and fill in its `.env` config block. Don't present installing
@@ -22,7 +23,7 @@ an extra as equivalent to "generating the project with/without" that feature.
 | Email | — (Copier toggles `include_resend`, `include_brevo`) | `app/services/email/{base,resend,brevo}.py` | Not usable until an API key is set; no silent fallback |
 | Cache (Redis) | `cache` | `app/services/cache/{base,manager,decorators,rate_limiter,token_blacklist}.py` | Fails open / no-op in `LOCAL` |
 | Firebase, Firestore, GCS, BackBlaze | — (Copier toggles, below) | `app/services/{firebase,firestore,gcs,back_blaze_b2}.py` | Not usable until credentials are set |
-| Task queue | `task-queue` | `app/services/task_queue/{celery_config.py, tasks/user_tasks.py}` | Inert unless a worker/beat process is actually started |
+| Task queue | — (Copier toggle `include_celery`) | `app/services/task_queue/{celery_config.py, tasks/user_tasks.py}` | Inert unless a worker/beat process is actually started |
 | Apple Pay | `apple-services` | `app/services/payments/apple_pay.py` | **Removable at generation time** — the one real toggle |
 
 ## Email (Copier toggles, not an extra)
@@ -82,7 +83,11 @@ closed on shutdown.
   domain-exception placement (same category of deviation as the `AppException`
   compatibility shim — see [layering-and-flow.md](layering-and-flow.md)).
 
-## Task queue / background jobs (`task-queue` extra, Celery + Redis)
+## Task queue / background jobs (`include_celery` Copier toggle, Celery + Redis)
+
+Included only when the project is generated with `include_celery`; it then gets
+`celery[redis]`, `psycopg` and `faker` as core dependencies, the worker/beat scripts
+and `app/core/db_sync.py` (guide: `docs/integrations/celery.md`).
 
 `app/services/task_queue/celery_config.py` defines a `beat_schedule` dict typed with a
 `CeleryTaskSettings` `TypedDict`. The one sample scheduled task,

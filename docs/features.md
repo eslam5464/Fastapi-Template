@@ -10,7 +10,7 @@ Full reference for what's built into this template: what each integration does, 
 | 🔐 Authentication (JWT, Argon2, blacklisting) | `cache` for blacklisting | [Authentication](#-authentication) |
 | 🔒 Security middleware (CSRF, headers, rate limiting) | `cache` for rate limiting | [Security middleware](#-security-middleware) |
 | ⚡ Caching | `cache` | [Caching](#-caching) |
-| ⚙️ Background jobs (Celery) | `task-queue` | [Background jobs](#-background-jobs--task-queue) |
+| ⚙️ Background jobs (Celery) | chosen at generation (`include_celery`) | [Background jobs](#-background-jobs--task-queue) |
 | ☁️ Cloud storage (BackBlaze B2, GCS) | chosen at generation (`include_backblaze`, `include_gcs`) | [Cloud storage](#-cloud-storage) |
 | 🔥 Firebase (Auth, Firestore) | chosen at generation (`include_firebase`, `include_firestore`) | [Firebase](#-firebase) |
 | 💳 Apple Pay | `apple-services` | [Apple Pay](#-apple-pay) |
@@ -22,7 +22,6 @@ Install optional extras individually as needed:
 
 ```bash
 uv sync --extra cache
-uv sync --extra task-queue
 uv sync --extra apple-services
 ```
 
@@ -33,7 +32,10 @@ uv sync --extra apple-services
 *Always installed — no extra required.*
 
 - **FastAPI** — async web framework. Versioned routers mounted at `/v1` and `/v2` (`app/api/v1/`, `app/api/v2/`), each with its own interactive docs (`/v1/docs`, `/v2/docs`).
-- **Async PostgreSQL** — SQLAlchemy 2.0 async engine (`asyncpg`) for the app, configured in `app/core/db.py` from `settings.db_url`, plus a sync engine (`psycopg`) for Celery in `app/core/db_sync.py` from `settings.db_url_sync`.
+- **Async PostgreSQL** — SQLAlchemy 2.0 async engine (`asyncpg`) for the app, configured in `app/core/db.py` from `settings.db_url`.
+<!-- --- FEATURE[celery] START --- -->
+- **Sync engine for Celery** — `psycopg` engine and `session_factory` in `app/core/db_sync.py`, from `settings.db_url_sync`.
+<!-- --- FEATURE[celery] END --- -->
 - **Database migrations** — Alembic (`app/alembic/`). Run via `./scripts/alembic.sh` / `.bat` or `alembic upgrade head` directly.
 - **Clean/layered architecture** — repository pattern (`app/repos/`) + dependency injection, with module boundaries enforced by `tach` (see `tach.toml`): `core` → `models`/`schemas` → `repos` → `services` → `api`/`middleware`.
 - **Structured logging** — Loguru-based (`app/core/logger.py`): console and rotating file output, request and process IDs.
@@ -68,13 +70,15 @@ All in `app/middleware/`:
 - **Install:** `uv sync --extra cache`
 - **Configure:** `REDIS_HOST`, `REDIS_PORT`, `REDIS_USER`, `REDIS_PASS` in `.env`
 
+<!-- --- FEATURE[celery] START --- -->
 ## ⚙️ Background jobs / task queue
 
-- **Module:** `app/services/task_queue/`
+- **Module:** `app/services/task_queue/`. Guide: [integrations/celery.md](integrations/celery.md).
 - **Celery** with Redis as the broker. Includes a sample scheduled task (`seed_fake_users`, runs every 10s when `ENABLE_DATA_SEEDING=true`).
-- **Install:** `uv sync --extra task-queue`
+- **Included** when the project is generated with `include_celery`; `celery[redis]` and `psycopg` are then regular dependencies.
 - **Start a worker:** `./scripts/celery_worker.sh` (or `.bat`) — or directly: `celery -A app.services.task_queue worker --loglevel=info --pool=solo`
 - **Start the scheduler:** `./scripts/celery_beat.sh` (or `.bat`) — or directly: `celery -A app.services.task_queue beat --loglevel=info`
+<!-- --- FEATURE[celery] END --- -->
 
 <!-- --- FEATURE[backblaze|gcs] START --- -->
 ## ☁️ Cloud storage

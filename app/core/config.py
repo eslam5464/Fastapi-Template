@@ -154,6 +154,7 @@ class Settings(BaseSettings):
     apple_pay_store_root_certificate_path: Path
     # --- FEATURE[apple_pay] END ---
 
+    # --- FEATURE[celery] START ---
     # Celery settings
     enable_data_seeding: bool
     seeding_user_count: int
@@ -163,6 +164,7 @@ class Settings(BaseSettings):
     celery_result_db: int = 2  # Database index for the Celery result backend
     celery_timezone: str = "UTC"
     celery_task_time_limit: int = 300  # Maximum time limit (default is 5 minutes)
+    # --- FEATURE[celery] END ---
 
     # --- FEATURE[resend|brevo] START ---
     # Email API keys
@@ -216,6 +218,7 @@ class Settings(BaseSettings):
             path=f"/{self.postgres_db}",
         )
 
+    # --- FEATURE[celery] START ---
     @computed_field
     @property
     def db_url_sync(self) -> URL:
@@ -230,6 +233,8 @@ class Settings(BaseSettings):
             password=self.postgres_password,
             path=f"/{self.postgres_db}",
         )
+
+    # --- FEATURE[celery] END ---
 
     @computed_field
     @property
@@ -311,6 +316,7 @@ class Settings(BaseSettings):
 
     # --- FEATURE[apple_pay] END ---
 
+    # --- FEATURE[celery] START ---
     @computed_field
     @property
     def celery_broker(self) -> URL:
@@ -340,6 +346,8 @@ class Settings(BaseSettings):
             password=self.redis_pass if self.redis_pass else None,
             path=f"/{self.celery_result_db}",
         )
+
+    # --- FEATURE[celery] END ---
 
 
 settings = Settings()
