@@ -1,8 +1,9 @@
 # --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
-# Verbatim copy of docker-compose.yml from eslam5464/Fastapi-Template, taken 2026-10-11.
-# The real repo is the source of truth; this is a fallback/reference copy
-# for offline scaffolding and Extend/Audit-mode pattern-matching. It can drift
-# from the live repo over time - prefer driving the real Copier template
+# Copy of docker-compose.yml from eslam5464/Fastapi-Template, taken 2026-11-09,
+# with every optional service included (a generated project only has the
+# services chosen for it). The real repo is the source of truth; this is a
+# fallback/reference copy for offline scaffolding and Extend/Audit-mode
+# pattern-matching. Prefer driving the real Copier template
 # (see references/copier-template-mechanics.md) whenever that's available.
 # --- END SNAPSHOT NOTICE ---
 
@@ -22,7 +23,8 @@ services:
         condition: service_healthy
     # Bare names pass through from the --env-file/.env so the backend receives the
     # full environment app/core/config.py requires. Only the hosts that must point
-    # at compose services are overridden (POSTGRES_HOST=db, REDIS_HOST=redis).
+    # at compose services are overridden (POSTGRES_HOST=db).
+    # REDIS_HOST=redis below points the app at the compose Redis service.
     environment:
       - CURRENT_ENVIRONMENT
       - DEBUG

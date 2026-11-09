@@ -1,8 +1,9 @@
 # --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
-# Verbatim copy of app/core/logger.py from eslam5464/Fastapi-Template, taken 2026-11-08.
-# The real repo is the source of truth; this is a fallback/reference copy
-# for offline scaffolding and Extend/Audit-mode pattern-matching. It can drift
-# from the live repo over time - prefer driving the real Copier template
+# Copy of app/core/logger.py from eslam5464/Fastapi-Template, taken 2026-11-09,
+# with every optional service included (a generated project only has the
+# services chosen for it). The real repo is the source of truth; this is a
+# fallback/reference copy for offline scaffolding and Extend/Audit-mode
+# pattern-matching. Prefer driving the real Copier template
 # (see references/copier-template-mechanics.md) whenever that's available.
 # --- END SNAPSHOT NOTICE ---
 
@@ -17,11 +18,7 @@ from typing import TYPE_CHECKING, Optional
 from loguru import logger
 
 from app.core.config import Environment, settings
-
-# --- FEATURE[openobserve] START ---
 from app.core.openobserve import add_openobserve_sink, is_openobserve_request_log, shutdown_openobserve
-
-# --- FEATURE[openobserve] END ---
 
 if TYPE_CHECKING:
     from types import FrameType
@@ -76,10 +73,8 @@ def correlation_filter(record: "Record") -> bool:
     Returns:
         bool: True to include the log, False to filter it out.
     """
-    # --- FEATURE[openobserve] START ---
     if record.get("name", None) and is_openobserve_request_log(record.get("message", "")):
         return False
-    # --- FEATURE[openobserve] END ---
 
     record["extra"]["request_id"] = request_id_var.get() or str(uuid.uuid4())[:8]
     record["extra"]["process_id"] = os.getpid()
@@ -200,9 +195,7 @@ def setup_logger():
         diagnose=True,  # Show variable values in exceptions
     )
 
-    # --- FEATURE[openobserve] START ---
     add_openobserve_sink(log_level, correlation_filter)
-    # --- FEATURE[openobserve] END ---
 
     logger.info(
         f"Logger initialized | "
@@ -254,9 +247,7 @@ def shutdown_logger():
     """
     logger.info("Shutting down logger...")
 
-    # --- FEATURE[openobserve] START ---
     shutdown_openobserve()
-    # --- FEATURE[openobserve] END ---
 
     # Let Loguru finish processing queued logs
     logger.complete()

@@ -25,6 +25,7 @@ if str(SCRIPT_DIR) not in sys.path:
 
 import features  # noqa: E402
 import markers  # noqa: E402
+import skill_assets  # noqa: E402
 
 PY_VERSION_FILES = [
     Path("Dockerfile"),
@@ -388,6 +389,8 @@ def main() -> None:
     except markers.MarkerError as exc:
         raise SystemExit(f"post_gen.py: {exc}") from exc
     normalize_python(changed)
+    # The skill's snapshots become copies of this project's own files.
+    skill_assets.rebuild(Path("."))
 
     if not offline_mode():
         regenerate_lockfile(args.python_version)

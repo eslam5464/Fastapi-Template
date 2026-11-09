@@ -1,7 +1,7 @@
 # Optional Integrations
 
-Source: `pyproject.toml` optional-dependency extras, `.env.example`, `docs/features.md`,
-and the relevant `app/services/*` modules. None of these modules are snapshotted in
+Source: `scripts/generate/features.py` (the feature manifest), `.env.example`,
+`docs/features.md`, `docs/integrations/*.md`, and the relevant `app/services/*` modules. None of these modules are snapshotted in
 `../assets/` (they're feature-specific, not architecturally load-bearing the way the
 base classes/middleware are) — **read the actual file in the target repo before
 modifying one**; what's below is a map of what exists and how to reason about it, not a
@@ -9,25 +9,25 @@ substitute for the real source.
 
 ## The rule that governs this whole file
 
-**The extras below are not Copier generation-time toggles** — only the services with an
-`include_*` question are (today `include_firebase`, `include_firestore`, `include_gcs`,
-`include_backblaze`, `include_resend`, `include_brevo`, `include_openobserve`,
-`include_celery`, `include_redis_rate_limit`, `include_redis_token_blacklist` and
-`include_apple_pay`, see
-[copier-template-mechanics.md](copier-template-mechanics.md)). Their code ships in every
-generated project regardless. "Enabling" one of these for a project means: install its
-`uv sync --extra <name>`, and fill in its `.env` config block. Don't present installing
-an extra as equivalent to "generating the project with/without" that feature.
+**Every service below is a Copier question, decided when the project is generated**
+(see [copier-template-mechanics.md](copier-template-mechanics.md)). A generated project
+has only the services that were chosen; the default (`services=minimal`) has none of
+them. So first check whether the target project has the service at all (its module,
+its settings in `app/core/config.py`, its guide in `docs/integrations/`). A chosen
+service's packages are regular dependencies (`uv sync` installs them); "enabling" it
+means filling in its `.env` config block. There are no extras to install. Adding a
+service the project was generated without means porting its files from the template.
 
-| Integration | Extra name | Key modules | Default behavior with no config |
+| Integration | Copier question | Key modules | Default behavior with no config |
 |---|---|---|---|
-| Email | — (Copier toggles `include_resend`, `include_brevo`) | `app/services/email/{base,resend,brevo}.py` | Not usable until an API key is set; no silent fallback |
-| Cache, rate limiting, token blacklist (Redis) | — (Copier toggles; Redis is computed from them and Celery) | `app/services/cache/{base,manager,decorators,rate_limiter,token_blacklist}.py` | Fails open / no-op in `LOCAL` |
-| Firebase, Firestore, GCS, BackBlaze | — (Copier toggles, below) | `app/services/{firebase,firestore,gcs,back_blaze_b2}.py` | Not usable until credentials are set |
-| Task queue | — (Copier toggle `include_celery`) | `app/services/task_queue/{celery_config.py, tasks/user_tasks.py}` | Inert unless a worker/beat process is actually started |
-| Apple Pay | — (Copier toggle `include_apple_pay`) | `app/services/payments/apple_pay.py` | Not usable until credentials are set |
+| Email | `include_resend`, `include_brevo` | `app/services/email/{base,resend,brevo}.py` | Not usable until an API key is set; no silent fallback |
+| Cache, rate limiting, token blacklist (Redis) | `include_redis_cache`, `include_redis_rate_limit`, `include_redis_token_blacklist` (Redis is computed from them and Celery) | `app/services/cache/{base,manager,decorators,rate_limiter,token_blacklist}.py` | Fails open / no-op in `LOCAL` |
+| Firebase, Firestore, GCS, BackBlaze | `include_firebase`, `include_firestore`, `include_gcs`, `include_backblaze` | `app/services/{firebase,firestore,gcs,back_blaze_b2}.py` | Not usable until credentials are set |
+| Task queue | `include_celery` | `app/services/task_queue/{celery_config.py, tasks/user_tasks.py}` | Inert unless a worker/beat process is actually started |
+| Log shipping | `include_openobserve` | `app/core/openobserve.py` | Off until `LOG_TO_OPENOBSERVE=true` |
+| Apple Pay | `include_apple_pay` | `app/services/payments/apple_pay.py` | Not usable until credentials are set |
 
-## Email (Copier toggles, not an extra)
+## Email (`include_resend`, `include_brevo`)
 
 `app/services/email/base.py` defines `BaseEmailService(ABC)` with an abstract `send()`
 and a concrete `send_welcome()` helper that renders `static/welcome.html` via a naive
@@ -44,7 +44,7 @@ toggle (`include_resend`, `include_brevo`); the shared base, types and exception
 when at least one is chosen, and the chosen SDKs are core dependencies (guide:
 `docs/integrations/email.md`).
 
-## Cache / rate limiting / token blacklist (Copier toggles, Redis-backed)
+## Cache / rate limiting / token blacklist (Redis-backed)
 
 The cache is the `include_redis_cache` Copier toggle (guide: `docs/integrations/caching.md`).
 Redis (`app/services/cache/base.py`, the `REDIS_*` settings, the `redis` dependency and
@@ -71,16 +71,15 @@ singletons, health-checked in `main.py`'s lifespan (see
 [observability-and-performance.md](observability-and-performance.md)) and explicitly
 closed on shutdown.
 
-## Cloud storage & Firebase (Copier toggles, not extras)
+## Cloud storage & Firebase
 
 - `app/services/gcs.py` — Google Cloud Storage via `gcloud-aio-storage`, schema in
-  `app/schemas/google_bucket.py`. Not an extra: it is the `include_gcs` Copier toggle,
-  and a project that includes it gets `gcloud-aio-storage` and `aiofiles` as core
-  dependencies (guide: `docs/integrations/gcs.md`).
+  `app/schemas/google_bucket.py` (`include_gcs`). A project that includes it gets
+  `gcloud-aio-storage` and `aiofiles` as core dependencies (guide:
+  `docs/integrations/gcs.md`).
 - `app/services/back_blaze_b2.py` — Backblaze B2 SDK, schema in
-  `app/schemas/back_blaze_bucket.py`. Not an extra: it is the `include_backblaze`
-  Copier toggle, and a project that includes it gets `b2sdk` as a core dependency
-  (guide: `docs/integrations/backblaze.md`).
+  `app/schemas/back_blaze_bucket.py` (`include_backblaze`). A project that includes it
+  gets `b2sdk` as a core dependency (guide: `docs/integrations/backblaze.md`).
 - `app/services/firebase.py` (Admin SDK auth) and `firestore.py` (Firestore DB) —
   the `include_firebase` and `include_firestore` Copier toggles (Firestore only with
   Firebase). A project that includes Firebase gets `firebase-admin` as a core
@@ -129,7 +128,8 @@ variables, dependency and docs are `FEATURE[apple_pay]` blocks, so a project gen
 without it has none of them (see
 [copier-template-mechanics.md](copier-template-mechanics.md)). It also builds a
 **module-level singleton at import time** that eagerly PEM-parses its private key — this
-is why `tests/conftest.py` has to generate throwaway credentials *before* any `app.*`
-import (see [testing-conventions.md](testing-conventions.md)); the same import-time
+is why `tests/conftest.py` calls `ensure_apple_pay_test_credentials()` (from
+`tests/apple_pay_credentials.py`) *before* any `app.*` import in projects with Apple Pay
+(see [testing-conventions.md](testing-conventions.md)); the same import-time
 fragility applies to any code that imports this module without valid (even if dummy)
 credential files present.

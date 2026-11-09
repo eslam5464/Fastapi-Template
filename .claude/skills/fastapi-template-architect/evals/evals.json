@@ -3,8 +3,8 @@
   "evals": [
     {
       "id": 0,
-      "prompt": "I want to start a brand new FastAPI backend project. Please actually scaffold it now (don't just explain the steps) using the eslam5464/Fastapi-Template architecture as the foundation: project name Acme Orders, slug acme-orders, description 'Order management backend', author Jane Doe <jane@example.com>, GitHub username janedoe, Python 3.14, skip Apple Pay, want email sending and Redis caching support usable in this project. A local checkout of the source template lives at C:\\Users\\Eslam\\Documents\\VS\\Fastapi-Template. Generate the new project into a target directory I give you, then tell me concisely what you did, confirm the project looks right by listing its top-level files, and give the exact follow-up commands to get it installed and runnable.",
-      "expected_output": "A fully generated, correctly identity-substituted project (name=acme-orders in pyproject.toml) with Apple Pay code excluded, generator tooling self-removed, and an accurate, complete post-gen checklist (uv sync incl. chosen extras, pre-commit install, .env setup, createdb + alembic upgrade head) - with email/cache correctly explained as extras to install, not generation-time toggles.",
+      "prompt": "I want to start a brand new FastAPI backend project. Please actually scaffold it now (don't just explain the steps) using the eslam5464/Fastapi-Template architecture as the foundation: project name Acme Orders, slug acme-orders, description 'Order management backend', author Jane Doe <jane@example.com>, GitHub username janedoe, Python 3.14, skip Apple Pay, want email sending through Resend and the Redis cache in this project. A local checkout of the source template lives at C:\\Users\\Eslam\\Documents\\VS\\Fastapi-Template. Generate the new project into a target directory I give you, then tell me concisely what you did, confirm the project looks right by listing its top-level files, and give the exact follow-up commands to get it installed and runnable.",
+      "expected_output": "A fully generated, correctly identity-substituted project (name=acme-orders in pyproject.toml) generated with services=custom, include_resend=true and include_redis_cache=true and every other service declined: Resend, the cache and Redis (computed from the cache) present, Apple Pay and the other services stripped, generator tooling self-removed, and an accurate, complete post-gen checklist (uv sync --all-groups, pre-commit install, .env setup, createdb + alembic upgrade head) - with email and the cache correctly explained as Copier questions answered at generation time, not extras to install afterwards.",
       "files": []
     },
     {
@@ -17,7 +17,9 @@
       "id": 2,
       "prompt": "I just wrote a new order_service.py for our FastAPI backend before opening a PR. Can you review it against our established architecture conventions and tell me everything wrong with it, and why each thing is a problem?",
       "expected_output": "Identifies the service holding a raw session, constructing its own repos internally, exceeding the 5-repository threshold (7 repos), raising HTTPException directly from the service layer, and the auto_commit=False silent-data-loss bug (two calls, no matching commit) - with an explanation of why each matters, not just a bare list.",
-      "files": ["order_service.py (deliberately flawed fixture, provided by the eval harness)"]
+      "files": [
+        "order_service.py (deliberately flawed fixture, provided by the eval harness)"
+      ]
     }
   ]
 }

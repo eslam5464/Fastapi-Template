@@ -120,13 +120,18 @@ uv run copier copy <local-path> <new-project-dir> --trust
    `FEATURE[...]` block whose expression is false (including the `_template` blocks:
    the `template` dependency group and the README's "Using This as a Template" section),
    then `normalize_python()` re-sorts imports and re-formats the Python files it changed.
-6. **`regenerate_lockfile()`** — `uv python install <version>` + `uv lock`, tolerant of
+6. **`skill_assets.rebuild()`** — every snapshot under this skill's `assets/` (both the
+   `.claude/` copy and the `.agents/` mirror) becomes a copy of the generated project's
+   own file, and the snapshots of files the project does not have (e.g.
+   `app/middleware/rate_limit.py` without rate limiting) are deleted. See "The skill's
+   `assets/` snapshots" below.
+7. **`regenerate_lockfile()`** — `uv python install <version>` + `uv lock`, tolerant of
    failure (doesn't hard-fail generation if the network/toolchain isn't available at
    generation time; `FASTAPI_TEMPLATE_STRICT=1` makes it fatal).
-7. **`remove_generate_tooling()`** — the script deletes its own containing directory
+8. **`remove_generate_tooling()`** — the script deletes its own containing directory
    (`scripts/generate/`) as its last act — a generated project doesn't ship the
    generator that built it.
-8. **`git_init_and_commit()`** — `git init && git add -A`, then
+9. **`git_init_and_commit()`** — `git init && git add -A`, then
    `refresh_secrets_baseline()` (re-runs the pinned detect-secrets hook so
    `.secrets.baseline` line numbers match the stripped files), then
    `git commit -m "chore: initial commit from copier template"`.
@@ -152,15 +157,32 @@ convention rather than introducing Jinja templating into the source tree — tha
 break the "the repo is always directly runnable" property that makes this whole approach
 work.
 
-## ⚠️ The distinction that matters most: toggle vs. extra
+## ⚠️ Every optional service is decided at generation time
 
-**Services with an `include_*` question remove their code at generation time** when
-declined (today: the Redis cache, rate limiting, the token blacklist, Celery, Firebase, Firestore, Google Cloud Storage, BackBlaze B2, Resend,
-Brevo, OpenObserve and Apple Pay). Redis is a computed feature: never asked, on when the
-cache, rate limiting, the token blacklist or Celery is chosen, and then it brings the
-`redis` dependency, the `REDIS_*` settings and the Redis service in compose and CI. A
-chosen service's packages are regular dependencies of the generated project; there are
-no `pyproject.toml` extras any more.
+Each optional service is an `include_*` question, and a declined service's code, tests,
+settings, env vars, compose and CI entries, docs and dependencies are removed from the
+generated project: the Redis cache, rate limiting, the token blacklist, Celery,
+Firebase, Firestore, Google Cloud Storage, BackBlaze B2, Resend, Brevo, OpenObserve and
+Apple Pay. Redis is a computed feature: never asked, on when the cache, rate limiting,
+the token blacklist or Celery is chosen, and then it brings the `redis` dependency, the
+`REDIS_*` settings and the Redis service in compose and CI. A chosen service's packages
+are regular dependencies of the generated project; there are no `pyproject.toml` extras.
+Adding a declined service to an existing project later means porting its files from the
+template by hand (`copier update` is not supported).
+
+## The skill's `assets/` snapshots
+
+Each file under `../assets/` is a copy of the repo file at the same relative path, with
+a SNAPSHOT NOTICE header. What it shows depends on where the skill lives:
+
+- **In the template repo, or a skill installed on its own** (`npx skills add ...`, or a
+  copy of the skill folder): the template rendered with every optional service included
+  and no `FEATURE[...]` markers, so it reads as plain code.
+  `scripts/generate/skill_assets.py --refresh` rewrites them after a template change, and
+  `scripts/generate/skill_assets_test.py` fails while one is stale.
+- **In a generated project**: `post_gen.py` rebuilds each snapshot from the project's own
+  file and deletes the snapshots of files the project does not have, so they match the
+  services that project actually has (as generated; they drift as the project changes).
 
 ## `template-ci.yml` — the self-verification loop
 

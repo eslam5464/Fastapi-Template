@@ -43,6 +43,7 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import features  # noqa: E402
+import skill_assets  # noqa: E402
 import variants  # noqa: E402
 
 FIRST_PARTY = ("app", "tests")
@@ -127,6 +128,26 @@ def _imports(tree: ast.AST) -> list[tuple[int, str]]:
     return found
 
 
+def _snapshot_problems(root: Path) -> list[str]:
+    """Every skill snapshot is a copy of a file this variant ships, with the same content."""
+    problems = []
+    for asset_dir in skill_assets.ASSET_DIRS:
+        for rel, path in skill_assets.snapshots(root, asset_dir):
+            where = f"{asset_dir.as_posix()}/{rel}"
+            live = root / rel
+            if not live.is_file():
+                problems.append(f"{where}: snapshot of {rel}, which this variant does not ship")
+                continue
+            try:
+                _, body = skill_assets.split(path.read_text(encoding="utf-8"))
+            except ValueError as exc:
+                problems.append(f"{where}: {exc}")
+                continue
+            if "FEATURE[" in body or body != live.read_text(encoding="utf-8").lstrip("\n"):
+                problems.append(f"{where}: differs from {rel}")
+    return problems
+
+
 def check_tree(root: Path, raw: dict) -> list[str]:
     """Problems found in a generated tree (empty list = clean)."""
     problems: list[str] = []
@@ -183,6 +204,8 @@ def check_tree(root: Path, raw: dict) -> list[str]:
                 if match:
                     line = text.count("\n", 0, match.start()) + 1
                     problems.append(f"{rel}:{line}: contains {pattern.pattern!r} of a disabled feature")
+
+    problems.extend(_snapshot_problems(root))
 
     for args in (["check", "--no-cache", "."], ["format", "--no-cache", "--check", "."]):
         result = subprocess.run([sys.executable, "-m", "ruff", *args], cwd=root, capture_output=True, text=True)

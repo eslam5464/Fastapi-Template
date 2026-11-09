@@ -84,7 +84,7 @@ hand-building (see "Offline fallback" below) when Copier genuinely isn't usable.
    uvx --with jinja2-time copier copy gh:eslam5464/Fastapi-Template <target-dir> --trust
    ```
    `--trust` is required because generation runs `scripts/generate/post_gen.py` (identity
-   substitution, license rewrite, optional Apple-Pay removal, lockfile regen, `git init`).
+   substitution, license rewrite, stripping the services not chosen, lockfile regen, `git init`).
    **Two verified gotchas, don't skip them:** bare `uvx copier copy ...` can fail with
    `No module named 'jinja2_time'` — a fresh `uvx` install of copier can be missing an
    optional Jinja extension it tries to load; `--with jinja2-time` fixes it. And
@@ -97,8 +97,8 @@ hand-building (see "Offline fallback" below) when Copier genuinely isn't usable.
 
 5. **Run the rest of the README Quick Start as an explicit post-gen checklist** (don't
    skip steps or assume the user did them):
-   - `uv sync --all-groups` plus `uv sync --extra <name>` for each integration chosen in
-     step 3 (or `--all-extras` if the user wants everything installed).
+   - `uv sync --all-groups`. There are no extras: the packages of the services chosen in
+     step 3 are already regular dependencies of the generated project.
    - `pre-commit install` (and `pre-commit install --hook-type commit-msg` for the
      Commitizen commit-msg hook).
    - Tell the user to copy `.env.example` to `.env` and fill it in themselves — **never
@@ -188,4 +188,7 @@ The `assets/` files and the reference docs' code examples are patterns, not a
 lockstep copy-paste target. A target project's specifics (its project name, DB schema
 name, actual domain models) still need real substitution and adaptation — never paste
 an asset file in verbatim without checking it matches the target project's own
-settings/imports/domain, even when Copier itself isn't in the loop.
+settings/imports/domain, even when Copier itself isn't in the loop. In a generated
+project each asset is a copy of that project's own file as generated (assets of files the
+project does not have are removed); in the template repo, or a skill installed on its own,
+the assets show the template with every optional service included.
