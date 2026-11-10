@@ -58,14 +58,16 @@ The application uses a mounted-subapp versioning model:
 - Root app does not expose global /docs, /redoc, or /openapi.json.
 - Version app mounts:
   - /v1 -> /v1/docs, /v1/redoc, /v1/openapi.json
+<!-- --- FEATURE[api_v2] START --- -->
   - /v2 -> /v2/docs, /v2/redoc, /v2/openapi.json
+<!-- --- FEATURE[api_v2] END --- -->
 
 This keeps OpenAPI schemas isolated by version and allows independent evolution of each API surface.
 
 ## Request Data Flow
 
 1. Request reaches root app middleware chain (security headers, CSRF, logging).
-2. Request is routed to root endpoints (for example /health) or a mounted version app (/v1 or /v2).
+2. Request is routed to root endpoints (for example /health) or a mounted version app (for example /v1).
 3. Endpoint dependencies assemble service objects and repositories with request-scoped session.
 4. Service executes business logic and calls repositories as needed.
 5. API layer maps domain exceptions to HTTP responses and returns schema-validated output.
@@ -81,6 +83,8 @@ This keeps OpenAPI schemas isolated by version and allows independent evolution 
 
 ## Current Constraints
 
-- Version 2 is scaffolded and mounted; endpoint surface is intentionally minimal at this stage.
+<!-- --- FEATURE[api_v2] START --- -->
+- The second API version (/v2) is scaffolded and mounted; its endpoint surface is intentionally empty at this stage.
+<!-- --- FEATURE[api_v2] END --- -->
 - Compatibility aliases for legacy /api/v1 paths are not enabled.
 - Production docs remain environment-gated through app configuration.

@@ -44,6 +44,12 @@ FEATURES: tuple[Feature, ...] = (
     # when generating a project.
     Feature("_template"),
     Feature(
+        "api_v2",
+        question="include_api_v2",
+        forbidden=(r"api_v2", r"v2_app", r"/v2\b"),
+        doc_forbidden=(r"(?i)(?<![.\w])v2\b",),
+    ),
+    Feature(
         "redis_cache",
         question="include_redis_cache",
         forbidden=(
@@ -167,6 +173,7 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 # A key ending in "/" is a directory (deleted with its whole tree when the
 # expression is false). Every key must exist in the template repository.
 PATHS: dict[str, str] = {
+    "app/api/v2/": "api_v2",
     # The skill's eval prompts test the template itself: template repo only.
     ".claude/skills/fastapi-template-architect/evals/": "_template",
     # The Archify diagram of the template itself (every service on): template repo only.

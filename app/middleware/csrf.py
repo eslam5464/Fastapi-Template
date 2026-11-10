@@ -26,9 +26,11 @@ EXEMPT_PATHS = {
     "/v1/docs",
     "/v1/redoc",
     "/v1/openapi.json",
+    # --- FEATURE[api_v2] START ---
     "/v2/docs",
     "/v2/redoc",
     "/v2/openapi.json",
+    # --- FEATURE[api_v2] END ---
 }
 
 
@@ -66,9 +68,11 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             "/v1/docs",
             "/v1/redoc",
             "/v1/openapi",
+            # --- FEATURE[api_v2] START ---
             "/v2/docs",
             "/v2/redoc",
             "/v2/openapi",
+            # --- FEATURE[api_v2] END ---
         )
         return any(path.startswith(prefix) for prefix in exempt_prefixes)
 

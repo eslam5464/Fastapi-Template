@@ -18,7 +18,7 @@
 Use concise imperative messages.
 Examples:
 
-- feat: mount versioned v2 docs app
+- feat: mount versioned docs app
 - fix: whitelist docs CSP in security headers
 - docs: align architecture with mounted versioning
 
@@ -68,5 +68,5 @@ Commit `.secrets.baseline` afterward — it only protects anyone else once it's 
 
 ## Local Docs
 
-- /v1/docs and /v2/docs are the canonical interactive docs endpoints.
+- /v1/docs is the canonical interactive docs endpoint (every mounted API version has its own).
 - Root /docs is intentionally disabled.

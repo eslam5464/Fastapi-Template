@@ -4,7 +4,7 @@ This project follows [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PA
 
 ## The rule, in plain terms
 
-- **MAJOR** — something breaks for existing consumers of the running app's HTTP API (`/v1`, `/v2`): an endpoint or field is removed, renamed, or changed in a way that isn't backward compatible.
+- **MAJOR** — something breaks for existing consumers of the running app's HTTP API (`/v1` and any later version): an endpoint or field is removed, renamed, or changed in a way that isn't backward compatible.
 - **MINOR** — new functionality that doesn't break anything: a new endpoint, a new optional integration, a new feature flag.
 - **PATCH** — a backward-compatible bug fix. No new behavior, just something broken made correct.
 

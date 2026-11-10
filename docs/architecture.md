@@ -32,15 +32,13 @@ app/
 ├── web.py                  # Gunicorn application runner
 ├── api/                    # API layer
 │   ├── routes.py           # Unversioned routes (/health)
-│   ├── v1/                 # API version 1
-│   │   ├── router.py       # Version router
-│   │   ├── deps/
-│   │   │   └── auth.py     # Authentication dependencies
-│   │   └── endpoints/
-│   │       ├── auth.py     # Authentication endpoints
-│   │       └── user.py     # User endpoints
-│   └── v2/
-│       └── router.py       # Version 2 router
+│   └── v1/                 # API version 1
+│       ├── router.py       # Version router
+│       ├── deps/
+│       │   └── auth.py     # Authentication dependencies
+│       └── endpoints/
+│           ├── auth.py     # Authentication endpoints
+│           └── user.py     # User endpoints
 ├── core/                   # Settings, infrastructure, shared helpers
 │   ├── config.py           # Settings (pydantic-settings)
 │   ├── db.py               # Async engine and sessions
@@ -77,10 +75,13 @@ app/
     └── versions/
 ```
 
-<!-- --- FEATURE[redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] START --- -->
-Optional service files in this project:
+<!-- --- FEATURE[api_v2|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] START --- -->
+Optional files in this project:
 
-<!-- --- FEATURE[redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] END --- -->
+<!-- --- FEATURE[api_v2|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] END --- -->
+<!-- --- FEATURE[api_v2] START --- -->
+- `app/api/v2/router.py` — the second API version, an empty scaffold mounted at `/v2`
+<!-- --- FEATURE[api_v2] END --- -->
 <!-- --- FEATURE[redis] START --- -->
 - `app/services/cache/base.py` — shared Redis connection pool (`BaseRedisClient`)
 <!-- --- FEATURE[redis] END --- -->

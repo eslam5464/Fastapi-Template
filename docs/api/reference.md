@@ -4,7 +4,10 @@
 
 - Service base: <http://localhost:8799>
 - Root operational endpoint: /health
-- Versioned API bases: /v1 and /v2
+- Versioned API base: /v1
+<!-- --- FEATURE[api_v2] START --- -->
+- Second API version (empty scaffold): /v2
+<!-- --- FEATURE[api_v2] END --- -->
 
 ## Documentation Endpoints
 
@@ -13,9 +16,11 @@ When environment is LOCAL, DEV, or STG:
 - /v1/docs
 - /v1/redoc
 - /v1/openapi.json
+<!-- --- FEATURE[api_v2] START --- -->
 - /v2/docs
 - /v2/redoc
 - /v2/openapi.json
+<!-- --- FEATURE[api_v2] END --- -->
 
 Root /docs, /redoc, and /openapi.json are intentionally disabled.
 

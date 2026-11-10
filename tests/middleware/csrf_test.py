@@ -70,7 +70,9 @@ class TestCSRFMiddlewareConstants:
         assert "/v1/auth/refresh-token" in EXEMPT_PATHS
         assert "/health" in EXEMPT_PATHS
         assert "/v1/docs" in EXEMPT_PATHS
+        # --- FEATURE[api_v2] START ---
         assert "/v2/docs" in EXEMPT_PATHS
+        # --- FEATURE[api_v2] END ---
 
 
 @pytest.mark.anyio
@@ -529,10 +531,12 @@ class TestCSRFMiddlewareIsExempt:
         request.url = MagicMock(path="/v1/docs/oauth2-redirect")
         assert middleware._is_exempt(request) is True
 
+        # --- FEATURE[api_v2] START ---
         # Test /v2/redoc prefix
         request.url = MagicMock(path="/v2/redoc")
         assert middleware._is_exempt(request) is True
 
+        # --- FEATURE[api_v2] END ---
         # Test /v1/openapi prefix
         request.url = MagicMock(path="/v1/openapi.json")
         assert middleware._is_exempt(request) is True

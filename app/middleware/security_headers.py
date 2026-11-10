@@ -33,8 +33,10 @@ DOCS_CSP = (
 DOCS_PATH_PREFIXES = (
     "/v1/docs",
     "/v1/redoc",
+    # --- FEATURE[api_v2] START ---
     "/v2/docs",
     "/v2/redoc",
+    # --- FEATURE[api_v2] END ---
 )
 
 
