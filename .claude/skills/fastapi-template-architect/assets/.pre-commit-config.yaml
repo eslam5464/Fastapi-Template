@@ -1,5 +1,5 @@
 # --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
-# Copy of .pre-commit-config.yaml from eslam5464/Fastapi-Template, taken 2026-11-09,
+# Copy of .pre-commit-config.yaml from eslam5464/Fastapi-Template, taken 2026-11-11,
 # with every optional service included (a generated project only has the
 # services chosen for it). The real repo is the source of truth; this is a
 # fallback/reference copy for offline scaffolding and Extend/Audit-mode
@@ -20,7 +20,7 @@ repos:
       - id: detect-private-key
       - id: check-merge-conflict
       - id: name-tests-test
-        exclude: ^tests/(\w+_credentials|conftest|schemas|utils)\.py$
+        exclude: ^tests/(\w+_credentials|conftest|sample_model|schemas|utils)\.py$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.15.22

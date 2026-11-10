@@ -1,5 +1,5 @@
 # --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
-# Copy of tests/conftest.py from eslam5464/Fastapi-Template, taken 2026-11-09,
+# Copy of tests/conftest.py from eslam5464/Fastapi-Template, taken 2026-11-11,
 # with every optional service included (a generated project only has the
 # services chosen for it). The real repo is the source of truth; this is a
 # fallback/reference copy for offline scaffolding and Extend/Audit-mode
@@ -17,7 +17,6 @@ import pytest  # noqa: E402
 from faker import Faker  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 from httpx import ASGITransport, AsyncClient  # noqa: E402
-from pwdlib import PasswordHash  # noqa: E402
 from sqlalchemy.ext.asyncio import (  # noqa: E402
     AsyncSession,
     async_sessionmaker,
@@ -25,23 +24,27 @@ from sqlalchemy.ext.asyncio import (  # noqa: E402
 )
 from sqlalchemy.pool import NullPool  # noqa: E402
 from sqlalchemy.sql import text  # noqa: E402
+from starlette.routing import Mount  # noqa: E402
 
-from app import repos  # noqa: E402
 from app.core.config import settings  # noqa: E402
 from app.core.db import get_session  # noqa: E402
-from app.main import app, v1_app, v2_app  # noqa: E402
-from app.models import Base, User  # noqa: E402
-from app.schemas import Token, UserCreate  # noqa: E402
-from app.services.auth_service import AuthService  # noqa: E402
+from app.main import app  # noqa: E402
+from app.models import Base  # noqa: E402
+from tests.sample_model import (  # noqa: E402
+    SampleRecord,
+    SampleRecordRepo,
+    sample_record_data,
+)
 
-DEFAULT_PASSWORD = "P@ssword123"
-_PASSWORD_HASH = PasswordHash.recommended()
 
+def mounted_apps() -> list[FastAPI]:
+    """The root app and every FastAPI sub-app mounted on it (the versioned APIs).
 
-@pytest.fixture(scope="session")
-def pre_hashed_password() -> str:
-    """Pre-compute the hashed password once for all tests to avoid repeated bcrypt operations."""
-    return _PASSWORD_HASH.hash(DEFAULT_PASSWORD)
+    A mounted sub-app resolves its own dependencies, so an override set only on
+    the root app does not reach the versioned routes.
+    """
+    sub_apps = [route.app for route in app.routes if isinstance(route, Mount) and isinstance(route.app, FastAPI)]
+    return [app, *sub_apps]
 
 
 @pytest.fixture
@@ -75,9 +78,8 @@ async def test_app() -> AsyncGenerator[FastAPI, None]:
             async with test_async_session() as session:
                 yield session
 
-        app.dependency_overrides[get_session] = override_get_session
-        v1_app.dependency_overrides[get_session] = override_get_session
-        v2_app.dependency_overrides[get_session] = override_get_session
+        for mounted_app in mounted_apps():
+            mounted_app.dependency_overrides[get_session] = override_get_session
 
         yield app
 
@@ -87,9 +89,8 @@ async def test_app() -> AsyncGenerator[FastAPI, None]:
             await conn.execute(text(f'DROP SCHEMA IF EXISTS "{settings.postgres_db_schema}"'))
 
         # Clear any application dependencies
-        app.dependency_overrides.clear()
-        v1_app.dependency_overrides.clear()
-        v2_app.dependency_overrides.clear()
+        for mounted_app in mounted_apps():
+            mounted_app.dependency_overrides.clear()
     finally:
         await test_engine.dispose()
 
@@ -125,47 +126,6 @@ async def db_session(test_app: FastAPI) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture
-async def user(db_session: AsyncSession, faker: Faker, pre_hashed_password: str) -> User:
-    """Create a test user."""
-    user_data = UserCreate(
-        email=faker.unique.safe_email(),
-        username=faker.unique.user_name(),
-        hashed_password=pre_hashed_password,
-        first_name=faker.first_name(),
-        last_name=faker.last_name(),
-    )
-    user_db = await repos.UserRepo(db_session).create_one(user_data)
-    return user_db
-
-
-@pytest.fixture
-async def other_user(
-    db_session: AsyncSession,
-    faker: Faker,
-    pre_hashed_password: str,
-) -> User:
-    """Create another test user."""
-    user_data = UserCreate(
-        email=faker.unique.safe_email(),
-        username=faker.unique.user_name(),
-        hashed_password=pre_hashed_password,
-        first_name=faker.first_name(),
-        last_name=faker.last_name(),
-    )
-    user_db = await repos.UserRepo(db_session).create_one(user_data)
-    return user_db
-
-
-@pytest.fixture
-async def default_password() -> str:
-    return DEFAULT_PASSWORD
-
-
-@pytest.fixture
-async def token(user: User) -> Token:
-    """Create a test token."""
-    access_token_data = AuthService.create_access_token(subject=str(user.id))
-    return Token(
-        access_token=access_token_data["token"],
-        token_type="Bearer",
-    )
+async def sample_record(db_session: AsyncSession, faker: Faker) -> SampleRecord:
+    """A stored row of the test-only model (see tests/sample_model.py)."""
+    return await SampleRecordRepo(db_session).create_one(sample_record_data(faker))
