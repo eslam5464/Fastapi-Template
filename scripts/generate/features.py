@@ -202,6 +202,7 @@ PATHS: dict[str, str] = {
     "tests/services/cache/rate_limiter_test.py": "redis_rate_limit",
     "tests/api/v1/deps/rate_limit_part1_test.py": "redis_rate_limit",
     "tests/api/v1/deps/rate_limit_part2_test.py": "redis_rate_limit",
+    "tests/api/v1/deps/rate_limit_user_test.py": "redis_rate_limit",
     "tests/api/v1/endpoints/rate_limit_wiring_test.py": "redis_rate_limit",
     "tests/main_rate_limit_test.py": "redis_rate_limit",
     "docs/integrations/rate-limiting.md": "redis_rate_limit",

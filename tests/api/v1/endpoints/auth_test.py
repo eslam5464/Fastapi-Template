@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.deps.auth import get_auth_service, get_current_user
 from app.core.config import settings
 from app.models import User
-from tests.utils import generate_user_credentials
+from tests.schemas import generate_user_credentials
 
 
 class TestLogin:
