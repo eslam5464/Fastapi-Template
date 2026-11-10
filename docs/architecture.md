@@ -67,7 +67,6 @@ app/
 │   └── types/              # Service-layer TypedDicts
 ├── middleware/
 │   ├── logging.py          # Request logging middleware
-│   ├── csrf.py             # CSRF protection middleware
 │   └── security_headers.py # Security headers middleware
 └── alembic/                # Database migrations
     ├── env.py
@@ -75,13 +74,16 @@ app/
     └── versions/
 ```
 
-<!-- --- FEATURE[api_v2|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] START --- -->
+<!-- --- FEATURE[api_v2|csrf|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] START --- -->
 Optional files in this project:
 
-<!-- --- FEATURE[api_v2|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] END --- -->
+<!-- --- FEATURE[api_v2|csrf|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] END --- -->
 <!-- --- FEATURE[api_v2] START --- -->
 - `app/api/v2/router.py` — the second API version, an empty scaffold mounted at `/v2`
 <!-- --- FEATURE[api_v2] END --- -->
+<!-- --- FEATURE[csrf] START --- -->
+- `app/middleware/csrf.py` — CSRF protection middleware
+<!-- --- FEATURE[csrf] END --- -->
 <!-- --- FEATURE[redis] START --- -->
 - `app/services/cache/base.py` — shared Redis connection pool (`BaseRedisClient`)
 <!-- --- FEATURE[redis] END --- -->
@@ -711,7 +713,9 @@ class NotFoundError(BaseAPIException):
 - **Input Validation**: Pydantic schema validation
 - **SQL Injection**: SQLAlchemy ORM protection
 - **CORS Policy**: Configured origin restrictions
+<!-- --- FEATURE[csrf] START --- -->
 - **CSRF Protection**: Middleware-based CSRF token validation
+<!-- --- FEATURE[csrf] END --- -->
 - **Security Headers**: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - **Rate Limiting**: Redis-based sliding window algorithm with microsecond precision

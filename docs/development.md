@@ -883,32 +883,39 @@ See [integrations/apple-pay.md](integrations/apple-pay.md).
 
 The template includes several security middleware components that are automatically applied to all requests.
 
+<!-- --- FEATURE[csrf] START --- -->
 #### CSRF Protection
 
-CSRF (Cross-Site Request Forgery) protection is implemented via middleware for state-changing requests.
+CSRF (Cross-Site Request Forgery) protection is implemented in `app/middleware/csrf.py` with the double-submit cookie pattern.
 
 **How it works:**
 
-- Validates CSRF tokens for POST, PUT, DELETE, PATCH requests
-- Tokens are validated against the session or a secure cookie
-- Safe methods (GET, HEAD, OPTIONS) are exempt
+- A response to a safe request (GET, HEAD, OPTIONS, TRACE) sets a `csrf_token` cookie when the client has none.
+- A state-changing request (POST, PUT, DELETE, PATCH) must send the same value in the `X-CSRF-Token` header, or it gets a 403.
+- The paths in `EXEMPT_PATHS` (for example `/health` and the docs) are not checked.
+- The check is skipped in the `local` environment.
 
 **Frontend Integration:**
 
 ```javascript
-// Include CSRF token in requests
-const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+// Read the csrf_token cookie and send it back in the X-CSRF-Token header
+const csrfToken = document.cookie
+  .split('; ')
+  .find((cookie) => cookie.startsWith('csrf_token='))
+  ?.split('=')[1];
 
-fetch('/api/v1/users/me', {
+fetch('/v1/reports/1', {
   method: 'PUT',
+  credentials: 'include',
   headers: {
     'Content-Type': 'application/json',
     'X-CSRF-Token': csrfToken
   },
-  body: JSON.stringify(userData)
+  body: JSON.stringify(data)
 });
 ```
 
+<!-- --- FEATURE[csrf] END --- -->
 #### Security Headers Middleware
 
 Automatically adds security headers to all responses:

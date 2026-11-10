@@ -6,7 +6,7 @@ Full reference for what's built into this project: what each feature does, which
 
 - 🚀 [Core](#-core) — FastAPI, Postgres, Alembic, logging, docs (always included)
 - 🔐 [Authentication](#-authentication) — JWT, Argon2
-- 🔒 [Security middleware](#-security-middleware) — CSRF, security headers
+- 🔒 [Security middleware](#-security-middleware) — security headers and the other request middleware
 <!-- --- FEATURE[redis_cache] START --- -->
 - ⚡ [Caching](#-caching) — Redis cache
 <!-- --- FEATURE[redis_cache] END --- -->
@@ -76,7 +76,12 @@ Optional services are chosen when the project is generated (Copier's `services=c
 
 All in `app/middleware/`:
 
-- **CSRF protection** (`csrf.py`)
+<!-- --- FEATURE[csrf] START --- -->
+- **CSRF protection** (`csrf.py`) — double-submit cookie check (`X-CSRF-Token` header against the `csrf_token` cookie) on state-changing requests.
+<!-- --- FEATURE[csrf] END --- -->
+<!-- --- FEATURE[!csrf] START --- -->
+- **No cross-site request forgery check** — this project was generated without that middleware. Add one before you authenticate browser clients with cookies.
+<!-- --- FEATURE[!csrf] END --- -->
 - **Security headers** (`security_headers.py`)
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - **Rate limiting** (`rate_limit.py`) — sliding-window algorithm with microsecond precision, Redis-backed. Guide: [integrations/rate-limiting.md](integrations/rate-limiting.md).

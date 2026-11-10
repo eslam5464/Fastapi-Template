@@ -63,7 +63,10 @@ Example:
 - 201: Created
 - 400: Bad request/domain validation failure mapping
 - 401: Authentication failure
-- 403: Forbidden/CSRF violations
+- 403: Forbidden
+<!-- --- FEATURE[csrf] START --- -->
+- 403 is also returned when the CSRF check fails
+<!-- --- FEATURE[csrf] END --- -->
 - 404: Not found
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - 429: Rate limited

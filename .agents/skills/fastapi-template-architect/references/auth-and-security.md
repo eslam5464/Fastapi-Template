@@ -50,6 +50,11 @@ test environment is non-`LOCAL` or Redis is genuinely available.
 
 ## CSRF — double-submit cookie pattern
 
+Only in projects generated with `include_csrf` (check that `app/middleware/csrf.py`
+exists). A project without it has no CSRF check at all: that is fine for an API whose
+clients send a bearer token in the `Authorization` header, and a gap to close before
+browser clients authenticate with cookies.
+
 Real code in `../assets/app/middleware/csrf.py`:
 
 - Safe methods (`GET`, `HEAD`, `OPTIONS`, `TRACE`) skip validation entirely.
@@ -126,4 +131,5 @@ dependency, with zero duplicated header-setting code per endpoint.
 ## Middleware registration order
 
 See [api-governance.md](api-governance.md) — `CORSMiddleware` → `SecurityHeadersMiddleware`
-→ `CSRFMiddleware` → `RateLimitHeaderMiddleware` → `LoggingMiddleware`, outermost first.
+→ `CSRFMiddleware` → `RateLimitHeaderMiddleware` → `LoggingMiddleware`, outermost first
+(`CSRFMiddleware` and `RateLimitHeaderMiddleware` only where the project has them).

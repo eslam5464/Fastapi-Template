@@ -56,7 +56,10 @@ Complete guide for local development environment setup and daily development tas
 <!-- --- FEATURE[apple_pay] START --- -->
 - Apple Pay (App Store Server API) integration guide ([integrations/apple-pay.md](integrations/apple-pay.md))
 <!-- --- FEATURE[apple_pay] END --- -->
-- Security middleware (CSRF, security headers)
+- Security middleware (security headers)
+<!-- --- FEATURE[csrf] START --- -->
+- CSRF protection middleware
+<!-- --- FEATURE[csrf] END --- -->
 <!-- --- FEATURE[redis_token_blacklist] START --- -->
 - Token blacklisting and logout ([integrations/token-revocation.md](integrations/token-revocation.md))
 <!-- --- FEATURE[redis_token_blacklist] END --- -->
