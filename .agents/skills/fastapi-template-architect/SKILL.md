@@ -58,8 +58,9 @@ hand-building (see "Offline fallback" below) when Copier genuinely isn't usable.
    for the exact question set and what each answer controls. In short: `project_name`,
    `project_slug`, `project_description`, `author_name`, `author_email`,
    `github_username`, `python_version` (≥3.14), then `services` (`minimal`, the
-   default, or `custom`) and, for `custom`, one bool per service that really strips its
-   code when declined: `include_firebase`, `include_firestore` (asked only after Firebase),
+   default, or `custom`) and, for `custom`, one bool per optional part that really strips
+   its code when declined: `include_api_v2` (the empty `/v2` scaffold),
+   `include_firebase`, `include_firestore` (asked only after Firebase),
    `include_redis_cache`, `include_redis_rate_limit`, `include_redis_token_blacklist`, `include_celery`, `include_gcs`, `include_backblaze`, `include_resend`, `include_brevo`,
    `include_openobserve`, `include_apple_pay` (all default false).
 

@@ -10,7 +10,7 @@
 
 1. Acknowledge incident and assign incident commander.
 2. Confirm service status via /health and recent logs.
-3. Identify blast radius (v1, v2, auth, database, and any optional service the project uses).
+3. Identify blast radius (API version, auth, database, and any optional service the project uses).
 4. Stabilize first: rollback, scale, or disable risky paths.
 5. Communicate status updates every 15 minutes for Sev-1/Sev-2.
 

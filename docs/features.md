@@ -45,7 +45,10 @@ Optional services are chosen when the project is generated (Copier's `services=c
 
 *Always included.*
 
-- **FastAPI** — async web framework. Versioned routers mounted at `/v1` and `/v2` (`app/api/v1/`, `app/api/v2/`), each with its own interactive docs (`/v1/docs`, `/v2/docs`).
+- **FastAPI** — async web framework. Each API version is its own mounted app with its own interactive docs: `app/api/v1/` at `/v1` (`/v1/docs`).
+<!-- --- FEATURE[api_v2] START --- -->
+- **Second API version** — an empty scaffold in `app/api/v2/`, mounted at `/v2` with its own docs (`/v2/docs`).
+<!-- --- FEATURE[api_v2] END --- -->
 - **Async PostgreSQL** — SQLAlchemy 2.0 async engine (`asyncpg`) for the app, configured in `app/core/db.py` from `settings.db_url`.
 <!-- --- FEATURE[celery] START --- -->
 - **Sync engine for Celery** — `psycopg` engine and `session_factory` in `app/core/db_sync.py`, from `settings.db_url_sync`.
@@ -67,7 +70,7 @@ Optional services are chosen when the project is generated (Copier's `services=c
 <!-- --- FEATURE[!redis_token_blacklist] START --- -->
 - **Logout** — logout returns `revoked: false` and the access token stays valid until it expires (no token blacklist).
 <!-- --- FEATURE[!redis_token_blacklist] END --- -->
-- **Protected routes** — dependency-injected via `app/api/v1/deps/` / `app/api/v2/deps/`.
+- **Protected routes** — dependency-injected via `app/api/v1/deps/`.
 
 ## 🔒 Security middleware
 

@@ -9,7 +9,7 @@ A production-ready FastAPI project template with modern best practices, async su
 
 ## ✨ Features
 
-- **🚀 FastAPI** - Modern, fast web framework for building APIs, with versioned routers (`/v1`, `/v2`)
+- **🚀 FastAPI** - Modern, fast web framework for building APIs, with versioned routers (one mounted app per API version, starting at `/v1`)
 - **📊 PostgreSQL** - Async database integration with SQLAlchemy 2.0 and Alembic migrations
 - **🔐 JWT Authentication** - Secure token-based authentication
 <!-- --- FEATURE[redis_token_blacklist] START --- -->
@@ -127,7 +127,9 @@ For the full list of integrations and services, see **[docs/features.md](docs/fe
 The API will be available at `http://localhost:8799` with interactive documentation at:
 
 - `http://localhost:8799/v1/docs`
+<!-- --- FEATURE[api_v2] START --- -->
 - `http://localhost:8799/v2/docs`
+<!-- --- FEATURE[api_v2] END --- -->
 
 <!-- --- FEATURE[_template] START --- -->
 ## 🧬 Using This as a Template
@@ -265,10 +267,9 @@ The interactive version of this diagram lives at [`docs/architecture/fastapi-tem
 ```text
 ├── app/
 │   ├── api/                 # API routes and endpoints
-│   │   ├── v1/             # API version 1
-│   │   │   ├── endpoints/  # Individual endpoint modules
-│   │   │   └── deps/       # Dependencies (auth, database)
-│   │   └── v2/             # API version 2
+│   │   └── v1/             # API version 1
+│   │       ├── endpoints/  # Individual endpoint modules
+│   │       └── deps/       # Dependencies (auth, database)
 │   ├── core/               # Core functionality
 │   │   ├── auth.py         # Authentication utilities
 │   │   ├── config.py       # Configuration management

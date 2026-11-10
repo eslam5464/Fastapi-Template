@@ -31,7 +31,9 @@ Every optional service's variables are listed in `.env.example`.
 
 - GET /health -> 200
 - GET /v1/openapi.json (non-prd) -> 200
+<!-- --- FEATURE[api_v2] START --- -->
 - GET /v2/openapi.json (non-prd) -> 200
+<!-- --- FEATURE[api_v2] END --- -->
 
 ## Rollback
 

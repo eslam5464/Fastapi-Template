@@ -6,7 +6,11 @@ from loguru import logger
 
 from app.api.routes import api_router
 from app.api.v1.router import api_v1_router
+
+# --- FEATURE[api_v2] START ---
 from app.api.v2.router import api_v2_router
+
+# --- FEATURE[api_v2] END ---
 from app.core.config import Environment, settings
 from app.core.logger import configure_uvicorn_logging, setup_logger, shutdown_logger
 from app.middleware.csrf import CSRFMiddleware
@@ -180,8 +184,10 @@ def _create_versioned_app(version: str) -> FastAPI:
 v1_app = _create_versioned_app("v1")
 v1_app.include_router(api_v1_router)
 
+# --- FEATURE[api_v2] START ---
 v2_app = _create_versioned_app("v2")
 v2_app.include_router(api_v2_router)
+# --- FEATURE[api_v2] END ---
 
 # Set CORS middleware with restricted configuration
 # Reference: https://cheatsheetseries.owasp.org/cheatsheets/REST_Security_Cheat_Sheet.html
@@ -225,4 +231,6 @@ app.include_router(api_router)
 
 # Mount versioned API apps
 app.mount("/v1", v1_app)
+# --- FEATURE[api_v2] START ---
 app.mount("/v2", v2_app)
+# --- FEATURE[api_v2] END ---

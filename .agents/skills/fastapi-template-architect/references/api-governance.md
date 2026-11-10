@@ -3,9 +3,11 @@
 Source: `docs/backend-architecture.md` ("API Governance", "Repository Profile Appendix")
 plus the real `app/main.py` (snapshotted in `../assets/`).
 
-## The dual mounted-sub-app pattern — this repo's actual routing shape
+## The mounted-sub-app pattern — this repo's actual routing shape
 
-`app/main.py` builds three separate FastAPI instances:
+`app/main.py` builds one root FastAPI instance and one more per API version. `/v1` is
+always there; `/v2` is an empty scaffold that only projects generated with
+`include_api_v2` have (the template repo, shown here, has both):
 
 ```python
 app = FastAPI(title=..., openapi_url=None, docs_url=None, redoc_url=None, lifespan=lifespan, ...)
@@ -41,21 +43,24 @@ Consequences that matter every time you touch routing or write tests:
 - `generate_unique_id_function=lambda route: f"{route.tags[0]}-{route.name}"` gives clean
   OpenAPI `operationId`s per version instead of FastAPI's default (which stringifies the
   full function path and gets unreadable fast).
-- **v2 exists today as an empty stub router** (`app/api/v2/router.py` — just an
-  `APIRouter()` with nothing included) — it demonstrates the versioning pattern without
-  duplicating v1's logic yet. Don't assume v2 has parity with v1's endpoints.
+- **v2, where a project has it, is an empty stub router** (`app/api/v2/router.py` — just
+  an `APIRouter()` with nothing included) — it demonstrates the versioning pattern
+  without duplicating v1's logic yet. Don't assume v2 exists, or has parity with v1's
+  endpoints: check `app/api/` first. Adding a version to a project without it means a
+  new `app/api/v<n>/router.py`, a `_create_versioned_app("v<n>")` call and an
+  `app.mount("/v<n>", ...)` in `app/main.py`, plus its docs paths in the CSRF exemptions
+  and in `DOCS_PATH_PREFIXES` (`app/middleware/security_headers.py`).
 
 ### The test-override gotcha (this trips people up constantly)
 
-Because there are three separate FastAPI app instances, **a dependency override on `app`
-does not propagate to `v1_app` or `v2_app`**. Every test fixture that overrides
-`get_session` (or any other dependency reachable from versioned routes) must apply the
-override to all three explicitly:
+Because each mounted version is a separate FastAPI app instance, **a dependency override
+on `app` does not propagate to `v1_app` (or `v2_app`)**. Every test fixture that
+overrides `get_session` (or any other dependency reachable from versioned routes) must
+apply the override to the root app and to every mounted sub-app:
 
 ```python
-app.dependency_overrides[get_session] = override_get_session
-v1_app.dependency_overrides[get_session] = override_get_session
-v2_app.dependency_overrides[get_session] = override_get_session
+for mounted_app in mounted_apps():  # helper in tests/conftest.py
+    mounted_app.dependency_overrides[get_session] = override_get_session
 ```
 
 The real `tests/conftest.py` (`../assets/tests/conftest.py`) does exactly this in its

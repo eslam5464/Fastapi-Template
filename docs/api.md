@@ -418,7 +418,7 @@ The API uses URL path versioning:
 
 - Current version: `v1`
 - Base path: `/api/v1`
-- Future versions: `/api/v2`, etc.
+- Future versions: each one gets its own base path and its own docs
 
 ### Version Support
 

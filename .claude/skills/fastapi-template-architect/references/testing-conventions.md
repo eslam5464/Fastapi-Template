@@ -97,7 +97,7 @@ from typing import AsyncGenerator  # noqa: E402
 
 import pytest  # noqa: E402
 ...
-from app.main import app, v1_app, v2_app  # noqa: E402
+from app.main import app  # noqa: E402
 ```
 
 Why: `app/services/payments/apple_pay.py` builds a module-level `ApplePay()` singleton
