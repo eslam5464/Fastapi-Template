@@ -12,7 +12,7 @@ from app.core import responses
 from app.models import User
 from app.schemas import UserResponse
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_current_user)])
 
 
 @router.get(

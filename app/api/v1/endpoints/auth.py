@@ -11,6 +11,11 @@ from app.api.v1.deps.auth import (
     login_user_for_access_token,
     oauth2_scheme,
 )
+
+# --- FEATURE[redis_rate_limit] START ---
+from app.api.v1.deps.rate_limit import RATE_LIMIT_AUTH_RESPONSES, rate_limit_auth
+
+# --- FEATURE[redis_rate_limit] END ---
 from app.core import responses
 from app.core.exceptions import http_exceptions
 from app.models.user import User
@@ -24,10 +29,15 @@ from app.services.auth_service import AuthService
 from app.services.cache.token_blacklist import token_blacklist
 
 # --- FEATURE[redis_token_blacklist] END ---
-from app.services.exceptions.auth import ValidationError
+from app.services.exceptions.base import ValidationError
 from app.services.types.auth import TokenPairDict
 
-router = APIRouter()
+router = APIRouter(
+    # --- FEATURE[redis_rate_limit] START ---
+    dependencies=[Depends(rate_limit_auth)],
+    responses=RATE_LIMIT_AUTH_RESPONSES,
+    # --- FEATURE[redis_rate_limit] END ---
+)
 
 
 @router.post(
