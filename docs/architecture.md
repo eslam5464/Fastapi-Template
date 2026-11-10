@@ -51,7 +51,6 @@ app/
 │   ├── credentials/        # Credential models of the integrations
 │   └── exceptions/
 │       ├── base.py         # Base exception classes
-│       ├── domain.py       # Domain exceptions
 │       └── http_exceptions.py  # HTTP exceptions
 ├── models/                 # SQLAlchemy models
 │   ├── base.py

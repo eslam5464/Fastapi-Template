@@ -1,7 +1,6 @@
 import logging
 import os
 import tomllib
-from datetime import timedelta
 from enum import StrEnum
 from pathlib import Path
 
@@ -135,8 +134,8 @@ class Settings(BaseSettings):
         Reference: https://cheatsheetseries.owasp.org/cheatsheets/Secrets_Management_Cheat_Sheet.html
         """,
     )
-    access_token_expire_seconds: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_SECONDS", timedelta(hours=1).seconds))
-    refresh_token_expire_seconds: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_SECONDS", timedelta(hours=24).seconds))
+    access_token_expire_seconds: int = 3600  # 1 hour
+    refresh_token_expire_seconds: int = 86400  # 24 hours
     jwt_algorithm: str = "HS256"
 
     # --- FEATURE[openobserve] START ---

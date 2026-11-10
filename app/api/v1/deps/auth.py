@@ -10,7 +10,7 @@ from app.core.exceptions import http_exceptions
 from app.models.user import User
 from app.schemas import TokenPayload, UserCreate, UserSignup
 from app.services.auth_service import AuthService
-from app.services.exceptions.auth import (
+from app.services.exceptions.base import (
     DuplicateResourceError,
     ResourceNotFoundError,
     ValidationError,

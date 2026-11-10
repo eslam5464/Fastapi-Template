@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 from app.core.config import settings
 from app.models import User
 from app.services.task_queue import celery_app
-from app.services.task_queue.celery_config import beat_schedule
+from app.services.task_queue.celery_config import SEED_USERS_SCHEDULE, beat_schedule
 from app.services.task_queue.tasks.user_tasks import seed_fake_users_task
 
 
@@ -26,13 +26,14 @@ class TestCeleryApp:
         assert celery_app.conf.accept_content == ["json"]
 
     def test_beat_schedule_follows_data_seeding_setting(self):
-        expected = beat_schedule if settings.enable_data_seeding else {}
-        assert celery_app.conf.beat_schedule == expected
+        assert celery_app.conf.beat_schedule == beat_schedule
+        assert ("seed-users" in beat_schedule) == settings.enable_data_seeding
+        if settings.enable_data_seeding:
+            assert beat_schedule["seed-users"] == SEED_USERS_SCHEDULE
 
     def test_scheduled_task_is_registered(self):
-        task_name = beat_schedule["seed-users"]["task"]
-        assert task_name in celery_app.tasks
-        assert beat_schedule["seed-users"]["args"] == (settings.seeding_user_count,)
+        assert SEED_USERS_SCHEDULE["task"] in celery_app.tasks
+        assert SEED_USERS_SCHEDULE["args"] == (settings.seeding_user_count,)
 
 
 class TestSeedFakeUsersTask:

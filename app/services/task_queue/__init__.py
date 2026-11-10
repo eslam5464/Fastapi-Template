@@ -16,7 +16,7 @@ celery_app.conf.update(
     task_track_started=True,
     task_time_limit=settings.celery_task_time_limit,
     worker_prefetch_multiplier=4,
-    beat_schedule=beat_schedule if settings.enable_data_seeding else {},
+    beat_schedule=beat_schedule,
 )
 
 celery_app.autodiscover_tasks(["app.services.task_queue.tasks"])
