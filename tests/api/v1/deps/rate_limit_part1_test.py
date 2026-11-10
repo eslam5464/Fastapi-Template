@@ -7,11 +7,9 @@ from app.api.v1.deps.rate_limit import (
     rate_limit_api,
     rate_limit_auth,
     rate_limit_public,
-    rate_limit_user,
 )
 from app.core.config import settings
 from app.core.exceptions.http_exceptions import TooManyRequestsException
-from app.models.user import User
 
 
 @pytest.mark.anyio
@@ -276,105 +274,3 @@ class TestRateLimitPublic:
 
                 call_args = mock_check.call_args[1]
                 assert call_args["key"] == "ratelimit:public:172.16.0.1"
-
-
-@pytest.mark.anyio
-class TestRateLimitUser:
-    """Test rate_limit_user dependency for authenticated user endpoints."""
-
-    async def test_allows_request_under_limit(self, user: User):
-        """Test that requests under limit are allowed."""
-        request = MagicMock(spec=Request)
-        request.client = MagicMock(host="192.168.1.1")
-        request.headers = {}
-        request.state = MagicMock()
-
-        mock_info = {
-            "limit": 300,
-            "remaining": 299,
-            "reset_time": 60,
-            "current": 1,
-        }
-
-        with patch("app.api.v1.deps.rate_limit.rate_limiter.check_rate_limit") as mock_check:
-            mock_check.return_value = (True, mock_info)
-
-            await rate_limit_user(request, user)
-
-            assert request.state.rate_limit_info == mock_info
-            mock_check.assert_called_once_with(
-                key=f"ratelimit:user:{user.id}",
-                limit=settings.rate_limit_user,
-                window=settings.rate_limit_window,
-            )
-
-    async def test_blocks_request_over_limit(self, user: User):
-        """Test that requests over limit are blocked."""
-        request = MagicMock(spec=Request)
-        request.client = MagicMock(host="192.168.1.1")
-        request.headers = {}
-        request.state = MagicMock()
-
-        mock_info = {
-            "limit": 300,
-            "remaining": 0,
-            "reset_time": 60,
-            "current": 300,
-        }
-
-        with patch("app.api.v1.deps.rate_limit.rate_limiter.check_rate_limit") as mock_check:
-            mock_check.return_value = (False, mock_info)
-
-            with pytest.raises(TooManyRequestsException) as exc_info:
-                await rate_limit_user(request, user)
-
-            exception = exc_info.value
-            assert exception.headers is not None
-            assert exception.headers["X-RateLimit-Limit"] == "300"
-
-    async def test_uses_user_id_not_ip(self, user: User, other_user: User):
-        """Test that rate limiting is based on user ID, not IP address."""
-        request = MagicMock(spec=Request)
-        request.client = MagicMock(host="192.168.1.1")  # Same IP for both users
-        request.headers = {}
-        request.state = MagicMock()
-
-        mock_info = {"limit": 300, "remaining": 299, "reset_time": 60, "current": 1}
-
-        with patch("app.api.v1.deps.rate_limit.rate_limiter.check_rate_limit") as mock_check:
-            mock_check.return_value = (True, mock_info)
-
-            # First user
-            await rate_limit_user(request, user)
-            first_call_key = mock_check.call_args[1]["key"]
-
-            # Second user with same IP
-            await rate_limit_user(request, other_user)
-            second_call_key = mock_check.call_args[1]["key"]
-
-            # Keys should be different (based on user ID)
-            assert first_call_key == f"ratelimit:user:{user.id}"
-            assert second_call_key == f"ratelimit:user:{other_user.id}"
-            assert first_call_key != second_call_key
-
-    async def test_custom_limit_and_window(self, user: User):
-        """Test that custom limit and window parameters work."""
-        request = MagicMock(spec=Request)
-        request.client = MagicMock(host="192.168.1.1")
-        request.headers = {}
-        request.state = MagicMock()
-
-        custom_limit = 50
-        custom_window = 120
-        mock_info = {"limit": custom_limit, "remaining": 49, "reset_time": 120, "current": 1}
-
-        with patch("app.api.v1.deps.rate_limit.rate_limiter.check_rate_limit") as mock_check:
-            mock_check.return_value = (True, mock_info)
-
-            await rate_limit_user(request, user, limit=custom_limit, window=custom_window)
-
-            mock_check.assert_called_once_with(
-                key=f"ratelimit:user:{user.id}",
-                limit=custom_limit,
-                window=custom_window,
-            )

@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 
 from app.models.base import Base
-from app.models.user import User
+from tests.sample_model import SampleRecord, SampleRecordRepo, sample_record_data
 
 
 class TestBaseModel:
@@ -23,8 +23,8 @@ class TestBaseModel:
 
     def test_tablename_generation_simple(self):
         """Test tablename generation for simple class names."""
-        # User model should become 'user'
-        assert User.__tablename__ == "user"
+        # The table name is the snake_case form of the class name
+        assert SampleRecord.__tablename__ == "sample_record"
 
     def test_tablename_generation_camelcase(self):
         """Test tablename generation converts CamelCase to snake_case."""
@@ -51,98 +51,80 @@ class TestBaseModel:
 class TestToDict:
     """Test to_dict method of Base model."""
 
-    async def test_to_dict_basic(self, user: User):
+    async def test_to_dict_basic(self, sample_record: SampleRecord):
         """Test basic to_dict conversion."""
-        result = user.to_dict()
+        result = sample_record.to_dict()
 
         assert isinstance(result, dict)
         assert "id" in result
-        assert "email" in result
-        assert "username" in result
+        assert "code" in result
+        assert "name" in result
         assert "created_at" in result
-        assert result["id"] == user.id
-        assert result["email"] == user.email
+        assert result["id"] == sample_record.id
+        assert result["code"] == sample_record.code
 
-    async def test_to_dict_exclude_keys(self, user: User):
+    async def test_to_dict_exclude_keys(self, sample_record: SampleRecord):
         """Test to_dict with exclude_keys parameter."""
-        result = user.to_dict(exclude_keys={"hashed_password", "created_at"})
+        result = sample_record.to_dict(exclude_keys={"payload", "created_at"})
 
         assert isinstance(result, dict)
-        assert "hashed_password" not in result
+        assert "payload" not in result
         assert "created_at" not in result
         assert "id" in result
-        assert "email" in result
+        assert "code" in result
 
-    async def test_to_dict_exclude_none_true(self, db_session, faker, pre_hashed_password):
+    async def test_to_dict_exclude_none_true(self, db_session, faker):
         """Test to_dict with exclude_none=True."""
-        from app import repos
-        from app.schemas import UserCreate
+        # Create record
+        record_data = sample_record_data(faker, note="")
+        record = await SampleRecordRepo(db_session).create_one(record_data)
 
-        # Create user
-        user_data = UserCreate(
-            email=faker.unique.safe_email(),
-            username=faker.unique.user_name(),
-            hashed_password=pre_hashed_password,
-            first_name=faker.first_name(),
-            last_name="",  # Empty string instead of None
-        )
-        user_obj = await repos.UserRepo(db_session).create_one(user_data)
-
-        result = user_obj.to_dict(exclude_none=True)
+        result = record.to_dict(exclude_none=True)
 
         # Empty string fields should be present (not None)
-        assert "last_name" in result
+        assert "note" in result
         assert "id" in result
-        assert "email" in result
+        assert "code" in result
 
-    async def test_to_dict_exclude_none_false(self, db_session, faker, pre_hashed_password):
+    async def test_to_dict_exclude_none_false(self, db_session, faker):
         """Test to_dict with exclude_none=False."""
-        from app import repos
-        from app.schemas import UserCreate
+        # Create record
+        record_data = sample_record_data(faker, note="")
+        record = await SampleRecordRepo(db_session).create_one(record_data, exclude_none=False)
 
-        # Create user
-        user_data = UserCreate(
-            email=faker.unique.safe_email(),
-            username=faker.unique.user_name(),
-            hashed_password=pre_hashed_password,
-            first_name=faker.first_name(),
-            last_name="",  # Empty string instead of None
-        )
-        user_obj = await repos.UserRepo(db_session).create_one(user_data, exclude_none=False)
-
-        result = user_obj.to_dict(exclude_none=False)
+        result = record.to_dict(exclude_none=False)
 
         # Empty strings should be included
-        assert "last_name" in result
-        assert result["last_name"] == ""
+        assert "note" in result
+        assert result["note"] == ""
         assert "id" in result
 
-    async def test_to_dict_all_fields_present(self, user: User):
+    async def test_to_dict_all_fields_present(self, sample_record: SampleRecord):
         """Test that to_dict includes all model columns."""
-        result = user.to_dict()
+        result = sample_record.to_dict()
 
         # Should have core fields
         assert "id" in result
         assert "created_at" in result
         assert "updated_at" in result
-        assert "email" in result
-        assert "username" in result
-        assert "first_name" in result
-        assert "last_name" in result
+        assert "code" in result
+        assert "name" in result
+        assert "label" in result
+        assert "note" in result
 
-    async def test_to_dict_values_match_attributes(self, user: User):
+    async def test_to_dict_values_match_attributes(self, sample_record: SampleRecord):
         """Test that to_dict values match model attribute values."""
-        result = user.to_dict()
+        result = sample_record.to_dict()
 
-        assert result["id"] == user.id
-        assert result["email"] == user.email
-        assert result["username"] == user.username
-        assert result["first_name"] == user.first_name
-        assert result["last_name"] == user.last_name
+        assert result["id"] == sample_record.id
+        assert result["code"] == sample_record.code
+        assert result["name"] == sample_record.name
+        assert result["label"] == sample_record.label
+        assert result["note"] == sample_record.note
 
-    async def test_to_dict_datetime_serializable(self, user: User):
+    async def test_to_dict_datetime_serializable(self, sample_record: SampleRecord):
         """Test that datetime fields are in result."""
-        result = user.to_dict()
+        result = sample_record.to_dict()
 
         # created_at and updated_at should be present
         assert "created_at" in result
@@ -152,35 +134,26 @@ class TestToDict:
         if "updated_at" in result and result["updated_at"] is not None:
             assert isinstance(result["updated_at"], datetime)
 
-    async def test_to_dict_combined_exclude_keys_and_none(self, db_session, faker, pre_hashed_password):
+    async def test_to_dict_combined_exclude_keys_and_none(self, db_session, faker):
         """Test to_dict with both exclude_keys and exclude_none."""
-        from app import repos
-        from app.schemas import UserCreate
+        # Create record
+        record_data = sample_record_data(faker, note="")
+        record = await SampleRecordRepo(db_session).create_one(record_data, exclude_none=False)
 
-        # Create user
-        user_data = UserCreate(
-            email=faker.unique.safe_email(),
-            username=faker.unique.user_name(),
-            hashed_password=pre_hashed_password,
-            first_name=faker.first_name(),
-            last_name="",  # Empty string instead of None
-        )
-        user_obj = await repos.UserRepo(db_session).create_one(user_data, exclude_none=False)
+        result = record.to_dict(exclude_keys={"payload"}, exclude_none=True)
 
-        result = user_obj.to_dict(exclude_keys={"hashed_password"}, exclude_none=True)
-
-        # Should exclude hashed_password
-        assert "hashed_password" not in result
+        # Should exclude payload
+        assert "payload" not in result
         # Empty string values are not None, so they'll be present
         # Should include other fields
         assert "id" in result
-        assert "email" in result
+        assert "code" in result
 
-    async def test_to_dict_empty_exclude_keys(self, user: User):
+    async def test_to_dict_empty_exclude_keys(self, sample_record: SampleRecord):
         """Test to_dict with empty exclude_keys set."""
-        result = user.to_dict(exclude_keys=set())
+        result = sample_record.to_dict(exclude_keys=set())
 
         # Should include all fields
         assert "id" in result
-        assert "email" in result
-        assert "hashed_password" in result
+        assert "code" in result
+        assert "payload" in result
