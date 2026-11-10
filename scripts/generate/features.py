@@ -50,6 +50,11 @@ FEATURES: tuple[Feature, ...] = (
         doc_forbidden=(r"(?i)(?<![.\w])v2\b",),
     ),
     Feature(
+        "csrf",
+        question="include_csrf",
+        forbidden=(r"(?i)csrf",),
+    ),
+    Feature(
         "redis_cache",
         question="include_redis_cache",
         forbidden=(
@@ -174,6 +179,8 @@ FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEA
 # expression is false). Every key must exist in the template repository.
 PATHS: dict[str, str] = {
     "app/api/v2/": "api_v2",
+    "app/middleware/csrf.py": "csrf",
+    "tests/middleware/csrf_test.py": "csrf",
     # The skill's eval prompts test the template itself: template repo only.
     ".claude/skills/fastapi-template-architect/evals/": "_template",
     # The Archify diagram of the template itself (every service on): template repo only.

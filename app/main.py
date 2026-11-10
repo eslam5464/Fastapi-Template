@@ -13,7 +13,11 @@ from app.api.v2.router import api_v2_router
 # --- FEATURE[api_v2] END ---
 from app.core.config import Environment, settings
 from app.core.logger import configure_uvicorn_logging, setup_logger, shutdown_logger
+
+# --- FEATURE[csrf] START ---
 from app.middleware.csrf import CSRFMiddleware
+
+# --- FEATURE[csrf] END ---
 from app.middleware.logging import LoggingMiddleware
 
 # --- FEATURE[redis_rate_limit] START ---
@@ -199,7 +203,9 @@ app.add_middleware(
     allow_headers=[
         "Authorization",
         "Content-Type",
+        # --- FEATURE[csrf] START ---
         "X-CSRF-Token",
+        # --- FEATURE[csrf] END ---
         "X-Request-ID",
         "Accept",
         "Accept-Language",
@@ -210,8 +216,10 @@ app.add_middleware(
 # Set security headers middleware (OWASP recommended)
 app.add_middleware(SecurityHeadersMiddleware)
 
+# --- FEATURE[csrf] START ---
 # Set CSRF protection middleware (header-based)
 app.add_middleware(CSRFMiddleware)
+# --- FEATURE[csrf] END ---
 
 # --- FEATURE[redis_rate_limit] START ---
 # Set rate limit header middleware

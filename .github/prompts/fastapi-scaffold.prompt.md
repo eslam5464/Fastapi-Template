@@ -19,7 +19,7 @@ what the template actually generates.
    default, no optional services) or `custom`.
 3. With `services=custom`, each optional service is its own yes/no question (all
    default to no) and a declined service is stripped from the generated project:
-   `include_api_v2` (an empty `/v2` scaffold), `include_redis_cache`, `include_redis_rate_limit`, `include_redis_token_blacklist`,
+   `include_api_v2` (an empty `/v2` scaffold), `include_csrf` (the CSRF middleware), `include_redis_cache`, `include_redis_rate_limit`, `include_redis_token_blacklist`,
    `include_celery`, `include_firebase`, `include_firestore` (only with Firebase),
    `include_gcs`, `include_backblaze`, `include_resend`, `include_brevo`,
    `include_openobserve`, `include_apple_pay`. Redis is never asked: it is added when

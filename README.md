@@ -19,7 +19,10 @@ A production-ready FastAPI project template with modern best practices, async su
 - **⚠️ Logout does not revoke tokens** - without the token blacklist, a logged-out access token stays valid until it expires; keep expiry times short
 <!-- --- FEATURE[!redis_token_blacklist] END --- -->
 - **🏗️ Clean Architecture** - Repository pattern, dependency injection, and enforced module boundaries (tach)
-- **🔒 Security** - CSRF and security headers middleware
+- **🔒 Security** - Security headers middleware, trusted hosts and a CORS allowlist
+<!-- --- FEATURE[csrf] START --- -->
+- **🛡️ CSRF protection** - Double-submit cookie middleware for browser clients
+<!-- --- FEATURE[csrf] END --- -->
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - **🚦 Rate limiting** - Redis sliding-window limits on the auth and user routes
 <!-- --- FEATURE[redis_rate_limit] END --- -->
