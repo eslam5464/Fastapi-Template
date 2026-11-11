@@ -1,7 +1,11 @@
 from .base import BaseSchema, BaseTimestampSchema
 from .health_check import HealthCheckResponse
+
+# --- FEATURE[auth] START ---
 from .user import UserResponse, UserCreate, UserUpdate, UserLogin, UserSignup
 from .token import Token, TokenPayload, TokenData, LogoutResponse
+
+# --- FEATURE[auth] END ---
 
 # --- FEATURE[backblaze] START ---
 from .back_blaze_bucket import (
@@ -31,6 +35,7 @@ __all__ = [
     "BaseSchema",
     "BaseTimestampSchema",
     "HealthCheckResponse",
+    # --- FEATURE[auth] START ---
     "UserCreate",
     "UserUpdate",
     "UserLogin",
@@ -40,6 +45,7 @@ __all__ = [
     "TokenPayload",
     "TokenData",
     "LogoutResponse",
+    # --- FEATURE[auth] END ---
     # --- FEATURE[backblaze] START ---
     "ApplicationData",
     "FileDownloadLink",

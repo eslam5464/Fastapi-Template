@@ -4,8 +4,12 @@ import tomllib
 from enum import StrEnum
 from pathlib import Path
 
-from pydantic import Field, computed_field
+from pydantic import computed_field
 
+# --- FEATURE[auth] START ---
+from pydantic.fields import Field
+
+# --- FEATURE[auth] END ---
 # --- FEATURE[resend|brevo] START ---
 from pydantic.types import SecretStr
 
@@ -123,9 +127,12 @@ class Settings(BaseSettings):
     rate_limit_window: int = 60  # Default window in seconds (1 minute)
     rate_limit_strict: int = 10  # Strict limit for authentication endpoints
     rate_limit_lenient: int = 1000  # Lenient limit for public endpoints
+    # --- FEATURE[auth] START ---
     rate_limit_user: int = 300  # Limit for authenticated user endpoints
+    # --- FEATURE[auth] END ---
     # --- FEATURE[redis_rate_limit] END ---
 
+    # --- FEATURE[auth] START ---
     # Token security settings
     secret_key: str = Field(
         min_length=32,
@@ -137,6 +144,7 @@ class Settings(BaseSettings):
     access_token_expire_seconds: int = 3600  # 1 hour
     refresh_token_expire_seconds: int = 86400  # 24 hours
     jwt_algorithm: str = "HS256"
+    # --- FEATURE[auth] END ---
 
     # --- FEATURE[openobserve] START ---
     # OpenObserve
@@ -161,8 +169,10 @@ class Settings(BaseSettings):
 
     # --- FEATURE[celery] START ---
     # Celery settings
+    # --- FEATURE[auth] START ---
     enable_data_seeding: bool
     seeding_user_count: int
+    # --- FEATURE[auth] END ---
     celery_broker_url: URL | None = None
     celery_result_backend: URL | None = None
     celery_broker_db: int = 1  # Database index for the Celery broker

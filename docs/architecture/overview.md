@@ -2,7 +2,7 @@
 
 ## System Purpose
 
-FastAPI Template provides a reusable backend foundation for authenticated APIs with layered architecture, async persistence, and production-oriented middleware.
+FastAPI Template provides a reusable backend foundation for APIs with layered architecture, async persistence, and production-oriented middleware.
 
 ## Component Map
 
@@ -27,13 +27,15 @@ FastAPI Template provides a reusable backend foundation for authenticated APIs w
 | ORM | SQLAlchemy 2 async |
 | Database | PostgreSQL |
 | Migrations | Alembic |
-| Auth | JWT + refresh tokens |
 | Testing | pytest + anyio |
 
-<!-- --- FEATURE[redis|celery] START --- -->
-Optional services in this project:
+<!-- --- FEATURE[auth|redis|celery] START --- -->
+Optional parts of this project:
 
-<!-- --- FEATURE[redis|celery] END --- -->
+<!-- --- FEATURE[auth|redis|celery] END --- -->
+<!-- --- FEATURE[auth] START --- -->
+- **Authentication** — JWT access and refresh tokens with the User model (`app/services/auth_service.py`)
+<!-- --- FEATURE[auth] END --- -->
 <!-- --- FEATURE[redis] START --- -->
 - **Redis** — backs the services below that need it
 <!-- --- FEATURE[redis] END --- -->
@@ -76,7 +78,7 @@ This keeps OpenAPI schemas isolated by version and allows independent evolution 
 
 - SecurityHeadersMiddleware uses route-aware CSP so Swagger/ReDoc can load safely on versioned docs paths.
 <!-- --- FEATURE[csrf] START --- -->
-- CSRFMiddleware exempts auth and versioned docs/openapi paths.
+- CSRFMiddleware exempts the versioned docs/openapi paths (and the auth endpoints, where the project has them).
 <!-- --- FEATURE[csrf] END --- -->
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - RateLimitHeaderMiddleware injects rate-limit headers when dependency state exists.

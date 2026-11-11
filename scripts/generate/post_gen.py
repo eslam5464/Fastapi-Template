@@ -185,7 +185,7 @@ def apply_identity_substitutions(args: argparse.Namespace) -> None:
     replace_required(
         readme,
         "A production-ready FastAPI project template with modern best practices, "
-        "async support, JWT authentication, and PostgreSQL integration.",
+        "async support, and PostgreSQL integration.",
         args.project_description,
     )
     replace_required(

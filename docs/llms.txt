@@ -7,7 +7,7 @@
 - [Getting Started](guides/getting-started.md): Prerequisites, environment setup, install, migrations, and first run
 - [Development](guides/development.md): Daily workflow, branching, commits, lint, format, and testing
 - [Contributing](guides/contributing.md): Code standards, PR checklist, review expectations
-- [API Reference](api/reference.md): Endpoints, auth, versioning, and error model
+- [API Reference](api/reference.md): Endpoints, versioning, and error model
 
 ## Strategy
 - [Vision](strategy/vision.md): Problem, target users, success metrics, and constraints

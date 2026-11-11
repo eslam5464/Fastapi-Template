@@ -1,3 +1,4 @@
+# --- FEATURE[auth] START ---
 from .auth import (
     JWTPayloadDict,
     LogoutRevokePayloadDict,
@@ -5,6 +6,7 @@ from .auth import (
     TokenWithJtiDict,
 )
 
+# --- FEATURE[auth] END ---
 # --- FEATURE[resend|brevo] START ---
 from .email import (
     EmailAttachment,
@@ -16,7 +18,7 @@ from .email import (
 )
 # --- FEATURE[resend|brevo] END ---
 
-__all__ = [
+__all__: list[str] = [
     # --- FEATURE[resend|brevo] START ---
     "EmailAttachment",
     "EmailProviderLiteral",
@@ -25,8 +27,10 @@ __all__ = [
     "EmailTag",
     "EmailTemplate",
     # --- FEATURE[resend|brevo] END ---
+    # --- FEATURE[auth] START ---
     "JWTPayloadDict",
     "LogoutRevokePayloadDict",
     "TokenPairDict",
     "TokenWithJtiDict",
+    # --- FEATURE[auth] END ---
 ]

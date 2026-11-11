@@ -5,7 +5,9 @@ Full reference for what's built into this project: what each feature does, which
 ## 📋 Quick Reference
 
 - 🚀 [Core](#-core) — FastAPI, Postgres, Alembic, logging, docs (always included)
+<!-- --- FEATURE[auth] START --- -->
 - 🔐 [Authentication](#-authentication) — JWT, Argon2
+<!-- --- FEATURE[auth] END --- -->
 - 🔒 [Security middleware](#-security-middleware) — security headers and the other request middleware
 <!-- --- FEATURE[redis_cache] START --- -->
 - ⚡ [Caching](#-caching) — Redis cache
@@ -61,6 +63,7 @@ Optional services are chosen when the project is generated (Copier's `services=c
 <!-- --- FEATURE[openobserve] END --- -->
 - **Automatic API documentation** — Swagger UI and ReDoc, generated per API version.
 
+<!-- --- FEATURE[auth] START --- -->
 ## 🔐 Authentication
 
 - **JWT-based auth** — access + refresh tokens, implemented in `app/services/auth_service.py`. Password hashing via Argon2 (`pwdlib`).
@@ -71,6 +74,14 @@ Optional services are chosen when the project is generated (Copier's `services=c
 - **Logout** — logout returns `revoked: false` and the access token stays valid until it expires (no token blacklist).
 <!-- --- FEATURE[!redis_token_blacklist] END --- -->
 - **Protected routes** — dependency-injected via `app/api/v1/deps/`.
+
+<!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[!auth] START --- -->
+## 🔓 No authentication
+
+This project was generated without the authentication service: it has no User model, no login and no protected routes, so every endpoint is public. Add your own access checks before exposing data that is not public.
+
+<!-- --- FEATURE[!auth] END --- -->
 
 ## 🔒 Security middleware
 
@@ -100,7 +111,10 @@ All in `app/middleware/`:
 ## ⚙️ Background jobs / task queue
 
 - **Module:** `app/services/task_queue/`. Guide: [integrations/celery.md](integrations/celery.md).
-- **Celery** with Redis as the broker. Includes a sample scheduled task (`seed_fake_users`, runs every 10s when `ENABLE_DATA_SEEDING=true`).
+- **Celery** with Redis as the broker, and a `ping` task to check that a worker is running.
+<!-- --- FEATURE[auth] START --- -->
+- **Sample scheduled task:** `seed_fake_users` inserts fake users every 10s when `ENABLE_DATA_SEEDING=true`.
+<!-- --- FEATURE[auth] END --- -->
 - **Included** when the project is generated with `include_celery`; `celery[redis]` and `psycopg` are then regular dependencies.
 - **Start a worker:** `./scripts/celery_worker.sh` (or `.bat`) — or directly: `celery -A app.services.task_queue worker --loglevel=info --pool=solo`
 - **Start the scheduler:** `./scripts/celery_beat.sh` (or `.bat`) — or directly: `celery -A app.services.task_queue beat --loglevel=info`

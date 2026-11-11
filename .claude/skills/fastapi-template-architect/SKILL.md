@@ -59,10 +59,12 @@ hand-building (see "Offline fallback" below) when Copier genuinely isn't usable.
    `project_slug`, `project_description`, `author_name`, `author_email`,
    `github_username`, `python_version` (≥3.14), then `services` (`minimal`, the
    default, or `custom`) and, for `custom`, one bool per optional part that really strips
-   its code when declined: `include_api_v2` (the empty `/v2` scaffold), `include_csrf`
-   (the CSRF middleware),
+   its code when declined: `include_auth` (JWT auth, the User model and the `/auth` and
+   `/users` routes), `include_api_v2` (the empty `/v2` scaffold), `include_csrf` (the CSRF
+   middleware),
    `include_firebase`, `include_firestore` (asked only after Firebase),
-   `include_redis_cache`, `include_redis_rate_limit`, `include_redis_token_blacklist`, `include_celery`, `include_gcs`, `include_backblaze`, `include_resend`, `include_brevo`,
+   `include_redis_cache`, `include_redis_rate_limit`, `include_redis_token_blacklist`
+   (asked only with auth), `include_celery`, `include_gcs`, `include_backblaze`, `include_resend`, `include_brevo`,
    `include_openobserve`, `include_apple_pay` (all default false).
 
 3. **Every optional service is a Copier question** — the Redis cache, rate limiting,
@@ -71,8 +73,9 @@ hand-building (see "Offline fallback" below) when Copier genuinely isn't usable.
    service is really stripped from the generated project (code, tests, settings, env,
    compose, CI, docs and dependencies). Redis itself is never asked: it is added when
    any Redis-backed service (cache, rate limiting, token blacklist, Celery) is chosen.
-   Mention the security trade-offs when a user declines rate limiting or the token
-   blacklist (see [references/auth-and-security.md](references/auth-and-security.md)),
+   The minimal base has **no authentication**: say so, and that every route is then
+   public until the user adds access checks. Mention the security trade-offs when a
+   user declines auth, rate limiting or the token blacklist (see [references/auth-and-security.md](references/auth-and-security.md)),
    and read [references/optional-integrations.md](references/optional-integrations.md)
    before answering questions about a service.
 
