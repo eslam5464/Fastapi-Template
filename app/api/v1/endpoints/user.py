@@ -5,7 +5,8 @@ from fastapi import APIRouter, Depends, status
 from app.api.v1.deps.auth import get_current_user
 
 # --- FEATURE[redis_rate_limit] START ---
-from app.api.v1.deps.rate_limit import create_rate_limit_user_and_ip, rate_limit_responses
+from app.api.v1.deps.rate_limit import rate_limit_responses
+from app.api.v1.deps.rate_limit_user import create_rate_limit_user_and_ip
 
 # --- FEATURE[redis_rate_limit] END ---
 from app.core import responses

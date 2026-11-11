@@ -73,11 +73,6 @@ POSTGRES_PASSWORD=your-postgres-password
 POSTGRES_DB=postgres
 POSTGRES_DB_SCHEMA=fastapi_template
 
-# Security Settings
-SECRET_KEY=your-super-secret-key-here
-ACCESS_TOKEN_EXPIRE_SECONDS=3600
-REFRESH_TOKEN_EXPIRE_SECONDS=2592000
-
 # Server Configuration
 BACKEND_HOST=localhost
 BACKEND_PORT=8799
@@ -278,16 +273,18 @@ python -m app.core.seeders
 ### Test Structure
 
 ```text
-tests/
-├── __init__.py
-├── conftest.py              # Test configuration and fixtures
-├── test_auth.py             # Authentication tests
-├── test_users.py            # User endpoint tests
-├── test_models.py           # Model tests
-├── test_repositories.py     # Repository tests
-└── integration/             # Integration tests
-    ├── test_api.py          # Full API tests
-    └── test_database.py     # Database integration tests
+tests/                       # mirrors the layout of app/
+├── conftest.py              # Shared fixtures (test app, client, database session)
+├── sample_model.py          # Test-only model for the base model and repository tests
+├── utils.py                 # Test helpers
+├── main_test.py             # Application wiring and lifespan
+├── web_test.py              # Gunicorn runner
+├── api/                     # Endpoint and dependency tests
+├── core/                    # Settings, database, logging, exceptions
+├── middleware/              # Middleware tests
+├── models/                  # Base model tests
+├── repos/                   # Base repository tests
+└── services/                # Service tests
 ```
 
 ### Running Tests
@@ -319,10 +316,10 @@ pytest
 pytest --cov=app --cov-report=html
 
 # Run specific test file
-pytest tests/test_auth.py
+pytest tests/main_test.py
 
 # Run specific test function
-pytest tests/test_auth.py::test_login
+pytest tests/main_test.py::TestAppConfiguration
 
 # Run with verbose output
 pytest -v
@@ -338,23 +335,14 @@ pytest -n auto
 ```python
 import pytest
 from httpx import AsyncClient
-from app.main import app
 
-@pytest.mark.asyncio
-async def test_create_user():
-    async with AsyncClient(app=app, base_url="http://test") as client:
-        response = await client.post(
-            "/api/v1/auth/signup",
-            data={
-                "username": "testuser",
-                "email": "test@example.com",
-                "password": "testpass123",
-                "first_name": "Test",
-                "last_name": "User"
-            }
-        )
-    assert response.status_code == 201
-    assert "access_token" in response.json()
+
+@pytest.mark.anyio
+async def test_health(client: AsyncClient):
+    # `client` is the fixture in tests/conftest.py: it calls the app in-process
+    response = await client.get("/health")
+
+    assert response.status_code == 200
 ```
 
 #### Test Fixtures
@@ -398,7 +386,7 @@ logger.error("Error occurred")
 logger.critical("Critical error")
 
 # Structured logging with context
-logger.info("User created", user_id=user.id, username=user.username)
+logger.info("Post created", post_id=post.id, title=post.title)
 
 # Exception logging with full traceback
 try:
@@ -429,8 +417,8 @@ Every HTTP request automatically gets a unique request ID that appears in all re
 
 ```python
 # All logs within a request context automatically include the request ID
-logger.info("Processing user registration")
-# Output: ... | ReqID:abc123 | Processing user registration
+logger.info("Processing the upload")
+# Output: ... | ReqID:abc123 | Processing the upload
 
 logger.info("Database query executed")
 # Output: ... | ReqID:abc123 | Database query executed
@@ -538,18 +526,18 @@ echo=True  # In database engine creation
 # Use select with joinedload for relationships
 from sqlalchemy.orm import selectinload
 
-users = await session.execute(
-    select(User).options(selectinload(User.posts))
+posts = await session.execute(
+    select(Post).options(selectinload(Post.comments))
 )
 
 # Use pagination for large datasets
-async def get_users_paginated(
+async def get_posts_paginated(
     session: AsyncSession,
     skip: int = 0,
     limit: int = 100
 ):
     result = await session.execute(
-        select(User).offset(skip).limit(limit)
+        select(Post).offset(skip).limit(limit)
     )
     return result.scalars().all()
 ```
@@ -611,7 +599,6 @@ class PostCreate(PostBase):
 
 class PostResponse(PostBase):
     id: UUID
-    author_id: UUID
     created_at: datetime
     updated_at: datetime
 ```
@@ -619,17 +606,13 @@ class PostResponse(PostBase):
 **Model** (`app/models/post.py`):
 
 ```python
-from sqlalchemy import String, Text, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import String, Text
+from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base
 
 class Post(Base):
     title: Mapped[str] = mapped_column(String(200))
     content: Mapped[str] = mapped_column(Text)
-    author_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
-
-    # Relationship
-    author: Mapped["User"] = relationship("User", back_populates="posts")
 ```
 
 **Repository** (`app/repos/post.py`):
@@ -639,13 +622,13 @@ from app.repos.base import BaseRepository
 from app.models.post import Post
 
 class PostRepository(BaseRepository[Post]):
-    async def get_by_author(
+    async def get_by_title(
         self,
         session: AsyncSession,
-        author_id: UUID
+        title: str
     ) -> List[Post]:
         result = await session.execute(
-            select(Post).where(Post.author_id == author_id)
+            select(Post).where(Post.title == title)
         )
         return result.scalars().all()
 ```
@@ -662,11 +645,27 @@ router = APIRouter()
 @router.post("/", response_model=PostResponse)
 async def create_post(
     post_data: PostCreate,
+    post_repo: PostRepository = Depends(get_post_repository)
+):
+    return await post_repo.create(session, post_data)
+```
+
+<!-- --- FEATURE[auth] START --- -->
+To require a logged-in user (and, for example, store them as the author), add the auth dependency to the endpoint:
+
+```python
+from app.api.v1.deps.auth import get_current_user
+from app.models import User
+
+@router.post("/", response_model=PostResponse)
+async def create_post(
+    post_data: PostCreate,
     current_user: User = Depends(get_current_user),
     post_repo: PostRepository = Depends(get_post_repository)
 ):
-    return await post_repo.create(session, post_data, author_id=current_user.id)
+    ...
 ```
+<!-- --- FEATURE[auth] END --- -->
 
 ### Database Migration for New Feature
 
@@ -677,29 +676,31 @@ alembic upgrade head
 
 ## Security Best Practices
 
+<!-- --- FEATURE[auth] START --- -->
 ### Password Security
 
 ```python
-# Always hash passwords
-from app.core.auth import get_password_hash, verify_password
-
-hashed = get_password_hash("plain_password")
-is_valid = verify_password("plain_password", hashed)
+# Always hash passwords: AuthService uses Argon2 (pwdlib)
+hashed = auth_service.get_password_hash("plain_password")
+is_valid = auth_service.verify_password("plain_password", hashed)
 ```
 
+<!-- --- FEATURE[auth] END --- -->
 ### Input Validation
 
 ```python
 # Use Pydantic for validation
-from pydantic import validator, EmailStr
+from pydantic import BaseModel, HttpUrl, field_validator
 
-class UserCreate(BaseModel):
-    username: str
-    email: EmailStr
+class ContactCreate(BaseModel):
+    name: str
+    website: HttpUrl
 
-    @validator('username')
-    def username_must_be_alphanumeric(cls, v):
-        assert v.isalnum(), 'Username must be alphanumeric'
+    @field_validator("name")
+    @classmethod
+    def name_must_be_alphanumeric(cls, v: str) -> str:
+        if not v.isalnum():
+            raise ValueError("Name must be alphanumeric")
         return v
 ```
 
@@ -712,11 +713,11 @@ class UserCreate(BaseModel):
 
 # Good
 result = await session.execute(
-    select(User).where(User.username == username)
+    select(Post).where(Post.title == title)
 )
 
 # Avoid
-# result = await session.execute(f"SELECT * FROM users WHERE username = '{username}'")
+# result = await session.execute(f"SELECT * FROM post WHERE title = '{title}'")
 ```
 
 ## Contribution Guidelines

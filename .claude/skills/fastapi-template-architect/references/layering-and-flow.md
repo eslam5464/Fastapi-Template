@@ -129,8 +129,8 @@ No function docstring on the endpoint — its documentation lives in `summary`,
 ```
 app/api/v1/deps/
 ├── services.py      # all get_*_service() factories — service wiring only
-├── auth.py          # oauth2_scheme, get_current_user
-├── rate_limit.py     # rate_limit_auth, rate_limit_api, ...
+├── auth.py          # oauth2_scheme, get_current_user (projects with auth)
+├── rate_limit.py     # rate_limit_auth, rate_limit_api, ... (projects with rate limiting)
 └── __init__.py       # re-exports for stable import paths
 ```
 

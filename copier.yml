@@ -13,7 +13,7 @@ project_slug:
 project_description:
   type: str
   help: "Short description used in pyproject.toml and README"
-  default: "A production-ready FastAPI backend with async PostgreSQL, JWT auth, and clean architecture."
+  default: "A production-ready FastAPI backend with async PostgreSQL and clean architecture."
 
 author_name:
   type: str
@@ -48,6 +48,12 @@ services:
     "Choose services one by one": custom
   default: minimal
 
+include_auth:
+  type: bool
+  help: "Include JWT authentication with the User model (signup, login, token refresh, logout, /users/me)? Adds SECRET_KEY and the token settings."
+  default: false
+  when: "{{ services == 'custom' }}"
+
 include_api_v2:
   type: bool
   help: "Include an empty second API version (/v2, mounted with its own docs)?"
@@ -68,7 +74,7 @@ include_redis_cache:
 
 include_redis_rate_limit:
   type: bool
-  help: "Include Redis-backed rate limiting on the auth and user routes? Adds the RATE_LIMIT_* settings."
+  help: "Include Redis-backed rate limiting (per IP address; per user and on the auth routes when authentication is included)? Adds the RATE_LIMIT_* settings."
   default: false
   when: "{{ services == 'custom' }}"
 
@@ -76,7 +82,7 @@ include_redis_token_blacklist:
   type: bool
   help: "Include the Redis token blacklist, so logout revokes tokens? Without it, logged-out tokens stay valid until they expire."
   default: false
-  when: "{{ services == 'custom' }}"
+  when: "{{ services == 'custom' and include_auth }}"
 
 include_celery:
   type: bool
@@ -156,4 +162,4 @@ _tasks:
      "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]

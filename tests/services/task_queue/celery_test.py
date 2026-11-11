@@ -3,6 +3,7 @@
 from app.core.config import settings
 from app.services.task_queue import celery_app
 from app.services.task_queue.celery_config import beat_schedule
+from app.services.task_queue.tasks.health_tasks import ping_task
 
 
 class TestCeleryApp:
@@ -23,3 +24,11 @@ class TestCeleryApp:
 
     def test_uses_the_configured_beat_schedule(self):
         assert celery_app.conf.beat_schedule == beat_schedule
+
+
+class TestPingTask:
+    def test_is_registered(self):
+        assert "ping" in celery_app.tasks
+
+    def test_returns_pong(self):
+        assert ping_task.apply().get() == "pong"

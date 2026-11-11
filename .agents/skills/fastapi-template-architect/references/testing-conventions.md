@@ -58,7 +58,7 @@ picking up the `anyio_backend` fixture automatically.
   it in `tests/models/base_model_test.py` and `tests/repos/base_repo_test.py`, so those
   tests don't depend on a domain model. `conftest.py` imports it, which registers its
   table for `create_all`; Alembic never sees it.
-- `tests/api/v1/conftest.py` holds the user and token fixtures (`user`, `other_user`,
+- `tests/api/v1/conftest.py` (projects with auth) holds the user and token fixtures (`user`, `other_user`,
   `token`, `pre_hashed_password`, `default_password`) for the tests of the authenticated
   API.
 

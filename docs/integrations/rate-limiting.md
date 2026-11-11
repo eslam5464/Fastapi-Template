@@ -7,7 +7,7 @@ middleware (`app/middleware/rate_limit.py`), the key prefixes (`RateLimitPrefix`
 
 It is included when the project is generated with
 `--data services=custom --data include_redis_rate_limit=true` (or by answering "yes" to
-the rate limiting question). Without it, the auth and user routes have no request limits;
+the rate limiting question). Without it, no route has a request limit;
 put a limit in front of the app (reverse proxy, API gateway) instead.
 
 The template includes a production-ready rate limiting system using Redis and sliding window algorithm.
@@ -22,7 +22,6 @@ from app.api.v1.deps.rate_limit import (
     rate_limit_auth,    # Strict: 10 req/min (for login, signup)
     rate_limit_api,     # Default: 100 req/min (for general API)
     rate_limit_public,  # Lenient: 1000 req/min (for public data)
-    rate_limit_user,    # User-based: 300 req/min (for authenticated)
 )
 
 router = APIRouter()
@@ -38,6 +37,14 @@ async def login(credentials: LoginForm):
 async def list_posts():
     # Limited to 100 requests per minute per IP
     pass
+```
+
+<!-- --- FEATURE[auth] START --- -->
+With authentication, `app/api/v1/deps/rate_limit_user.py` adds limits counted per logged-in user:
+
+```python
+from app.api.v1.deps.auth import get_current_user
+from app.api.v1.deps.rate_limit_user import rate_limit_user  # 300 req/min per user
 
 # User-based rate limiting for authenticated endpoints
 @router.get("/profile", dependencies=[Depends(rate_limit_user)])
@@ -47,32 +54,38 @@ async def get_profile(current_user: User = Depends(get_current_user)):
     pass
 ```
 
+<!-- --- FEATURE[auth] END --- -->
+
 ## Custom Rate Limits
 
 Create custom rate limiters for specific endpoints:
 
 ```python
-from app.api.v1.deps.rate_limit import create_rate_limit
+from app.api.v1.deps.rate_limit import create_rate_limit_ip_only
 
-# Custom limit for heavy operations (5 requests per 5 minutes)
-heavy_limit = create_rate_limit(limit=5, window=300, prefix="heavy")
+# Custom limit for heavy operations (5 requests per 5 minutes per IP)
+heavy_limit = create_rate_limit_ip_only(limit=5, window=300, prefix="heavy")
 
 @router.post("/export", dependencies=[Depends(heavy_limit)])
 async def export_large_file():
     pass
+```
+
+<!-- --- FEATURE[auth] START --- -->
+With authentication, `create_rate_limit_user_only` and `create_rate_limit_user_and_ip` count per user:
+
+```python
+from app.api.v1.deps.rate_limit_user import create_rate_limit_user_only
 
 # Custom user-based limit (20 uploads per minute per user)
-upload_limit = create_rate_limit(
-    limit=20,
-    window=60,
-    prefix="upload",
-    use_user_id=True
-)
+upload_limit = create_rate_limit_user_only(limit=20, window=60, prefix="upload")
 
 @router.post("/upload", dependencies=[Depends(upload_limit)])
-async def upload_file(current_user: User = Depends(get_current_user)):
+async def upload_file():
     pass
 ```
+
+<!-- --- FEATURE[auth] END --- -->
 
 ## Rate Limit Response Headers
 
@@ -119,11 +132,14 @@ RATE_LIMIT_USER=300         # Authenticated user endpoints
 - Public API endpoints: 100 req/min per IP
 - Health checks, documentation: 1000 req/min per IP
 
+<!-- --- FEATURE[auth] START --- -->
 **User-Based** (for authenticated endpoints):
 
 - User profile, settings: 300 req/min per user
 - Solves shared IP problem (office/cafe networks)
 - Each user gets independent quota regardless of IP
+
+<!-- --- FEATURE[auth] END --- -->
 
 ## Available Prefixes
 
@@ -190,8 +206,11 @@ The API implements production-ready rate limiting using Redis with a sliding win
 | Authentication (`/login`, `/signup`) | 10 req   | 1 min  | Strict limit per IP  |
 | General API                          | 100 req  | 1 min  | Default limit per IP |
 | Public endpoints                     | 1000 req | 1 min  | Lenient limit per IP |
-| Authenticated user endpoints         | 300 req  | 1 min  | Per user ID          |
 
+<!-- --- FEATURE[auth] START --- -->
+Authenticated user endpoints: 300 requests per minute, counted per user ID.
+
+<!-- --- FEATURE[auth] END --- -->
 ### Rate Limit Response Headers
 
 All rate-limited endpoints include these headers:

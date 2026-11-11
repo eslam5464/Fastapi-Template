@@ -64,13 +64,18 @@ class TestResolve:
             "include_redis_token_blacklist",
             "include_celery",
         ):
-            assert post_gen.resolve(answers(**{question: True}))["redis"] is True
+            enabled = {question: True}
+            if question == "include_redis_token_blacklist":
+                enabled["include_auth"] = True  # its parent feature
+            assert post_gen.resolve(answers(**enabled))["redis"] is True
         assert post_gen.resolve(answers())["redis"] is False
         assert post_gen.resolve(answers(include_gcs=True))["redis"] is False
 
     def test_child_without_parent_is_rejected(self):
         with pytest.raises(SystemExit, match="requires its parent feature 'firebase'"):
             post_gen.resolve(answers(include_firestore=True))
+        with pytest.raises(SystemExit, match="requires its parent feature 'auth'"):
+            post_gen.resolve(answers(include_redis_token_blacklist=True))
 
     def test_template_always_off(self):
         # _template is never a question; it must come back False even when

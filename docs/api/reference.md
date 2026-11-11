@@ -24,6 +24,7 @@ When environment is LOCAL, DEV, or STG:
 
 Root /docs, /redoc, and /openapi.json are intentionally disabled.
 
+<!-- --- FEATURE[auth] START --- -->
 ## Authentication Endpoints (v1)
 
 - POST /v1/auth/login
@@ -35,15 +36,20 @@ Root /docs, /redoc, and /openapi.json are intentionally disabled.
 
 - GET /v1/users/me
 
+<!-- --- FEATURE[auth] END --- -->
+
 ## Health Endpoint
 
 - GET /health
 
+<!-- --- FEATURE[auth] START --- -->
 ## Auth Header
 
 Use bearer token for protected routes:
 
 - Authorization: Bearer <access_token>
+
+<!-- --- FEATURE[auth] END --- -->
 
 ## Error Format
 
@@ -53,7 +59,7 @@ Example:
 
 ```json
 {
-  "detail": "Unauthorized"
+  "detail": "Not Found"
 }
 ```
 
@@ -62,7 +68,9 @@ Example:
 - 200: Success
 - 201: Created
 - 400: Bad request/domain validation failure mapping
+<!-- --- FEATURE[auth] START --- -->
 - 401: Authentication failure
+<!-- --- FEATURE[auth] END --- -->
 - 403: Forbidden
 <!-- --- FEATURE[csrf] START --- -->
 - 403 is also returned when the CSRF check fails

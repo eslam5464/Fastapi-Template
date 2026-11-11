@@ -61,7 +61,7 @@ IDENTITY_ARGS = [
     "--project-slug",
     "fastapi-template",
     "--project-description",
-    "A production-ready FastAPI backend with async PostgreSQL, JWT auth, and clean architecture.",
+    "A production-ready FastAPI backend with async PostgreSQL and clean architecture.",
     "--author-name",
     "Eslam",
     "--author-email",
