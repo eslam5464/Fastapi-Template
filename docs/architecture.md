@@ -66,13 +66,16 @@ app/
     └── versions/
 ```
 
-<!-- --- FEATURE[auth|api_v2|csrf|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] START --- -->
+<!-- --- FEATURE[auth|example_items|api_v2|csrf|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] START --- -->
 Optional files in this project:
 
-<!-- --- FEATURE[auth|api_v2|csrf|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] END --- -->
+<!-- --- FEATURE[auth|example_items|api_v2|csrf|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] END --- -->
 <!-- --- FEATURE[auth] START --- -->
 - `app/models/user.py`, `app/repos/user.py`, `app/schemas/user.py`, `app/schemas/token.py`, `app/services/auth_service.py`, `app/api/v1/deps/auth.py`, `app/api/v1/endpoints/auth.py`, `app/api/v1/endpoints/user.py` — authentication and the User model
 <!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[example_items] START --- -->
+- `app/models/item.py`, `app/repos/item.py`, `app/schemas/item.py`, `app/services/item_service.py`, `app/api/v1/deps/items.py`, `app/api/v1/endpoints/items.py` — the example Items domain
+<!-- --- FEATURE[example_items] END --- -->
 <!-- --- FEATURE[api_v2] START --- -->
 - `app/api/v2/router.py` — the second API version, an empty scaffold mounted at `/v2`
 <!-- --- FEATURE[api_v2] END --- -->

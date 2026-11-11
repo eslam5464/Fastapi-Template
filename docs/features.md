@@ -8,6 +8,9 @@ Full reference for what's built into this project: what each feature does, which
 <!-- --- FEATURE[auth] START --- -->
 - 🔐 [Authentication](#-authentication) — JWT, Argon2
 <!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[example_items] START --- -->
+- 📦 [Example domain: Items](#-example-domain-items) — a complete CRUD slice to copy from
+<!-- --- FEATURE[example_items] END --- -->
 - 🔒 [Security middleware](#-security-middleware) — security headers and the other request middleware
 <!-- --- FEATURE[redis_cache] START --- -->
 - ⚡ [Caching](#-caching) — Redis cache
@@ -82,6 +85,26 @@ Optional services are chosen when the project is generated (Copier's `services=c
 This project was generated without the authentication service: it has no User model, no login and no protected routes, so every endpoint is public. Add your own access checks before exposing data that is not public.
 
 <!-- --- FEATURE[!auth] END --- -->
+
+<!-- --- FEATURE[example_items] START --- -->
+## 📦 Example domain: Items
+
+A small, complete CRUD slice that shows how the layers fit together. Copy it for your own domain, or delete it.
+
+- **Model:** `app/models/item.py` (`Item`: `name`, unique; `description`; `is_active`), created by the first Alembic revision.
+- **Schemas:** `app/schemas/item.py` (`ItemCreate`, `ItemUpdate`, `ItemResponse`).
+- **Repository:** `app/repos/item.py` (`ItemRepo`, on top of `BaseRepository`).
+- **Service:** `app/services/item_service.py` (`ItemService`): the business rules, raising service exceptions.
+- **API:** `app/api/v1/endpoints/items.py`, wired through `app/api/v1/deps/items.py`: list, read, create, update and delete under `/v1/items`.
+<!-- --- FEATURE[auth] START --- -->
+- **Access:** every `/v1/items` route needs a logged-in user (a router-level `get_current_user` dependency).
+<!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[!auth] START --- -->
+- **Access:** the `/v1/items` routes are public, because this project has no authentication.
+<!-- --- FEATURE[!auth] END --- -->
+- **Tests:** `tests/services/item_service_test.py` and `tests/api/v1/endpoints/items_test.py`.
+
+<!-- --- FEATURE[example_items] END --- -->
 
 ## 🔒 Security middleware
 

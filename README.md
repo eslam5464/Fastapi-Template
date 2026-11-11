@@ -24,6 +24,9 @@ A production-ready FastAPI project template with modern best practices, async su
 - **⚠️ No authentication** - every route is public until you add your own login and access checks
 <!-- --- FEATURE[!auth] END --- -->
 - **🏗️ Clean Architecture** - Repository pattern, dependency injection, and enforced module boundaries (tach)
+<!-- --- FEATURE[example_items] START --- -->
+- **📦 Example CRUD domain** - Items: a model, repository, service, `/v1/items` endpoints, migration and tests to copy from
+<!-- --- FEATURE[example_items] END --- -->
 - **🔒 Security** - Security headers middleware, trusted hosts and a CORS allowlist
 <!-- --- FEATURE[csrf] START --- -->
 - **🛡️ CSRF protection** - Double-submit cookie middleware for browser clients

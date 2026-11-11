@@ -37,6 +37,7 @@ github_username:     # str, default "eslam5464"
 python_version:      # str, default "3.14"; validator enforces >= 3.14 (PEP 758 syntax requirement)
 services:            # choice: "minimal" (default) or "custom"
 include_auth:        # bool, default false, asked only when services == custom
+include_example_items: # bool, default false, asked only when services == custom
 include_api_v2:      # bool, default false, asked only when services == custom
 include_csrf:        # bool, default false, asked only when services == custom
 include_redis_cache: # bool, default false, asked only when services == custom
@@ -63,7 +64,7 @@ _tasks:
      "--author-name", "{{ author_name }}", "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_example_items': include_example_items, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
 ```
 
 Invocation (from `README.md`):
@@ -163,7 +164,8 @@ work.
 ## ⚠️ Every optional service is decided at generation time
 
 Each optional part is an `include_*` question (the services below; JWT authentication
-with the User model, `include_auth`; the empty `/v2` API scaffold, `include_api_v2`; and
+with the User model, `include_auth`; an example CRUD domain, `include_example_items`; the
+empty `/v2` API scaffold, `include_api_v2`; and
 the CSRF middleware, `include_csrf`), and a declined part's code, tests,
 settings, env vars, compose and CI entries, docs and dependencies are removed from the
 generated project: the Redis cache, rate limiting, the token blacklist, Celery,

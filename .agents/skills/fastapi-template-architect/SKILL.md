@@ -60,7 +60,8 @@ hand-building (see "Offline fallback" below) when Copier genuinely isn't usable.
    `github_username`, `python_version` (≥3.14), then `services` (`minimal`, the
    default, or `custom`) and, for `custom`, one bool per optional part that really strips
    its code when declined: `include_auth` (JWT auth, the User model and the `/auth` and
-   `/users` routes), `include_api_v2` (the empty `/v2` scaffold), `include_csrf` (the CSRF
+   `/users` routes), `include_example_items` (an example CRUD domain under `/v1/items`),
+   `include_api_v2` (the empty `/v2` scaffold), `include_csrf` (the CSRF
    middleware),
    `include_firebase`, `include_firestore` (asked only after Firebase),
    `include_redis_cache`, `include_redis_rate_limit`, `include_redis_token_blacklist`

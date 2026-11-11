@@ -8,13 +8,13 @@ Create Date: 2025-09-26 08:51:52.377335+00:00
 
 from typing import Sequence, Union
 
-# --- FEATURE[auth] START ---
+# --- FEATURE[auth|example_items] START ---
 import sqlalchemy as sa
 from alembic import op
 
 from app.core.config import settings
 
-# --- FEATURE[auth] END ---
+# --- FEATURE[auth|example_items] END ---
 # revision identifiers, used by Alembic.
 revision: str = "9d538fba92b0"
 down_revision: Union[str, Sequence[str], None] = None
@@ -64,10 +64,52 @@ def upgrade() -> None:
         schema=settings.postgres_db_schema,
     )
     # --- FEATURE[auth] END ---
+    # --- FEATURE[example_items] START ---
+    op.create_table(
+        "item",
+        sa.Column("name", sa.String(length=255), nullable=False),
+        sa.Column("description", sa.String(length=1000), nullable=True),
+        sa.Column("is_active", sa.Boolean(), server_default=sa.text("true"), nullable=False),
+        sa.Column("id", sa.BigInteger(), autoincrement=True, nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.text("now()"),
+            nullable=True,
+        ),
+        sa.PrimaryKeyConstraint("id", name=op.f("pk_item")),
+        schema=settings.postgres_db_schema,
+    )
+    op.create_index(
+        op.f("ix_item_id"),
+        "item",
+        ["id"],
+        unique=False,
+        schema=settings.postgres_db_schema,
+    )
+    op.create_index(
+        op.f("ix_item_name"),
+        "item",
+        ["name"],
+        unique=True,
+        schema=settings.postgres_db_schema,
+    )
+    # --- FEATURE[example_items] END ---
 
 
 def downgrade() -> None:
     """Downgrade schema."""
+    # --- FEATURE[example_items] START ---
+    op.drop_index(op.f("ix_item_name"), table_name="item", schema=settings.postgres_db_schema)
+    op.drop_index(op.f("ix_item_id"), table_name="item", schema=settings.postgres_db_schema)
+    op.drop_table("item", schema=settings.postgres_db_schema)
+    # --- FEATURE[example_items] END ---
     # --- FEATURE[auth] START ---
     op.drop_index(op.f("ix_user_id"), table_name="user", schema=settings.postgres_db_schema)
     op.drop_index(op.f("ix_user_email"), table_name="user", schema=settings.postgres_db_schema)
