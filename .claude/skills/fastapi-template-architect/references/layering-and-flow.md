@@ -133,7 +133,8 @@ against: `app/models/item.py`, `app/schemas/item.py`, `app/repos/item.py`,
 `tests/api/v1/endpoints/items_test.py`. The service takes its repository in the
 constructor and raises service exceptions; the endpoints translate them to HTTP
 exceptions. When the project also has auth, the router carries a `get_current_user`
-dependency. Check that the files exist before pointing a user at them.
+dependency. Check that the files exist before pointing a user at them; `docs/guides/example-items.md`
+explains how to turn the slice into a new domain.
 
 ## Deps: file organization and version isolation
 

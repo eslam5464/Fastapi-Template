@@ -299,25 +299,7 @@ The interactive version of this diagram lives at [`docs/architecture/fastapi-tem
 <!-- --- FEATURE[auth] START --- -->
 ## 🔐 Authentication
 
-The template includes a complete JWT-based authentication system:
-
-- User registration and login
-- Access and refresh tokens
-- Password hashing with Argon2 (via pwdlib)
-<!-- --- FEATURE[redis_token_blacklist] START --- -->
-- Token blacklisting for secure logout
-<!-- --- FEATURE[redis_token_blacklist] END --- -->
-- Protected routes with dependency injection
-
-### Example Usage
-
-```python
-from app.api.v1.deps.auth import get_current_user
-
-@router.get("/protected")
-async def protected_route(current_user: User = Depends(get_current_user)):
-    return {"message": f"Hello {current_user.username}!"}
-```
+JWT authentication with a User model: signup, login, access and refresh tokens, Argon2 password hashing, and a `get_current_user` dependency for protected routes. See **[docs/integrations/auth.md](docs/integrations/auth.md)** for the endpoints, the settings and how to protect a route.
 
 <!-- --- FEATURE[auth] END --- -->
 

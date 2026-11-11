@@ -62,6 +62,12 @@ Complete guide for local development environment setup and daily development tas
 <!-- --- FEATURE[csrf] START --- -->
 - CSRF protection middleware
 <!-- --- FEATURE[csrf] END --- -->
+<!-- --- FEATURE[auth] START --- -->
+- Authentication guide ([integrations/auth.md](integrations/auth.md))
+<!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[example_items] START --- -->
+- Example Items domain guide ([guides/example-items.md](guides/example-items.md))
+<!-- --- FEATURE[example_items] END --- -->
 <!-- --- FEATURE[redis_token_blacklist] START --- -->
 - Token blacklisting and logout ([integrations/token-revocation.md](integrations/token-revocation.md))
 <!-- --- FEATURE[redis_token_blacklist] END --- -->

@@ -10,7 +10,7 @@ since they aren't snapshotted in `assets/`).
 ## JWT authentication
 
 Only in projects generated with `include_auth` (check that `app/services/auth_service.py`
-exists). The minimal base has **no authentication**: no User model, no `/auth` or
+exists; its guide is `docs/integrations/auth.md`). The minimal base has **no authentication**: no User model, no `/auth` or
 `/users` routes and no `get_current_user`, so every route is public until the project
 adds its own access checks. The token blacklist, per-user rate limits
 (`app/api/v1/deps/rate_limit_user.py`) and the Celery user-seeding task all require it.
