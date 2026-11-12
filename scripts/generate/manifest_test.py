@@ -81,7 +81,16 @@ def test_feature_questions_are_gated_on_custom_services():
     for question in _feature_questions():
         when = str(config[question].get("when", ""))
         assert "services == 'custom'" in when, f"{question} must only be asked when services == 'custom'"
-        assert config[question].get("default") is False, f"{question} must default to false"
+        assert config[question].get("default") == "{{ services == 'full' }}", (
+            f"{question} must default to the full-service expression"
+        )
+
+
+def test_services_choices_and_default():
+    config = _copier_config()
+    services = config["services"]
+    assert [choice for label, choice in services["choices"].items()] == ["minimal", "custom", "full"]
+    assert services["default"] == "{{ 'full' if _copier_conf.defaults else 'minimal' }}"
 
 
 def test_tasks_features_json_keys_match_manifest():

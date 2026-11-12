@@ -91,11 +91,10 @@ def all_variants() -> dict[str, dict]:
 def copier_data_args(raw: dict) -> list[str]:
     """`--data key=value` arguments for `copier copy` that reproduce these answers.
 
-    The minimal base needs none: it is what `--defaults` already gives.
+    Always sets `services` first, so the result does not depend on what a bare
+    `--defaults` selects (it selects `full`).
     """
-    if raw["services"] == "minimal":
-        return []
-    args = ["--data", "services=custom"]
+    args = ["--data", f"services={raw['services']}"]
     for key, value in raw.items():
         if key != "services" and value:
             args += ["--data", f"{key}=true"]
