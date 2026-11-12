@@ -9,6 +9,12 @@ since they aren't snapshotted in `assets/`).
 
 ## JWT authentication
 
+Only in projects generated with `include_auth` (check that `app/services/auth_service.py`
+exists; its guide is `docs/integrations/auth.md`). The minimal base has **no authentication**: no User model, no `/auth` or
+`/users` routes and no `get_current_user`, so every route is public until the project
+adds its own access checks. The token blacklist, per-user rate limits
+(`app/api/v1/deps/rate_limit_user.py`) and the Celery user-seeding task all require it.
+
 - Access + refresh tokens, each carrying a `jti` claim (enables per-token revocation),
   `iat`, a `type` claim (`"access"` vs `"refresh"` — checked on validation so a refresh
   token can't be used where an access token is expected), and `sub`.
@@ -50,6 +56,11 @@ test environment is non-`LOCAL` or Redis is genuinely available.
 
 ## CSRF — double-submit cookie pattern
 
+Only in projects generated with `include_csrf` (check that `app/middleware/csrf.py`
+exists). A project without it has no CSRF check at all: that is fine for an API whose
+clients send a bearer token in the `Authorization` header, and a gap to close before
+browser clients authenticate with cookies.
+
 Real code in `../assets/app/middleware/csrf.py`:
 
 - Safe methods (`GET`, `HEAD`, `OPTIONS`, `TRACE`) skip validation entirely.
@@ -88,8 +99,8 @@ than loosening `DEFAULT_CSP` globally.
 ## Rate limiting — sliding window over Redis
 
 Present only in projects generated with the `include_redis_rate_limit` Copier toggle
-(guide: `docs/integrations/rate-limiting.md`). Without it the auth and user routes have
-no request limits, so recommend a limit at the reverse proxy or gateway instead.
+(guide: `docs/integrations/rate-limiting.md`). Without it no route has a request
+limit, so recommend a limit at the reverse proxy or gateway instead.
 
 `app/api/v1/deps/rate_limit.py` (`../assets/`) implements a **sliding-window algorithm**
 via Redis sorted sets (`ZADD`/`ZREMRANGEBYSCORE`/`ZCARD`, microsecond-precision scores).
@@ -100,12 +111,13 @@ Named tiers, each a FastAPI dependency:
 | `rate_limit_auth` | 10/min | IP | Login/signup — brute-force protection |
 | `rate_limit_api` | 100/min | IP | General API protection |
 | `rate_limit_public` | 1000/min | IP | Health checks, public/read endpoints |
-| `rate_limit_user` | 300/min | user ID | Authenticated endpoints, fair per-user limits |
+| `rate_limit_user` (in `deps/rate_limit_user.py`, only with auth) | 300/min | user ID | Authenticated endpoints, fair per-user limits |
 
 Plus **factory functions** for custom limiters when the named tiers don't fit:
-`create_rate_limit_ip_only(limit, window, prefix)`,
+`create_rate_limit_ip_only(limit, window, prefix)` in `deps/rate_limit.py`, and, in
+`deps/rate_limit_user.py` (only with auth),
 `create_rate_limit_user_only(limit, window, prefix)`,
-`create_rate_limit_user_and_ip(limit, window, prefix)`, and the dispatcher
+`create_rate_limit_user_and_ip(limit, window, prefix)` and the dispatcher
 `create_rate_limit(limit, window, prefix, user_based=False)`. Use these instead of
 writing a new ad-hoc limiter when an endpoint needs a limit the named tiers don't cover
 (the module's own docstrings show export examples, e.g. a 5-per-5-minutes export
@@ -126,4 +138,5 @@ dependency, with zero duplicated header-setting code per endpoint.
 ## Middleware registration order
 
 See [api-governance.md](api-governance.md) — `CORSMiddleware` → `SecurityHeadersMiddleware`
-→ `CSRFMiddleware` → `RateLimitHeaderMiddleware` → `LoggingMiddleware`, outermost first.
+→ `CSRFMiddleware` → `RateLimitHeaderMiddleware` → `LoggingMiddleware`, outermost first
+(`CSRFMiddleware` and `RateLimitHeaderMiddleware` only where the project has them).

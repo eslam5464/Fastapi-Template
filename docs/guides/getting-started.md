@@ -48,7 +48,9 @@ python main.py
 
 - Health check: <http://localhost:8799/health>
 - v1 docs: <http://localhost:8799/v1/docs>
+<!-- --- FEATURE[api_v2] START --- -->
 - v2 docs: <http://localhost:8799/v2/docs>
+<!-- --- FEATURE[api_v2] END --- -->
 
 ## First Test Run
 

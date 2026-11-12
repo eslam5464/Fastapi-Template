@@ -32,15 +32,10 @@ app/
 ├── web.py                  # Gunicorn application runner
 ├── api/                    # API layer
 │   ├── routes.py           # Unversioned routes (/health)
-│   ├── v1/                 # API version 1
-│   │   ├── router.py       # Version router
-│   │   ├── deps/
-│   │   │   └── auth.py     # Authentication dependencies
-│   │   └── endpoints/
-│   │       ├── auth.py     # Authentication endpoints
-│   │       └── user.py     # User endpoints
-│   └── v2/
-│       └── router.py       # Version 2 router
+│   └── v1/                 # API version 1
+│       ├── router.py       # Version router
+│       ├── deps/           # Route dependencies
+│       └── endpoints/      # Endpoint modules
 ├── core/                   # Settings, infrastructure, shared helpers
 │   ├── config.py           # Settings (pydantic-settings)
 │   ├── db.py               # Async engine and sessions
@@ -51,26 +46,19 @@ app/
 │   ├── credentials/        # Credential models of the integrations
 │   └── exceptions/
 │       ├── base.py         # Base exception classes
-│       ├── domain.py       # Domain exceptions
 │       └── http_exceptions.py  # HTTP exceptions
 ├── models/                 # SQLAlchemy models
-│   ├── base.py
-│   └── user.py
+│   └── base.py
 ├── schemas/                # Pydantic schemas
 │   ├── base.py
-│   ├── user.py
-│   ├── token.py
 │   └── health_check.py
 ├── repos/                  # Repository layer
-│   ├── base.py
-│   └── user.py
+│   └── base.py
 ├── services/               # Business logic
-│   ├── auth_service.py     # Authentication service
 │   ├── exceptions/         # Service-layer exceptions
 │   └── types/              # Service-layer TypedDicts
 ├── middleware/
 │   ├── logging.py          # Request logging middleware
-│   ├── csrf.py             # CSRF protection middleware
 │   └── security_headers.py # Security headers middleware
 └── alembic/                # Database migrations
     ├── env.py
@@ -78,10 +66,22 @@ app/
     └── versions/
 ```
 
-<!-- --- FEATURE[redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] START --- -->
-Optional service files in this project:
+<!-- --- FEATURE[auth|example_items|api_v2|csrf|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] START --- -->
+Optional files in this project:
 
-<!-- --- FEATURE[redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] END --- -->
+<!-- --- FEATURE[auth|example_items|api_v2|csrf|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] END --- -->
+<!-- --- FEATURE[auth] START --- -->
+- `app/models/user.py`, `app/repos/user.py`, `app/schemas/user.py`, `app/schemas/token.py`, `app/services/auth_service.py`, `app/api/v1/deps/auth.py`, `app/api/v1/endpoints/auth.py`, `app/api/v1/endpoints/user.py` — authentication and the User model ([guide](integrations/auth.md))
+<!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[example_items] START --- -->
+- `app/models/item.py`, `app/repos/item.py`, `app/schemas/item.py`, `app/services/item_service.py`, `app/api/v1/deps/items.py`, `app/api/v1/endpoints/items.py` — the example Items domain ([guide](guides/example-items.md))
+<!-- --- FEATURE[example_items] END --- -->
+<!-- --- FEATURE[api_v2] START --- -->
+- `app/api/v2/router.py` — the second API version, an empty scaffold mounted at `/v2`
+<!-- --- FEATURE[api_v2] END --- -->
+<!-- --- FEATURE[csrf] START --- -->
+- `app/middleware/csrf.py` — CSRF protection middleware
+<!-- --- FEATURE[csrf] END --- -->
 <!-- --- FEATURE[redis] START --- -->
 - `app/services/cache/base.py` — shared Redis connection pool (`BaseRedisClient`)
 <!-- --- FEATURE[redis] END --- -->
@@ -132,19 +132,19 @@ Optional service files in this project:
 **Responsibility**: Handle HTTP requests and responses
 
 - **Routes**: Define API endpoints and their grouping
-- **Dependencies**: Provide authentication, database sessions and other shared request dependencies
+- **Dependencies**: Provide database sessions and other shared request dependencies
 - **Endpoints**: Implement specific API operations
 - **Validation**: Input validation using Pydantic schemas
 
 ```python
 # Example endpoint structure
-@router.post("/users", response_model=UserResponse)
-async def create_user(
-    user_data: UserCreate,
+@router.post("/products", response_model=ProductResponse)
+async def create_product(
+    product_data: ProductCreate,
     session: AsyncSession = Depends(get_session),
-    user_repo: UserRepository = Depends(get_user_repository)
+    product_repo: ProductRepository = Depends(get_product_repository)
 ):
-    return await user_repo.create(session, user_data)
+    return await product_repo.create(session, product_data)
 ```
 
 ### 2. Core Layer (`app/core/`)
@@ -152,7 +152,6 @@ async def create_user(
 **Responsibility**: Business logic and utilities
 
 - **Configuration**: Environment-based settings management
-- **Authentication**: JWT token handling, password hashing
 - **Database**: Connection management and session handling
 - **Logging**: Structured logging with Loguru
 - **Exceptions**: Custom exception classes
@@ -206,16 +205,15 @@ class Base(DeclarativeBase):
 
 ```python
 # Example schema structure
-class UserBase(BaseModel):
-    username: str
-    email: EmailStr
-    first_name: str
-    last_name: str
+class ProductBase(BaseModel):
+    name: str
+    description: str | None = None
+    price: Decimal
 
-class UserCreate(UserBase):
-    password: str
+class ProductCreate(ProductBase):
+    sku: str
 
-class UserResponse(UserBase):
+class ProductResponse(ProductBase):
     id: UUID
     created_at: datetime
 ```
@@ -230,14 +228,14 @@ class UserResponse(UserBase):
 
 ```python
 # Repository pattern example
-class UserRepository(BaseRepository[User]):
-    async def get_by_email(
+class ProductRepository(BaseRepository[Product]):
+    async def get_by_sku(
         self,
         session: AsyncSession,
-        email: str
-    ) -> Optional[User]:
+        sku: str
+    ) -> Optional[Product]:
         result = await session.execute(
-            select(User).where(User.email == email)
+            select(Product).where(Product.sku == sku)
         )
         return result.scalar_one_or_none()
 ```
@@ -367,9 +365,11 @@ Redis-based infrastructure shared by the cache, rate limiting and the token blac
 - **Sliding Window Algorithm**: Accurate request counting using Redis sorted sets with microsecond precision
 - **High-Frequency Support**: Handles multiple requests per second with unique timestamp tracking
 - **IP-Based Limiting**: Rate limit by client IP for unauthenticated endpoints
+<!-- --- FEATURE[auth] START --- -->
 - **User-Based Limiting**: Rate limit by user ID for authenticated endpoints
+<!-- --- FEATURE[auth] END --- -->
 - **Custom Prefixes**: Separate rate limit quotas per endpoint group
-- **Configurable Limits**: Pre-configured presets (strict, default, lenient, user)
+- **Configurable Limits**: Pre-configured presets (strict, default, lenient)
 - **Custom Rate Limits**: Factory function for endpoint-specific limits
 - **Rate Limit Headers**: Automatic `X-RateLimit-*` headers in responses
 - **Fail-Open Design**: Allows requests if Redis is unavailable
@@ -377,10 +377,12 @@ Redis-based infrastructure shared by the cache, rate limiting and the token blac
 
 **Rate Limiting Strategies**:
 
-- **Authentication Endpoints** (`/login`, `/signup`): 10 req/min per IP (strict)
+- **Sensitive Endpoints** (login, signup and similar): 10 req/min per IP (strict)
 - **General API Endpoints**: 100 req/min per IP (default)
 - **Public Endpoints**: 1000 req/min per IP (lenient)
+<!-- --- FEATURE[auth] START --- -->
 - **Authenticated User Endpoints**: 300 req/min per user (user-based)
+<!-- --- FEATURE[auth] END --- -->
 - **Custom Endpoints**: Configurable limits with custom prefixes
 
 <!-- --- FEATURE[redis_rate_limit] END --- -->
@@ -419,6 +421,7 @@ Endpoint → Service Client → External API → Process Response → Return Dat
          Initialize      Authenticate    Error Handling
 ```
 
+<!-- --- FEATURE[auth] START --- -->
 ## Authentication Architecture
 
 ### JWT Token System
@@ -436,6 +439,8 @@ Request → Extract Token → Validate Token → Get User → Execute Handler
               ↓               ↓              ↓
          Authorization    JWT Decode    Database Query
 ```
+
+<!-- --- FEATURE[auth] END --- -->
 
 ## Database Architecture
 
@@ -464,11 +469,6 @@ class Settings(BaseSettings):
     postgres_password: str
     postgres_db: str
 
-    # Security
-    secret_key: str
-    access_token_expire_seconds: int = 3600
-    refresh_token_expire_seconds: int = 86400
-
     # Server
     backend_host: str = "0.0.0.0"
     backend_port: int = 8799
@@ -476,6 +476,10 @@ class Settings(BaseSettings):
     # Environment
     current_environment: Environment = Environment.LOCAL
 ```
+
+<!-- --- FEATURE[auth] START --- -->
+With authentication, `Settings` also has `secret_key` (required, at least 32 characters), `access_token_expire_seconds`, `refresh_token_expire_seconds` and `jwt_algorithm`.
+<!-- --- FEATURE[auth] END --- -->
 
 ### Environment Types
 
@@ -659,7 +663,9 @@ class NotFoundError(BaseAPIException):
 
 - **API Tests**: End-to-end endpoint testing
 - **Database Tests**: Real database operations
+<!-- --- FEATURE[auth] START --- -->
 - **Authentication Tests**: Token-based auth flow
+<!-- --- FEATURE[auth] END --- -->
 
 ### Test Database
 
@@ -691,6 +697,7 @@ class NotFoundError(BaseAPIException):
 
 ## Security Architecture
 
+<!-- --- FEATURE[auth] START --- -->
 ### Authentication Security
 
 - **Password Hashing**: Argon2 via pwdlib (modern, secure alternative to bcrypt)
@@ -706,12 +713,16 @@ class NotFoundError(BaseAPIException):
 - **Protected Routes**: Valid token required
 - **Admin Routes**: Special permissions required
 
+<!-- --- FEATURE[auth] END --- -->
+
 ### Data Security
 
 - **Input Validation**: Pydantic schema validation
 - **SQL Injection**: SQLAlchemy ORM protection
 - **CORS Policy**: Configured origin restrictions
+<!-- --- FEATURE[csrf] START --- -->
 - **CSRF Protection**: Middleware-based CSRF token validation
+<!-- --- FEATURE[csrf] END --- -->
 - **Security Headers**: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - **Rate Limiting**: Redis-based sliding window algorithm with microsecond precision

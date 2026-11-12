@@ -5,12 +5,13 @@
 [![Coverage](https://raw.githubusercontent.com/eslam5464/Fastapi-Template/python-coverage-comment-action-data/badge.svg)](https://github.com/eslam5464/Fastapi-Template/tree/python-coverage-comment-action-data)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A production-ready FastAPI project template with modern best practices, async support, JWT authentication, and PostgreSQL integration.
+A production-ready FastAPI project template with modern best practices, async support, and PostgreSQL integration.
 
 ## ✨ Features
 
-- **🚀 FastAPI** - Modern, fast web framework for building APIs, with versioned routers (`/v1`, `/v2`)
+- **🚀 FastAPI** - Modern, fast web framework for building APIs, with versioned routers (one mounted app per API version, starting at `/v1`)
 - **📊 PostgreSQL** - Async database integration with SQLAlchemy 2.0 and Alembic migrations
+<!-- --- FEATURE[auth] START --- -->
 - **🔐 JWT Authentication** - Secure token-based authentication
 <!-- --- FEATURE[redis_token_blacklist] START --- -->
 - **🚫 Token revocation** - logout puts the token on a Redis blacklist
@@ -18,10 +19,20 @@ A production-ready FastAPI project template with modern best practices, async su
 <!-- --- FEATURE[!redis_token_blacklist] START --- -->
 - **⚠️ Logout does not revoke tokens** - without the token blacklist, a logged-out access token stays valid until it expires; keep expiry times short
 <!-- --- FEATURE[!redis_token_blacklist] END --- -->
+<!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[!auth] START --- -->
+- **⚠️ No authentication** - every route is public until you add your own login and access checks
+<!-- --- FEATURE[!auth] END --- -->
 - **🏗️ Clean Architecture** - Repository pattern, dependency injection, and enforced module boundaries (tach)
-- **🔒 Security** - CSRF and security headers middleware
+<!-- --- FEATURE[example_items] START --- -->
+- **📦 Example CRUD domain** - Items: a model, repository, service, `/v1/items` endpoints, migration and tests to copy from
+<!-- --- FEATURE[example_items] END --- -->
+- **🔒 Security** - Security headers middleware, trusted hosts and a CORS allowlist
+<!-- --- FEATURE[csrf] START --- -->
+- **🛡️ CSRF protection** - Double-submit cookie middleware for browser clients
+<!-- --- FEATURE[csrf] END --- -->
 <!-- --- FEATURE[redis_rate_limit] START --- -->
-- **🚦 Rate limiting** - Redis sliding-window limits on the auth and user routes
+- **🚦 Rate limiting** - Redis sliding-window limits as FastAPI dependencies
 <!-- --- FEATURE[redis_rate_limit] END --- -->
 - **🐳 Docker Compose** - Backend and Postgres ready to run
 - **🧪 CI & Testing** - Pytest with coverage gating, plus lint/type/security checks in GitHub Actions
@@ -127,7 +138,9 @@ For the full list of integrations and services, see **[docs/features.md](docs/fe
 The API will be available at `http://localhost:8799` with interactive documentation at:
 
 - `http://localhost:8799/v1/docs`
+<!-- --- FEATURE[api_v2] START --- -->
 - `http://localhost:8799/v2/docs`
+<!-- --- FEATURE[api_v2] END --- -->
 
 <!-- --- FEATURE[_template] START --- -->
 ## 🧬 Using This as a Template
@@ -234,7 +247,7 @@ Detailed documentation is available in the [docs/](docs/) folder:
 - **[Features](docs/features.md)** - Full list of integrations and services, with setup notes
 - **[Architecture Overview](docs/architecture/overview.md)** - Current system design and versioned routing model
 - **[Backend Architecture Guide](docs/backend-architecture.md)** - Layered architecture deep dive
-- **[API Reference](docs/api/reference.md)** - Versioned endpoint and auth reference
+- **[API Reference](docs/api/reference.md)** - Versioned endpoint reference
 - **[Getting Started](docs/guides/getting-started.md)** - Setup and first run
 - **[Development Guide](docs/guides/development.md)** - Local workflow and quality commands
 - **[Contributing](docs/guides/contributing.md)** - Contribution and PR standards
@@ -265,15 +278,13 @@ The interactive version of this diagram lives at [`docs/architecture/fastapi-tem
 ```text
 ├── app/
 │   ├── api/                 # API routes and endpoints
-│   │   ├── v1/             # API version 1
-│   │   │   ├── endpoints/  # Individual endpoint modules
-│   │   │   └── deps/       # Dependencies (auth, database)
-│   │   └── v2/             # API version 2
+│   │   └── v1/             # API version 1
+│   │       ├── endpoints/  # Individual endpoint modules
+│   │       └── deps/       # Route dependencies
 │   ├── core/               # Core functionality
-│   │   ├── auth.py         # Authentication utilities
 │   │   ├── config.py       # Configuration management
 │   │   ├── db.py           # Database connection
-│   │   └── exceptions.py   # Custom exceptions
+│   │   └── exceptions/     # Custom exceptions
 │   ├── models/             # SQLAlchemy models
 │   ├── schemas/            # Pydantic schemas
 │   ├── repos/              # Repository pattern implementations
@@ -285,27 +296,12 @@ The interactive version of this diagram lives at [`docs/architecture/fastapi-tem
 └── logs/                   # Application logs (Generated at runtime)
 ```
 
+<!-- --- FEATURE[auth] START --- -->
 ## 🔐 Authentication
 
-The template includes a complete JWT-based authentication system:
+JWT authentication with a User model: signup, login, access and refresh tokens, Argon2 password hashing, and a `get_current_user` dependency for protected routes. See **[docs/integrations/auth.md](docs/integrations/auth.md)** for the endpoints, the settings and how to protect a route.
 
-- User registration and login
-- Access and refresh tokens
-- Password hashing with Argon2 (via pwdlib)
-<!-- --- FEATURE[redis_token_blacklist] START --- -->
-- Token blacklisting for secure logout
-<!-- --- FEATURE[redis_token_blacklist] END --- -->
-- Protected routes with dependency injection
-
-### Example Usage
-
-```python
-from app.api.v1.deps.auth import get_current_user
-
-@router.get("/protected")
-async def protected_route(current_user: User = Depends(get_current_user)):
-    return {"message": f"Hello {current_user.username}!"}
-```
+<!-- --- FEATURE[auth] END --- -->
 
 ## 🛠️ Development
 
@@ -337,7 +333,7 @@ uv run pytest tests/ --cov=app --cov-report=term --cov-report=html
 
 - ✅ Unit, service, and integration tests
 - 📊 Terminal and HTML coverage reports
-- 🎯 Tests cover API endpoints, authentication, database operations, services, middleware, and utilities
+- 🎯 Tests cover the API, database operations, services, middleware, and utilities
 
 ### Security Analysis
 
@@ -405,17 +401,22 @@ POSTGRES_PASSWORD=your-postgres-password
 POSTGRES_DB=postgres
 POSTGRES_DB_SCHEMA=fastapi_template
 
-# Security
-SECRET_KEY=your-secret-key
-ACCESS_TOKEN_EXPIRE_SECONDS=3600
-REFRESH_TOKEN_EXPIRE_SECONDS=2592000
-
 # Server
 BACKEND_HOST=localhost
 BACKEND_PORT=8799
 CURRENT_ENVIRONMENT=local
 ```
 
+<!-- --- FEATURE[auth] START --- -->
+Authentication:
+
+```env
+SECRET_KEY=your-secret-key
+ACCESS_TOKEN_EXPIRE_SECONDS=3600
+REFRESH_TOKEN_EXPIRE_SECONDS=2592000
+```
+
+<!-- --- FEATURE[auth] END --- -->
 <!-- --- FEATURE[redis] START --- -->
 Redis (shared by the Redis-backed services this project uses):
 
@@ -436,15 +437,15 @@ RATE_LIMIT_WINDOW=60
 ```
 
 <!-- --- FEATURE[redis_rate_limit] END --- -->
-<!-- --- FEATURE[celery] START --- -->
-Celery and background tasks:
+<!-- --- FEATURE[celery&auth] START --- -->
+Celery user seeding:
 
 ```env
 ENABLE_DATA_SEEDING=false
 SEEDING_USER_COUNT=100
 ```
 
-<!-- --- FEATURE[celery] END --- -->
+<!-- --- FEATURE[celery&auth] END --- -->
 <!-- --- FEATURE[resend] START --- -->
 Resend:
 

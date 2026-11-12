@@ -2,7 +2,7 @@
 
 ## System Purpose
 
-FastAPI Template provides a reusable backend foundation for authenticated APIs with layered architecture, async persistence, and production-oriented middleware.
+FastAPI Template provides a reusable backend foundation for APIs with layered architecture, async persistence, and production-oriented middleware.
 
 ## Component Map
 
@@ -15,7 +15,7 @@ FastAPI Template provides a reusable backend foundation for authenticated APIs w
 | Model Layer (app/models) | ORM table mapping | Shared base model and entity models |
 | Schema Layer (app/schemas) | Validation and serialization | Pydantic request/response contracts |
 | Core Layer (app/core) | Config, db setup, HTTP exceptions, utilities | Lowest dependency layer |
-| Middleware Layer (app/middleware) | Security headers, CSRF, logging | Applied in root app order |
+| Middleware Layer (app/middleware) | Security headers, logging and the other request middleware | Applied in root app order |
 
 ## Tech Stack
 
@@ -27,13 +27,18 @@ FastAPI Template provides a reusable backend foundation for authenticated APIs w
 | ORM | SQLAlchemy 2 async |
 | Database | PostgreSQL |
 | Migrations | Alembic |
-| Auth | JWT + refresh tokens |
 | Testing | pytest + anyio |
 
-<!-- --- FEATURE[redis|celery] START --- -->
-Optional services in this project:
+<!-- --- FEATURE[auth|example_items|redis|celery] START --- -->
+Optional parts of this project:
 
-<!-- --- FEATURE[redis|celery] END --- -->
+<!-- --- FEATURE[auth|example_items|redis|celery] END --- -->
+<!-- --- FEATURE[auth] START --- -->
+- **Authentication** — JWT access and refresh tokens with the User model (`app/services/auth_service.py`)
+<!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[example_items] START --- -->
+- **Example domain** — Items, a complete CRUD slice under `/v1/items` (`app/services/item_service.py`)
+<!-- --- FEATURE[example_items] END --- -->
 <!-- --- FEATURE[redis] START --- -->
 - **Redis** — backs the services below that need it
 <!-- --- FEATURE[redis] END --- -->
@@ -58,14 +63,16 @@ The application uses a mounted-subapp versioning model:
 - Root app does not expose global /docs, /redoc, or /openapi.json.
 - Version app mounts:
   - /v1 -> /v1/docs, /v1/redoc, /v1/openapi.json
+<!-- --- FEATURE[api_v2] START --- -->
   - /v2 -> /v2/docs, /v2/redoc, /v2/openapi.json
+<!-- --- FEATURE[api_v2] END --- -->
 
 This keeps OpenAPI schemas isolated by version and allows independent evolution of each API surface.
 
 ## Request Data Flow
 
-1. Request reaches root app middleware chain (security headers, CSRF, logging).
-2. Request is routed to root endpoints (for example /health) or a mounted version app (/v1 or /v2).
+1. Request reaches root app middleware chain (security headers, logging and the other middleware of this project).
+2. Request is routed to root endpoints (for example /health) or a mounted version app (for example /v1).
 3. Endpoint dependencies assemble service objects and repositories with request-scoped session.
 4. Service executes business logic and calls repositories as needed.
 5. API layer maps domain exceptions to HTTP responses and returns schema-validated output.
@@ -73,7 +80,9 @@ This keeps OpenAPI schemas isolated by version and allows independent evolution 
 ## Middleware Notes
 
 - SecurityHeadersMiddleware uses route-aware CSP so Swagger/ReDoc can load safely on versioned docs paths.
-- CSRFMiddleware exempts auth and versioned docs/openapi paths.
+<!-- --- FEATURE[csrf] START --- -->
+- CSRFMiddleware exempts the versioned docs/openapi paths (and the auth endpoints, where the project has them).
+<!-- --- FEATURE[csrf] END --- -->
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - RateLimitHeaderMiddleware injects rate-limit headers when dependency state exists.
 <!-- --- FEATURE[redis_rate_limit] END --- -->
@@ -81,6 +90,8 @@ This keeps OpenAPI schemas isolated by version and allows independent evolution 
 
 ## Current Constraints
 
-- Version 2 is scaffolded and mounted; endpoint surface is intentionally minimal at this stage.
+<!-- --- FEATURE[api_v2] START --- -->
+- The second API version (/v2) is scaffolded and mounted; its endpoint surface is intentionally empty at this stage.
+<!-- --- FEATURE[api_v2] END --- -->
 - Compatibility aliases for legacy /api/v1 paths are not enabled.
 - Production docs remain environment-gated through app configuration.

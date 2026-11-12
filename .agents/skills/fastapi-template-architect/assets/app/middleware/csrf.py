@@ -1,5 +1,5 @@
 # --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
-# Copy of app/middleware/csrf.py from eslam5464/Fastapi-Template, taken 2026-08-30,
+# Copy of app/middleware/csrf.py from eslam5464/Fastapi-Template, taken 2026-11-11,
 # with every optional service included (a generated project only has the
 # services chosen for it). The real repo is the source of truth; this is a
 # fallback/reference copy for offline scaffolding and Extend/Audit-mode
@@ -25,8 +25,9 @@ CSRF_HEADER_NAME = "X-CSRF-Token"
 # Safe HTTP methods that don't require CSRF protection
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 
-# Paths exempt from CSRF protection (auth endpoints using JWT)
+# Paths exempt from CSRF protection
 EXEMPT_PATHS = {
+    # The auth endpoints use bearer tokens, not cookies
     "/v1/auth/login",
     "/v1/auth/signup",
     "/v1/auth/refresh-token",

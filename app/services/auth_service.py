@@ -17,7 +17,7 @@ from app.schemas import TokenData, UserCreate
 from app.services.cache.token_blacklist import token_blacklist
 
 # --- FEATURE[redis_token_blacklist] END ---
-from app.services.exceptions.auth import (
+from app.services.exceptions.base import (
     DuplicateResourceError,
     ResourceNotFoundError,
     ValidationError,

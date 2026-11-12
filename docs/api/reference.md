@@ -4,7 +4,10 @@
 
 - Service base: <http://localhost:8799>
 - Root operational endpoint: /health
-- Versioned API bases: /v1 and /v2
+- Versioned API base: /v1
+<!-- --- FEATURE[api_v2] START --- -->
+- Second API version (empty scaffold): /v2
+<!-- --- FEATURE[api_v2] END --- -->
 
 ## Documentation Endpoints
 
@@ -13,12 +16,15 @@ When environment is LOCAL, DEV, or STG:
 - /v1/docs
 - /v1/redoc
 - /v1/openapi.json
+<!-- --- FEATURE[api_v2] START --- -->
 - /v2/docs
 - /v2/redoc
 - /v2/openapi.json
+<!-- --- FEATURE[api_v2] END --- -->
 
 Root /docs, /redoc, and /openapi.json are intentionally disabled.
 
+<!-- --- FEATURE[auth] START --- -->
 ## Authentication Endpoints (v1)
 
 - POST /v1/auth/login
@@ -30,15 +36,31 @@ Root /docs, /redoc, and /openapi.json are intentionally disabled.
 
 - GET /v1/users/me
 
+<!-- --- FEATURE[auth] END --- -->
+
+<!-- --- FEATURE[example_items] START --- -->
+## Item Endpoints (v1, example domain)
+
+- GET /v1/items
+- POST /v1/items
+- GET /v1/items/{item_id}
+- PATCH /v1/items/{item_id}
+- DELETE /v1/items/{item_id}
+
+<!-- --- FEATURE[example_items] END --- -->
+
 ## Health Endpoint
 
 - GET /health
 
+<!-- --- FEATURE[auth] START --- -->
 ## Auth Header
 
 Use bearer token for protected routes:
 
 - Authorization: Bearer <access_token>
+
+<!-- --- FEATURE[auth] END --- -->
 
 ## Error Format
 
@@ -48,7 +70,7 @@ Example:
 
 ```json
 {
-  "detail": "Unauthorized"
+  "detail": "Not Found"
 }
 ```
 
@@ -57,8 +79,13 @@ Example:
 - 200: Success
 - 201: Created
 - 400: Bad request/domain validation failure mapping
+<!-- --- FEATURE[auth] START --- -->
 - 401: Authentication failure
-- 403: Forbidden/CSRF violations
+<!-- --- FEATURE[auth] END --- -->
+- 403: Forbidden
+<!-- --- FEATURE[csrf] START --- -->
+- 403 is also returned when the CSRF check fails
+<!-- --- FEATURE[csrf] END --- -->
 - 404: Not found
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - 429: Rate limited

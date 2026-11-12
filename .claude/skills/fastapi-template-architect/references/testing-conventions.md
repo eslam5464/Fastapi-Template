@@ -10,7 +10,7 @@ Enforced via `[tool.pytest.ini_options] python_files = ["*_test.py"]` in
 This is the opposite of the pytest-community default convention — don't assume a
 generic pytest tutorial's naming applies here. `.pre-commit-config.yaml`'s
 `name-tests-test` hook enforces this too, with an explicit exclude for
-`tests/(conftest|schemas|utils)\.py`.
+the helper modules (`conftest.py`, `sample_model.py`, `schemas.py`, `utils.py`).
 
 ## Test layout in this repo (vs. the architecture doc's ideal)
 
@@ -49,24 +49,37 @@ picking up the `anyio_backend` fixture automatically.
 - `<thing>_factory` — a fixture returning a callable that generates data.
 - `<thing>` — a real-instance fixture (e.g. `user`, `db_session`, `client`).
 
-## The three-app dependency-override gotcha
+## Fixtures live next to what they need
 
-Because `app/main.py` mounts `v1_app` and `v2_app` as **separate** FastAPI instances
+- `tests/conftest.py` holds only fixtures every project has: `anyio_backend`,
+  `test_app`, `client`, `faker`, `db_session` and `sample_record`.
+- `tests/sample_model.py` defines a test-only model (`SampleRecord`, its schemas and
+  `SampleRecordRepo`). The generic layers (`Base`, `BaseRepository`) are tested through
+  it in `tests/models/base_model_test.py` and `tests/repos/base_repo_test.py`, so those
+  tests don't depend on a domain model. `conftest.py` imports it, which registers its
+  table for `create_all`; Alembic never sees it.
+- `tests/api/v1/conftest.py` (projects with auth) holds the user and token fixtures (`user`, `other_user`,
+  `token`, `pre_hashed_password`, `default_password`) for the tests of the authenticated
+  API.
+
+## The mounted-apps dependency-override gotcha
+
+Because `app/main.py` mounts each versioned API as a **separate** FastAPI instance
 under `app` (see [api-governance.md](api-governance.md)), a dependency override on `app`
 alone does **not** reach routes served through the mounted sub-apps. The real
-`test_app` fixture in `../assets/tests/conftest.py` applies every override to all three
-explicitly:
+`test_app` fixture in `../assets/tests/conftest.py` applies every override to the root
+app and to every mounted sub-app, through its `mounted_apps()` helper:
 
 ```python
-app.dependency_overrides[get_session] = override_get_session
-v1_app.dependency_overrides[get_session] = override_get_session
-v2_app.dependency_overrides[get_session] = override_get_session
+for mounted_app in mounted_apps():
+    mounted_app.dependency_overrides[get_session] = override_get_session
 ```
 
-...and clears all three on teardown. Copy this pattern for any new dependency override
-— forgetting `v1_app`/`v2_app` produces tests that pass for root-level routes but hit the
-real database/service for every versioned endpoint, which is easy to miss because the
-test doesn't error, it just silently uses production wiring.
+...and clears them all on teardown. Use `mounted_apps()` (or the sub-app itself, e.g.
+`v1_app`) for any new dependency override — overriding only `app` produces tests that
+pass for root-level routes but hit the real database/service for every versioned
+endpoint, which is easy to miss because the test doesn't error, it just silently uses
+production wiring.
 
 ## The "expensive singleton at import time" trick
 
@@ -84,7 +97,7 @@ from typing import AsyncGenerator  # noqa: E402
 
 import pytest  # noqa: E402
 ...
-from app.main import app, v1_app, v2_app  # noqa: E402
+from app.main import app  # noqa: E402
 ```
 
 Why: `app/services/payments/apple_pay.py` builds a module-level `ApplePay()` singleton

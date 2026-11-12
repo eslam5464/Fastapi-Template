@@ -30,15 +30,19 @@ hand-writing files: there is no separate "template source" to fall behind the re
 ```yaml
 project_name:      # str, default "FastAPI Template"
 project_slug:       # str, auto-derived from project_name (lowercased, hyphenated)
-project_description: # str, default "A production-ready FastAPI backend with async PostgreSQL, JWT auth, and clean architecture."
+project_description: # str, default "A production-ready FastAPI backend with async PostgreSQL and clean architecture."
 author_name:        # str, default "Eslam"
 author_email:        # str, default "eslam5464@users.noreply.github.com"
 github_username:     # str, default "eslam5464"
 python_version:      # str, default "3.14"; validator enforces >= 3.14 (PEP 758 syntax requirement)
 services:            # choice: "minimal" (default) or "custom"
+include_auth:        # bool, default false, asked only when services == custom
+include_example_items: # bool, default false, asked only when services == custom
+include_api_v2:      # bool, default false, asked only when services == custom
+include_csrf:        # bool, default false, asked only when services == custom
 include_redis_cache: # bool, default false, asked only when services == custom
 include_redis_rate_limit: # bool, default false, asked only when services == custom
-include_redis_token_blacklist: # bool, default false, asked only when services == custom
+include_redis_token_blacklist: # bool, default false, asked only when include_auth is true
 include_celery:      # bool, default false, asked only when services == custom
 include_firebase:    # bool, default false, asked only when services == custom
 include_firestore:   # bool, default false, asked only when include_firebase is true
@@ -60,7 +64,7 @@ _tasks:
      "--author-name", "{{ author_name }}", "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_example_items': include_example_items, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
 ```
 
 Invocation (from `README.md`):
@@ -159,11 +163,16 @@ work.
 
 ## ⚠️ Every optional service is decided at generation time
 
-Each optional service is an `include_*` question, and a declined service's code, tests,
+Each optional part is an `include_*` question (the services below; JWT authentication
+with the User model, `include_auth`; an example CRUD domain, `include_example_items`; the
+empty `/v2` API scaffold, `include_api_v2`; and
+the CSRF middleware, `include_csrf`), and a declined part's code, tests,
 settings, env vars, compose and CI entries, docs and dependencies are removed from the
 generated project: the Redis cache, rate limiting, the token blacklist, Celery,
 Firebase, Firestore, Google Cloud Storage, BackBlaze B2, Resend, Brevo, OpenObserve and
-Apple Pay. Redis is a computed feature: never asked, on when the cache, rate limiting,
+Apple Pay. The token blacklist needs authentication (its question is asked only with
+`include_auth`), and per-user rate limits and the Celery user-seeding task exist only
+with it. Redis is a computed feature: never asked, on when the cache, rate limiting,
 the token blacklist or Celery is chosen, and then it brings the `redis` dependency, the
 `REDIS_*` settings and the Redis service in compose and CI. A chosen service's packages
 are regular dependencies of the generated project; there are no `pyproject.toml` extras.

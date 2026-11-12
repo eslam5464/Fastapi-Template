@@ -1,5 +1,5 @@
 # --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
-# Copy of .github/workflows/ci.yml from eslam5464/Fastapi-Template, taken 2026-11-09,
+# Copy of .github/workflows/ci.yml from eslam5464/Fastapi-Template, taken 2026-11-11,
 # with every optional service included (a generated project only has the
 # services chosen for it). The real repo is the source of truth; this is a
 # fallback/reference copy for offline scaffolding and Extend/Audit-mode
@@ -115,7 +115,7 @@ jobs:
       - name: Configure environment
         run: |
           cp .env.example .env
-          # "dev" keeps CORS/docs/CSRF behaviour sane for the tests, matching what
+          # "dev" keeps the CORS, docs and middleware behaviour sane for the tests, matching what
           # local development runs with.
           # It also lets the tests use Redis: in LOCAL, BaseRedisClient.redis_client
           # always returns None (a guard for local dev without Redis running).

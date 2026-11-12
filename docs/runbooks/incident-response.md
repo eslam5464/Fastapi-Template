@@ -10,7 +10,7 @@
 
 1. Acknowledge incident and assign incident commander.
 2. Confirm service status via /health and recent logs.
-3. Identify blast radius (v1, v2, auth, database, and any optional service the project uses).
+3. Identify blast radius (API version, database, and any optional service the project uses).
 4. Stabilize first: rollback, scale, or disable risky paths.
 5. Communicate status updates every 15 minutes for Sev-1/Sev-2.
 
@@ -19,9 +19,12 @@
 | Failure | Signal | First Action |
 |---|---|---|
 | Database unavailable | /health failure, DB connection errors | Check DB connectivity and failover state |
-| Auth failures spike | Elevated 401/403 on v1 auth routes | Validate secret key and token expiry |
 | App startup failure | Process crash on boot | Inspect dependency health checks in app/main.py |
 
+<!-- --- FEATURE[auth] START --- -->
+**Auth failures spike** — signal: elevated 401/403 on the v1 auth routes. First action: validate the secret key and the token expiry settings.
+
+<!-- --- FEATURE[auth] END --- -->
 <!-- --- FEATURE[redis] START --- -->
 **Redis unavailable** — signal: cache, rate-limit or token-blacklist errors in the logs. First action: verify Redis availability; these services fail open, so degrade gracefully if possible (a token blacklist outage means logged-out tokens are accepted until Redis is back).
 <!-- --- FEATURE[redis] END --- -->

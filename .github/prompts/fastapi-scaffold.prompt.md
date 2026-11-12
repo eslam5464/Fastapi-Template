@@ -19,13 +19,16 @@ what the template actually generates.
    default, no optional services) or `custom`.
 3. With `services=custom`, each optional service is its own yes/no question (all
    default to no) and a declined service is stripped from the generated project:
-   `include_redis_cache`, `include_redis_rate_limit`, `include_redis_token_blacklist`,
+   `include_auth` (JWT auth with the User model), `include_example_items` (an example
+   CRUD domain), `include_api_v2` (an empty `/v2`
+   scaffold), `include_csrf` (the CSRF middleware), `include_redis_cache`,
+   `include_redis_rate_limit`, `include_redis_token_blacklist` (only with auth),
    `include_celery`, `include_firebase`, `include_firestore` (only with Firebase),
    `include_gcs`, `include_backblaze`, `include_resend`, `include_brevo`,
    `include_openobserve`, `include_apple_pay`. Redis is never asked: it is added when
    the cache, rate limiting, the token blacklist or Celery is chosen. Point out that
-   without rate limiting the auth routes have no request limits, and without the token
-   blacklist logout cannot revoke tokens.
+   without auth every route is public, without rate limiting no route has a request
+   limit, and without the token blacklist logout cannot revoke tokens.
 4. Run generation, passing each chosen service as `--data`:
    ```bash
    uv run copier copy <local-path> <target-dir> --trust      --data services=custom --data include_redis_cache=true

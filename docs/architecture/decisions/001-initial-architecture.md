@@ -13,7 +13,7 @@ The project needed a maintainable backend structure with clear boundaries for HT
 | Option | Pros | Cons |
 |---|---|---|
 | Single app with shared /docs and path-prefixed routers | Simpler startup wiring | Shared OpenAPI surface, harder per-version contract isolation |
-| Mounted FastAPI sub-apps per version (/v1, /v2) with root operational app | Isolated OpenAPI docs per version, cleaner rollout path | Slightly more composition complexity |
+| Mounted FastAPI sub-apps per version (/v1, then one per later version) with root operational app | Isolated OpenAPI docs per version, cleaner rollout path | Slightly more composition complexity |
 | Full microservices split by version | Strong isolation | Operational overhead too high for current team size |
 
 ## Decision
@@ -21,7 +21,7 @@ The project needed a maintainable backend structure with clear boundaries for HT
 Use a layered modular-monolith architecture and mount separate FastAPI sub-apps per API version.
 
 - Root app hosts operational endpoints (for example /health) and shared middleware.
-- v1 and v2 are mounted at /v1 and /v2.
+- Each API version is mounted at its own path, starting with /v1.
 - Each mounted app has independent /docs, /redoc, and /openapi.json paths.
 - Services remain framework-agnostic and repositories own persistence details.
 

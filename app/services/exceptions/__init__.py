@@ -1,7 +1,7 @@
-from .base import ServiceException
-from .auth import (
+from .base import (
     DuplicateResourceError,
     ResourceNotFoundError,
+    ServiceException,
     ValidationError,
 )
 

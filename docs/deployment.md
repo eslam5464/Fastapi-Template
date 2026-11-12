@@ -406,7 +406,7 @@ server {
 
     # Rate Limiting
     limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
-    limit_req_zone $binary_remote_addr zone=auth_limit:10m rate=5r/m;
+    limit_req_zone $binary_remote_addr zone=strict_limit:10m rate=5r/m;
 
     # Main Application
     location / {
@@ -424,9 +424,9 @@ server {
         proxy_read_timeout 60s;
     }
 
-    # Authentication Endpoints (Stricter Rate Limiting)
-    location /api/v1/auth/ {
-        limit_req zone=auth_limit burst=5 nodelay;
+    # Sensitive Endpoints (Stricter Rate Limiting): set the path of your login or admin routes
+    location /v1/sensitive/ {
+        limit_req zone=strict_limit burst=5 nodelay;
 
         proxy_pass http://127.0.0.1:8799;
         proxy_set_header Host $host;
@@ -601,9 +601,8 @@ server {
 
 ```sql
 -- Create indexes for frequently queried columns
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_created_at ON users(created_at);
+CREATE INDEX idx_orders_customer_id ON orders(customer_id);
+CREATE INDEX idx_orders_created_at ON orders(created_at);
 
 -- Configure PostgreSQL for performance
 -- In postgresql.conf:

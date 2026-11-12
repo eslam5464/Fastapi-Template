@@ -12,9 +12,11 @@
 | Name | Purpose |
 |---|---|
 | CURRENT_ENVIRONMENT | Runtime environment selector |
-| SECRET_KEY | JWT signing secret |
 | POSTGRES_* | Database connection settings |
 
+<!-- --- FEATURE[auth] START --- -->
+Also set `SECRET_KEY`, the secret that signs the JWT access and refresh tokens.
+<!-- --- FEATURE[auth] END --- -->
 <!-- --- FEATURE[redis] START --- -->
 Also set `REDIS_HOST`, `REDIS_PORT`, `REDIS_USER` and `REDIS_PASS` for the Redis-backed services.
 <!-- --- FEATURE[redis] END --- -->
@@ -31,7 +33,9 @@ Every optional service's variables are listed in `.env.example`.
 
 - GET /health -> 200
 - GET /v1/openapi.json (non-prd) -> 200
+<!-- --- FEATURE[api_v2] START --- -->
 - GET /v2/openapi.json (non-prd) -> 200
+<!-- --- FEATURE[api_v2] END --- -->
 
 ## Rollback
 

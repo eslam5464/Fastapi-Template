@@ -1,19 +1,19 @@
 # API Reference
 
-This document provides comprehensive information about the FastAPI Template API endpoints, authentication, and usage examples.
+This document provides comprehensive information about the FastAPI Template API endpoints and usage examples.
 
 ## Base URL
 
 - **Local Development**: `http://localhost:8799`
-- **API Base Path**: `/api/v1`
+- **API Base Path**: `/v1` (each API version is mounted at its own path)
 
 ## Interactive Documentation
 
 When running in development mode, you can access:
 
-- **Swagger UI**: `http://localhost:8799/docs`
-- **ReDoc**: `http://localhost:8799/redoc`
-- **OpenAPI Schema**: `http://localhost:8799/openapi.json`
+- **Swagger UI**: `http://localhost:8799/v1/docs`
+- **ReDoc**: `http://localhost:8799/v1/redoc`
+- **OpenAPI Schema**: `http://localhost:8799/v1/openapi.json`
 
 ## Available Services
 
@@ -21,11 +21,14 @@ This API template includes the following services:
 
 ### Core Services
 
+- **Health check** - `GET /health` reports the status of the service
+<!-- --- FEATURE[auth] START --- -->
 - **Authentication** - JWT-based user authentication
 <!-- --- FEATURE[redis_token_blacklist] START --- -->
 - **Token revocation** - logout puts the token on a Redis blacklist
 <!-- --- FEATURE[redis_token_blacklist] END --- -->
 - **User Management** - User registration and profile management
+<!-- --- FEATURE[auth] END --- -->
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - **Rate Limiting** - Redis-based sliding window rate limiting with microsecond precision
 <!-- --- FEATURE[redis_rate_limit] END --- -->
@@ -77,6 +80,7 @@ For integration examples:
 - [Apple Pay Integration](./integrations/apple-pay.md)
 <!-- --- FEATURE[apple_pay] END --- -->
 
+<!-- --- FEATURE[auth] START --- -->
 ## Authentication
 
 The API uses JWT (JSON Web Token) authentication with the following flow:
@@ -92,11 +96,14 @@ The API uses JWT (JSON Web Token) authentication with the following flow:
 - **Access Token**: Short-lived (1 hour by default), used for API requests
 - **Refresh Token**: Long-lived (24 hours by default), used to get new access tokens
 
+<!-- --- FEATURE[auth] END --- -->
+
 ## API Endpoints
 
+<!-- --- FEATURE[auth] START --- -->
 ### Authentication Endpoints
 
-#### POST /api/v1/auth/login
+#### POST /v1/auth/login
 
 Authenticate user and receive access tokens.
 
@@ -127,12 +134,12 @@ Authenticate user and receive access tokens.
 **Example Request**:
 
 ```bash
-curl -X POST "http://localhost:8799/api/v1/auth/login" \
+curl -X POST "http://localhost:8799/v1/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=johndoe&password=secretpassword"
 ```
 
-#### POST /api/v1/auth/signup
+#### POST /v1/auth/signup
 
 Register a new user and receive access tokens.
 
@@ -166,12 +173,12 @@ Register a new user and receive access tokens.
 **Example Request**:
 
 ```bash
-curl -X POST "http://localhost:8799/api/v1/auth/signup" \
+curl -X POST "http://localhost:8799/v1/auth/signup" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=johndoe&email=john@example.com&password=secretpassword&first_name=John&last_name=Doe"
 ```
 
-#### POST /api/v1/auth/refresh
+#### POST /v1/auth/refresh-token
 
 Get a new access token using a refresh token.
 
@@ -196,7 +203,7 @@ Get a new access token using a refresh token.
 
 - `401 Unauthorized`: Invalid or expired refresh token
 
-#### POST /api/v1/auth/logout
+#### POST /v1/auth/logout
 
 Log out. When token revocation is enabled, the access token is revoked and cannot be used again; otherwise it stays valid until it expires.
 
@@ -222,7 +229,7 @@ Authorization: Bearer <access_token>
 **Example Request**:
 
 ```bash
-curl -X POST "http://localhost:8799/api/v1/auth/logout" \
+curl -X POST "http://localhost:8799/v1/auth/logout" \
   -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 ```
 
@@ -230,6 +237,48 @@ curl -X POST "http://localhost:8799/api/v1/auth/logout" \
 <!-- --- FEATURE[redis_token_blacklist] START --- -->
 Revoked tokens are kept on a Redis blacklist until their natural expiration time ([integrations/token-revocation.md](integrations/token-revocation.md)).
 <!-- --- FEATURE[redis_token_blacklist] END --- -->
+
+<!-- --- FEATURE[auth] END --- -->
+
+<!-- --- FEATURE[example_items] START --- -->
+### Item Endpoints (example domain)
+
+| Method | Path | Result |
+| ------ | ---- | ------ |
+| GET | `/v1/items?skip=0&limit=50` | 200 with a page of items, oldest first |
+| POST | `/v1/items` | 201 with the new item; 409 if the name is taken |
+| GET | `/v1/items/{item_id}` | 200 with the item; 404 if it does not exist |
+| PATCH | `/v1/items/{item_id}` | 200 with the changed item; 404 or 409 |
+| DELETE | `/v1/items/{item_id}` | 204; 404 if it does not exist |
+
+**Request Body** (POST; PATCH takes the same fields, all optional):
+
+```json
+{
+  "name": "Blue widget",
+  "description": "Optional text",
+  "is_active": true
+}
+```
+
+**Response** (item):
+
+```json
+{
+  "id": 1,
+  "name": "Blue widget",
+  "description": "Optional text",
+  "is_active": true,
+  "created_at": "2025-01-19T10:30:00Z",
+  "updated_at": "2025-01-19T10:30:00Z"
+}
+```
+
+<!-- --- FEATURE[auth] START --- -->
+Every item route needs an `Authorization: Bearer <access_token>` header.
+
+<!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[example_items] END --- -->
 
 ### Health Endpoints
 
@@ -263,9 +312,10 @@ Check the health status of the API and its dependencies.
 curl -X GET "http://localhost:8799/health"
 ```
 
+<!-- --- FEATURE[auth] START --- -->
 ### User Endpoints
 
-#### GET /api/v1/users/me
+#### GET /v1/users/me
 
 Get current authenticated user information.
 
@@ -297,12 +347,15 @@ Authorization: Bearer <access_token>
 **Example Request**:
 
 ```bash
-curl -X GET "http://localhost:8799/api/v1/users/me" \
+curl -X GET "http://localhost:8799/v1/users/me" \
   -H "Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."
 ```
 
+<!-- --- FEATURE[auth] END --- -->
+
 ## Data Models
 
+<!-- --- FEATURE[auth] START --- -->
 ### User Model
 
 ```json
@@ -327,6 +380,8 @@ curl -X GET "http://localhost:8799/api/v1/users/me" \
 }
 ```
 
+<!-- --- FEATURE[auth] END --- -->
+
 ### Error Model
 
 ```json
@@ -337,6 +392,7 @@ curl -X GET "http://localhost:8799/api/v1/users/me" \
 }
 ```
 
+<!-- --- FEATURE[auth] START --- -->
 ## Authentication Implementation
 
 ### Using Access Tokens
@@ -363,6 +419,8 @@ The API includes security headers:
 - `WWW-Authenticate: Bearer` (for 401 responses)
 - CORS headers (configurable origins)
 - Security middleware headers
+
+<!-- --- FEATURE[auth] END --- -->
 
 ## Error Handling
 
@@ -417,8 +475,8 @@ Limits, response headers, the 429 response and configuration: see [integrations/
 The API uses URL path versioning:
 
 - Current version: `v1`
-- Base path: `/api/v1`
-- Future versions: `/api/v2`, etc.
+- Base path: `/v1`
+- Future versions: each one gets its own base path and its own docs
 
 ### Version Support
 
@@ -440,12 +498,13 @@ allow_headers: List[str] = ["*"]
 
 ## Request/Response Examples
 
+<!-- --- FEATURE[auth] START --- -->
 ### Complete Authentication Flow
 
 1. **Register a new user**:
 
     ```bash
-    curl -X POST "http://localhost:8799/api/v1/auth/signup" \
+    curl -X POST "http://localhost:8799/v1/auth/signup" \
       -H "Content-Type: application/x-www-form-urlencoded" \
       -d "username=testuser&email=test@example.com&password=testpass123&first_name=Test&last_name=User"
     ```
@@ -453,7 +512,7 @@ allow_headers: List[str] = ["*"]
 2. **Login with credentials**:
 
     ```bash
-    curl -X POST "http://localhost:8799/api/v1/auth/login" \
+    curl -X POST "http://localhost:8799/v1/auth/login" \
       -H "Content-Type: application/x-www-form-urlencoded" \
       -d "username=testuser&password=testpass123"
     ```
@@ -461,12 +520,15 @@ allow_headers: List[str] = ["*"]
 3. **Use access token**:
 
     ```bash
-    curl -X GET "http://localhost:8799/api/v1/users/me" \
+    curl -X GET "http://localhost:8799/v1/users/me" \
       -H "Authorization: Bearer <access_token_from_login>"
     ```
 
+<!-- --- FEATURE[auth] END --- -->
+
 ### Error Handling Examples
 
+<!-- --- FEATURE[auth] START --- -->
 **Invalid credentials**:
 
 ```json
@@ -476,6 +538,8 @@ allow_headers: List[str] = ["*"]
   "timestamp": "2025-01-19T10:30:00Z"
 }
 ```
+
+<!-- --- FEATURE[auth] END --- -->
 
 **Validation error**:
 
@@ -496,22 +560,28 @@ allow_headers: List[str] = ["*"]
 ### Using curl
 
 ```bash
-# Test health endpoint (if available)
+# Test the health endpoint
 curl -X GET "http://localhost:8799/health"
+```
 
-# Test authentication
-curl -X POST "http://localhost:8799/api/v1/auth/login" \
+<!-- --- FEATURE[auth] START --- -->
+Test authentication:
+
+```bash
+curl -X POST "http://localhost:8799/v1/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=testuser&password=testpass"
 ```
+<!-- --- FEATURE[auth] END --- -->
 
+<!-- --- FEATURE[auth] START --- -->
 ### Using Python requests
 
 ```python
 import requests
 
 # Base URL
-base_url = "http://localhost:8799/api/v1"
+base_url = "http://localhost:8799/v1"
 
 # Login
 response = requests.post(
@@ -533,7 +603,7 @@ user_data = user_response.json()
 
 ```javascript
 // Login
-const loginResponse = await fetch("/api/v1/auth/login", {
+const loginResponse = await fetch("/v1/auth/login", {
   method: "POST",
   headers: {
     "Content-Type": "application/x-www-form-urlencoded",
@@ -547,7 +617,7 @@ const loginResponse = await fetch("/api/v1/auth/login", {
 const tokens = await loginResponse.json();
 
 // Use access token
-const userResponse = await fetch("/api/v1/users/me", {
+const userResponse = await fetch("/v1/users/me", {
   headers: {
     Authorization: `Bearer ${tokens.access_token}`,
   },
@@ -555,6 +625,8 @@ const userResponse = await fetch("/api/v1/users/me", {
 
 const userData = await userResponse.json();
 ```
+
+<!-- --- FEATURE[auth] END --- -->
 
 ## Production Considerations
 
@@ -564,8 +636,10 @@ const userData = await userResponse.json();
 - Configure CORS origins properly
 - Implement rate limiting
 - Add request validation
+<!-- --- FEATURE[auth] START --- -->
 - Use secure secret keys
 - Implement token blacklisting
+<!-- --- FEATURE[auth] END --- -->
 
 ### Monitoring
 

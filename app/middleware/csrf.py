@@ -16,19 +16,24 @@ CSRF_HEADER_NAME = "X-CSRF-Token"
 # Safe HTTP methods that don't require CSRF protection
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS", "TRACE"}
 
-# Paths exempt from CSRF protection (auth endpoints using JWT)
+# Paths exempt from CSRF protection
 EXEMPT_PATHS = {
+    # --- FEATURE[auth] START ---
+    # The auth endpoints use bearer tokens, not cookies
     "/v1/auth/login",
     "/v1/auth/signup",
     "/v1/auth/refresh-token",
     "/v1/auth/logout",
+    # --- FEATURE[auth] END ---
     "/health",
     "/v1/docs",
     "/v1/redoc",
     "/v1/openapi.json",
+    # --- FEATURE[api_v2] START ---
     "/v2/docs",
     "/v2/redoc",
     "/v2/openapi.json",
+    # --- FEATURE[api_v2] END ---
 }
 
 
@@ -66,9 +71,11 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             "/v1/docs",
             "/v1/redoc",
             "/v1/openapi",
+            # --- FEATURE[api_v2] START ---
             "/v2/docs",
             "/v2/redoc",
             "/v2/openapi",
+            # --- FEATURE[api_v2] END ---
         )
         return any(path.startswith(prefix) for prefix in exempt_prefixes)
 

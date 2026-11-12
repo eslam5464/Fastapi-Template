@@ -193,7 +193,9 @@ class TestAppConfiguration:
         # Should have root health route and mounted versioned apps
         assert "/health" in routes
         assert "/v1" in routes
+        # --- FEATURE[api_v2] START ---
         assert "/v2" in routes
+        # --- FEATURE[api_v2] END ---
 
     def test_app_cors_configuration(self):
         """Test CORS middleware configuration."""
@@ -249,6 +251,7 @@ class TestAppEndpoints:
             response = await client.get(path)
             assert response.status_code == 200
 
+    # --- FEATURE[api_v2] START ---
     async def test_v2_docs_endpoints_are_available_in_allowed_envs(self, client):
         """Mounted v2 app should expose its own docs endpoints in allowed envs."""
         if app.openapi_url is None and Environment.LOCAL not in ALLOWED_ENVIRONMENTS:
@@ -258,6 +261,8 @@ class TestAppEndpoints:
         for path in docs_paths:
             response = await client.get(path)
             assert response.status_code == 200
+
+    # --- FEATURE[api_v2] END ---
 
 
 @pytest.mark.anyio

@@ -23,7 +23,7 @@ service the project was generated without means porting its files from the templ
 | Email | `include_resend`, `include_brevo` | `app/services/email/{base,resend,brevo}.py` | Not usable until an API key is set; no silent fallback |
 | Cache, rate limiting, token blacklist (Redis) | `include_redis_cache`, `include_redis_rate_limit`, `include_redis_token_blacklist` (Redis is computed from them and Celery) | `app/services/cache/{base,manager,decorators,rate_limiter,token_blacklist}.py` | Fails open / no-op in `LOCAL` |
 | Firebase, Firestore, GCS, BackBlaze | `include_firebase`, `include_firestore`, `include_gcs`, `include_backblaze` | `app/services/{firebase,firestore,gcs,back_blaze_b2}.py` | Not usable until credentials are set |
-| Task queue | `include_celery` | `app/services/task_queue/{celery_config.py, tasks/user_tasks.py}` | Inert unless a worker/beat process is actually started |
+| Task queue | `include_celery` | `app/services/task_queue/{celery_config.py, tasks/health_tasks.py}` (plus `tasks/user_tasks.py` with auth) | Inert unless a worker/beat process is actually started |
 | Log shipping | `include_openobserve` | `app/core/openobserve.py` | Off until `LOG_TO_OPENOBSERVE=true` |
 | Apple Pay | `include_apple_pay` | `app/services/payments/apple_pay.py` | Not usable until credentials are set |
 
@@ -97,11 +97,12 @@ closed on shutdown.
 ## Task queue / background jobs (`include_celery` Copier toggle, Celery + Redis)
 
 Included only when the project is generated with `include_celery`; it then gets
-`celery[redis]`, `psycopg` and `faker` as core dependencies, the worker/beat scripts
+`celery[redis]` and `psycopg` as core dependencies (plus `faker` with auth), the worker/beat scripts
 and `app/core/db_sync.py` (guide: `docs/integrations/celery.md`).
 
 `app/services/task_queue/celery_config.py` defines a `beat_schedule` dict typed with a
-`CeleryTaskSettings` `TypedDict`. The one sample scheduled task,
+`CeleryTaskSettings` `TypedDict`, empty by default; `tasks/health_tasks.py` has a `ping`
+task for checking that a worker runs. In projects with auth, the sample scheduled task
 `seed_fake_users_task` (`app/services/task_queue/tasks/user_tasks.py`), runs every 10
 seconds when `ENABLE_DATA_SEEDING=true`, using the **sync** session factory
 (`session_factory` from `app/core/db_sync.py` — Celery workers are sync, not async) to bulk

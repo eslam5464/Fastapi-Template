@@ -122,7 +122,7 @@ class TestSecurityHeadersMiddleware:
         middleware = SecurityHeadersMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "GET"
-        request.url = MagicMock(path="/v1/users/me")
+        request.url = MagicMock(path="/v1/reports/1")
 
         response = MagicMock(spec=_StreamingResponse)
         response.status_code = 200
@@ -169,7 +169,7 @@ class TestSecurityHeadersMiddleware:
         middleware = SecurityHeadersMiddleware(MagicMock())
         request = MagicMock(spec=Request)
         request.method = "GET"
-        request.url = MagicMock(path="/v1/users/me")
+        request.url = MagicMock(path="/v1/reports/1")
 
         response = MagicMock(spec=_StreamingResponse)
         response.status_code = 200

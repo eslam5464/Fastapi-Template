@@ -5,8 +5,13 @@ Full reference for what's built into this project: what each feature does, which
 ## 📋 Quick Reference
 
 - 🚀 [Core](#-core) — FastAPI, Postgres, Alembic, logging, docs (always included)
+<!-- --- FEATURE[auth] START --- -->
 - 🔐 [Authentication](#-authentication) — JWT, Argon2
-- 🔒 [Security middleware](#-security-middleware) — CSRF, security headers
+<!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[example_items] START --- -->
+- 📦 [Example domain: Items](#-example-domain-items) — a complete CRUD slice to copy from
+<!-- --- FEATURE[example_items] END --- -->
+- 🔒 [Security middleware](#-security-middleware) — security headers and the other request middleware
 <!-- --- FEATURE[redis_cache] START --- -->
 - ⚡ [Caching](#-caching) — Redis cache
 <!-- --- FEATURE[redis_cache] END --- -->
@@ -45,7 +50,10 @@ Optional services are chosen when the project is generated (Copier's `services=c
 
 *Always included.*
 
-- **FastAPI** — async web framework. Versioned routers mounted at `/v1` and `/v2` (`app/api/v1/`, `app/api/v2/`), each with its own interactive docs (`/v1/docs`, `/v2/docs`).
+- **FastAPI** — async web framework. Each API version is its own mounted app with its own interactive docs: `app/api/v1/` at `/v1` (`/v1/docs`).
+<!-- --- FEATURE[api_v2] START --- -->
+- **Second API version** — an empty scaffold in `app/api/v2/`, mounted at `/v2` with its own docs (`/v2/docs`).
+<!-- --- FEATURE[api_v2] END --- -->
 - **Async PostgreSQL** — SQLAlchemy 2.0 async engine (`asyncpg`) for the app, configured in `app/core/db.py` from `settings.db_url`.
 <!-- --- FEATURE[celery] START --- -->
 - **Sync engine for Celery** — `psycopg` engine and `session_factory` in `app/core/db_sync.py`, from `settings.db_url_sync`.
@@ -58,22 +66,57 @@ Optional services are chosen when the project is generated (Copier's `services=c
 <!-- --- FEATURE[openobserve] END --- -->
 - **Automatic API documentation** — Swagger UI and ReDoc, generated per API version.
 
+<!-- --- FEATURE[auth] START --- -->
 ## 🔐 Authentication
 
-- **JWT-based auth** — access + refresh tokens, implemented in `app/services/auth_service.py`. Password hashing via Argon2 (`pwdlib`).
+- **JWT-based auth** — access + refresh tokens, implemented in `app/services/auth_service.py`. Password hashing via Argon2 (`pwdlib`). Guide: [integrations/auth.md](integrations/auth.md).
 <!-- --- FEATURE[redis_token_blacklist] START --- -->
 - **Token blacklisting** — logout revokes the token, backed by Redis (`app/services/cache/token_blacklist.py`). Guide: [integrations/token-revocation.md](integrations/token-revocation.md).
 <!-- --- FEATURE[redis_token_blacklist] END --- -->
 <!-- --- FEATURE[!redis_token_blacklist] START --- -->
 - **Logout** — logout returns `revoked: false` and the access token stays valid until it expires (no token blacklist).
 <!-- --- FEATURE[!redis_token_blacklist] END --- -->
-- **Protected routes** — dependency-injected via `app/api/v1/deps/` / `app/api/v2/deps/`.
+- **Protected routes** — dependency-injected via `app/api/v1/deps/`.
+
+<!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[!auth] START --- -->
+## 🔓 No authentication
+
+This project was generated without the authentication service: it has no User model, no login and no protected routes, so every endpoint is public. Add your own access checks before exposing data that is not public.
+
+<!-- --- FEATURE[!auth] END --- -->
+
+<!-- --- FEATURE[example_items] START --- -->
+## 📦 Example domain: Items
+
+A small, complete CRUD slice that shows how the layers fit together. Copy it for your own domain, or delete it.
+
+- **Model:** `app/models/item.py` (`Item`: `name`, unique; `description`; `is_active`), created by the first Alembic revision.
+- **Schemas:** `app/schemas/item.py` (`ItemCreate`, `ItemUpdate`, `ItemResponse`).
+- **Repository:** `app/repos/item.py` (`ItemRepo`, on top of `BaseRepository`).
+- **Service:** `app/services/item_service.py` (`ItemService`): the business rules, raising service exceptions.
+- **API:** `app/api/v1/endpoints/items.py`, wired through `app/api/v1/deps/items.py`: list, read, create, update and delete under `/v1/items`.
+<!-- --- FEATURE[auth] START --- -->
+- **Access:** every `/v1/items` route needs a logged-in user (a router-level `get_current_user` dependency).
+<!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[!auth] START --- -->
+- **Access:** the `/v1/items` routes are public, because this project has no authentication.
+<!-- --- FEATURE[!auth] END --- -->
+- **Tests:** `tests/services/item_service_test.py` and `tests/api/v1/endpoints/items_test.py`.
+- **Guide:** [guides/example-items.md](guides/example-items.md) — how a request flows through it, and how to turn it into your own domain.
+
+<!-- --- FEATURE[example_items] END --- -->
 
 ## 🔒 Security middleware
 
 All in `app/middleware/`:
 
-- **CSRF protection** (`csrf.py`)
+<!-- --- FEATURE[csrf] START --- -->
+- **CSRF protection** (`csrf.py`) — double-submit cookie check (`X-CSRF-Token` header against the `csrf_token` cookie) on state-changing requests.
+<!-- --- FEATURE[csrf] END --- -->
+<!-- --- FEATURE[!csrf] START --- -->
+- **No cross-site request forgery check** — this project was generated without that middleware. Add one before you authenticate browser clients with cookies.
+<!-- --- FEATURE[!csrf] END --- -->
 - **Security headers** (`security_headers.py`)
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - **Rate limiting** (`rate_limit.py`) — sliding-window algorithm with microsecond precision, Redis-backed. Guide: [integrations/rate-limiting.md](integrations/rate-limiting.md).
@@ -92,7 +135,10 @@ All in `app/middleware/`:
 ## ⚙️ Background jobs / task queue
 
 - **Module:** `app/services/task_queue/`. Guide: [integrations/celery.md](integrations/celery.md).
-- **Celery** with Redis as the broker. Includes a sample scheduled task (`seed_fake_users`, runs every 10s when `ENABLE_DATA_SEEDING=true`).
+- **Celery** with Redis as the broker, and a `ping` task to check that a worker is running.
+<!-- --- FEATURE[auth] START --- -->
+- **Sample scheduled task:** `seed_fake_users` inserts fake users every 10s when `ENABLE_DATA_SEEDING=true`.
+<!-- --- FEATURE[auth] END --- -->
 - **Included** when the project is generated with `include_celery`; `celery[redis]` and `psycopg` are then regular dependencies.
 - **Start a worker:** `./scripts/celery_worker.sh` (or `.bat`) — or directly: `celery -A app.services.task_queue worker --loglevel=info --pool=solo`
 - **Start the scheduler:** `./scripts/celery_beat.sh` (or `.bat`) — or directly: `celery -A app.services.task_queue beat --loglevel=info`

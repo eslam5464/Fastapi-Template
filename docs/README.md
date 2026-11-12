@@ -14,7 +14,9 @@ Learn about the clean architecture principles, layer organization, and design pa
 - Dependency injection
 - Layer architecture (API, Core, Models, Schemas, Repositories)
 - Data flow and request handling
+<!-- --- FEATURE[auth] START --- -->
 - Authentication & authorization architecture
+<!-- --- FEATURE[auth] END --- -->
 - Database and migration strategy
 - Error handling and middleware
 - Logging architecture (multi-worker safe, distributed tracing, centralized aggregation)
@@ -56,7 +58,16 @@ Complete guide for local development environment setup and daily development tas
 <!-- --- FEATURE[apple_pay] START --- -->
 - Apple Pay (App Store Server API) integration guide ([integrations/apple-pay.md](integrations/apple-pay.md))
 <!-- --- FEATURE[apple_pay] END --- -->
-- Security middleware (CSRF, security headers)
+- Security middleware (security headers)
+<!-- --- FEATURE[csrf] START --- -->
+- CSRF protection middleware
+<!-- --- FEATURE[csrf] END --- -->
+<!-- --- FEATURE[auth] START --- -->
+- Authentication guide ([integrations/auth.md](integrations/auth.md))
+<!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[example_items] START --- -->
+- Example Items domain guide ([guides/example-items.md](guides/example-items.md))
+<!-- --- FEATURE[example_items] END --- -->
 <!-- --- FEATURE[redis_token_blacklist] START --- -->
 - Token blacklisting and logout ([integrations/token-revocation.md](integrations/token-revocation.md))
 <!-- --- FEATURE[redis_token_blacklist] END --- -->
@@ -76,12 +87,16 @@ Complete guide for local development environment setup and daily development tas
 
 Comprehensive API documentation including all endpoints, request/response formats, and examples:
 
+<!-- --- FEATURE[auth] START --- -->
 - Authentication flow (login, signup, refresh tokens, logout)
 - User management endpoints
+<!-- --- FEATURE[auth] END --- -->
 - Health check endpoint
 - Request/response schemas
 - Error handling and status codes
+<!-- --- FEATURE[auth] START --- -->
 - Authentication implementation
+<!-- --- FEATURE[auth] END --- -->
 - CORS configuration
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - Rate limiting (implemented with Redis sliding window)
@@ -130,7 +145,6 @@ Production deployment strategies, configuration, and monitoring:
 | Create database migrations      | [Development > Database Management](./development.md#database-management)           |
 | Run tests                       | [Development > Testing](./development.md#testing)                                   |
 | Add new endpoints               | [Architecture > API Layer](./architecture.md#1-api-layer-appapi)                    |
-| Authenticate API requests       | [API > Authentication](./api.md#authentication)                                     |
 | Deploy with Docker              | [Deployment > Docker Deployment](./deployment.md#docker-deployment)                 |
 | Configure environment variables | [Deployment > Environment Configuration](./deployment.md#environment-configuration) |
 | Set up monitoring               | [Deployment > Monitoring](./deployment.md#monitoring)                               |
@@ -146,8 +160,10 @@ This template is built with:
 - **PostgreSQL** - Primary database
 - **Alembic** - Database migrations
 - **Pydantic** - Data validation
+<!-- --- FEATURE[auth] START --- -->
 - **JWT** - Authentication
 - **pwdlib** - Password hashing with Argon2
+<!-- --- FEATURE[auth] END --- -->
 - **Loguru** - Structured logging with centralized aggregation
 <!-- --- FEATURE[redis] START --- -->
 - **Redis** - Backs the Redis-based services this project uses

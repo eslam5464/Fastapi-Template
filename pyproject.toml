@@ -23,10 +23,12 @@ dependencies = [
     # --- FEATURE[brevo] START ---
     "brevo-python>=5.0.2",
     # --- FEATURE[brevo] END ---
+    # --- FEATURE[auth|firebase] START ---
     "email-validator>=2.3.0",
-    # --- FEATURE[celery] START ---
+    # --- FEATURE[auth|firebase] END ---
+    # --- FEATURE[celery&auth] START ---
     "faker>=40.36.0",
-    # --- FEATURE[celery] END ---
+    # --- FEATURE[celery&auth] END ---
     "fastapi>=0.116.2",
     # --- FEATURE[firebase] START ---
     "firebase-admin>=7.1.0",
@@ -44,11 +46,15 @@ dependencies = [
     "psycopg[binary]>=3.3.4 ; sys_platform == 'win32'",
     "psycopg>=3.3.2 ; sys_platform != 'win32'",
     # --- FEATURE[celery] END ---
+    # --- FEATURE[auth] START ---
     "pwdlib[argon2]>=0.3.0",
+    # --- FEATURE[auth] END ---
     "pydantic>=2.11.9",
     "pydantic-settings>=2.10.1",
+    # --- FEATURE[auth] START ---
     "python-jose>=3.5.0",
     "python-multipart>=0.0.20",
+    # --- FEATURE[auth] END ---
     # --- FEATURE[redis] START ---
     "redis>=7.1.0",
     # --- FEATURE[redis] END ---
@@ -175,7 +181,9 @@ module = [
     # --- FEATURE[firestore] START ---
     "google.cloud.firestore.*",
     # --- FEATURE[firestore] END ---
+    # --- FEATURE[auth] START ---
     "jose.*",
+    # --- FEATURE[auth] END ---
     # --- FEATURE[celery] START ---
     "celery.*",
     # --- FEATURE[celery] END ---
