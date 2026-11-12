@@ -89,11 +89,9 @@ closed on shutdown.
   raw key string or a file-path-based key and auto-escapes `\n` → `\\n` for a PEM key
   embedded directly in an env var). Guides: `docs/integrations/firebase.md` and
   `docs/integrations/firestore.md`.
-- Each has its own exception module under `app/core/exceptions/` (`gcs_exceptions.py`,
-  `back_blaze_exceptions.py`, `firebase_exceptions.py`) — note these live in `app/core/`
-  rather than `app/services/exceptions/`, a documented deviation from the strict-profile
-  domain-exception placement (same category of deviation as the `AppException`
-  compatibility shim — see [layering-and-flow.md](layering-and-flow.md)).
+Shared base and HTTP exceptions live in `app/core/exceptions/`; service-specific exceptions
+live in `app/services/exceptions/` (`gcs.py`, `backblaze.py`, `firebase.py`, `apple_pay.py`,
+`rate_limiter.py`).
 
 ## Task queue / background jobs (`include_celery` Copier toggle, Celery + Redis)
 

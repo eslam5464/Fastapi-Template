@@ -166,6 +166,28 @@ disallow_untyped_defs = false
 disallow_incomplete_defs = false
 # --- FEATURE[firebase|gcs|backblaze|apple_pay] END ---
 
+# Service-specific exception modules retain their existing untyped constructors.
+[[tool.mypy.overrides]]
+module = [
+    # --- FEATURE[firebase] START ---
+    "app.services.exceptions.firebase",
+    # --- FEATURE[firebase] END ---
+    # --- FEATURE[gcs] START ---
+    "app.services.exceptions.gcs",
+    # --- FEATURE[gcs] END ---
+    # --- FEATURE[backblaze] START ---
+    "app.services.exceptions.backblaze",
+    # --- FEATURE[backblaze] END ---
+    # --- FEATURE[apple_pay] START ---
+    "app.services.exceptions.apple_pay",
+    # --- FEATURE[apple_pay] END ---
+    # --- FEATURE[redis_rate_limit] START ---
+    "app.services.exceptions.rate_limiter",
+    # --- FEATURE[redis_rate_limit] END ---
+]
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+
 # Third-party packages with missing/incomplete type stubs.
 [[tool.mypy.overrides]]
 module = [

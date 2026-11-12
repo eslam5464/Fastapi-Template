@@ -9,7 +9,7 @@ from google.cloud.firestore import AsyncClient
 from loguru import logger
 
 from app.core.credentials.firebase import FirebaseServiceAccount
-from app.core.exceptions.firebase_exceptions import (
+from app.services.exceptions.firebase import (
     FirebaseDocumentNotFoundError,
 )
 

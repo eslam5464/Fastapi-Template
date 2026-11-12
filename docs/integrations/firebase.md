@@ -5,7 +5,7 @@
 ID token verification, custom tokens and push notifications (FCM). Credentials are
 modeled by `FirebaseServiceAccount` in `app/core/credentials/firebase.py`, the token
 schemas live in `app/schemas/firebase.py`, and the exceptions in
-`app/core/exceptions/firebase_exceptions.py`.
+`app/services/exceptions/firebase.py`.
 
 The integration is included when the project is generated with
 `--data services=custom --data include_firebase=true` (or by answering "yes" to the

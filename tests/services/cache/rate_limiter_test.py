@@ -2,8 +2,8 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from app.core.exceptions.rate_limiter import RateLimitConfigurationError
 from app.services.cache.rate_limiter import RateLimiter
+from app.services.exceptions.rate_limiter import RateLimitConfigurationError
 
 
 class TestRateLimiterConfiguration:

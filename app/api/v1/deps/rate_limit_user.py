@@ -11,11 +11,10 @@ from fastapi import Depends, Request
 from app.api.v1.deps.auth import get_current_user
 from app.api.v1.deps.rate_limit import create_rate_limit_ip_only
 from app.core.config import settings
-from app.core.constants import RateLimitPrefix
 from app.core.exceptions.http_exceptions import TooManyRequestsException
 from app.core.utils import get_client_ip
 from app.models.user import User
-from app.services.cache.rate_limiter import rate_limiter
+from app.services.cache.rate_limiter import RateLimitPrefix, rate_limiter
 
 
 async def rate_limit_user(

@@ -122,7 +122,7 @@ def _assert_full_project(dst: Path) -> None:
 
 def _assert_minimal_base(dst: Path) -> None:
     assert not (dst / "app" / "services" / "payments").exists()
-    assert not (dst / "app" / "core" / "exceptions" / "apple_pay.py").exists()
+    assert not (dst / "app" / "services" / "exceptions" / "apple_pay.py").exists()
     assert not (dst / "app" / "core" / "credentials" / "apple_pay.py").exists()
     assert not (dst / "tests" / "services" / "payments").exists()
     assert not (dst / "tests" / "apple_pay_credentials.py").exists()
@@ -175,7 +175,7 @@ def test_bake_with_apple_pay(tmp_path: Path):
 
     assert (dst / "app" / "services" / "payments" / "apple_pay.py").is_file()
     assert (dst / "app" / "core" / "credentials" / "apple_pay.py").is_file()
-    assert (dst / "app" / "core" / "exceptions" / "apple_pay.py").is_file()
+    assert (dst / "app" / "services" / "exceptions" / "apple_pay.py").is_file()
     assert (dst / "tests" / "apple_pay_credentials.py").is_file()
     assert "app-store-server-library" in (dst / "pyproject.toml").read_text()
     _assert_no_leftover_jinja(dst)

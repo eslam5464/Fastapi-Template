@@ -13,7 +13,7 @@ from appstoreserverlibrary.models.ExtendReasonCode import ExtendReasonCode
 from faker import Faker
 
 from app.core.credentials.apple_pay import ApplePayStoreCredentials
-from app.core.exceptions.apple_pay import (
+from app.services.exceptions.apple_pay import (
     AppStoreConnectionAbortedException,
     AppStoreNotFoundException,
     AppStoreValidationException,

@@ -3,7 +3,7 @@
 `app/services/firestore.py` provides `Firestore`, an async document-store client built on
 the Firebase Admin SDK (`firebase_admin.firestore_async`). It uses the same service
 account as [Firebase](firebase.md); its errors are `FirebaseFirestoreError` and
-`FirebaseDocumentNotFoundError` in `app/core/exceptions/firebase_exceptions.py`.
+`FirebaseDocumentNotFoundError` in `app/services/exceptions/firebase.py`.
 
 Firestore can only be included together with Firebase: generate the project with
 `--data services=custom --data include_firebase=true --data include_firestore=true` (the
@@ -19,7 +19,7 @@ Firestore database in the same Firebase project (Firebase Console → Firestore 
 
 ```python
 from app.core.config import settings
-from app.core.exceptions.firebase_exceptions import FirebaseDocumentNotFoundError
+from app.services.exceptions.firebase import FirebaseDocumentNotFoundError
 from app.services.firestore import Firestore
 
 firestore = Firestore(settings.firebase_credentials)
@@ -44,7 +44,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, HTTPException
 
 from app.core.config import settings
-from app.core.exceptions.firebase_exceptions import FirebaseDocumentNotFoundError
+from app.services.exceptions.firebase import FirebaseDocumentNotFoundError
 from app.services.firestore import Firestore
 
 router = APIRouter()

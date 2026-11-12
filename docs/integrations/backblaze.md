@@ -2,7 +2,7 @@
 
 `app/services/back_blaze_b2.py` wraps the [b2sdk](https://github.com/Backblaze/b2-sdk-python)
 client for bucket management and file operations. Its exceptions live in
-`app/core/exceptions/back_blaze_exceptions.py` and its schemas (`ApplicationData`,
+`app/services/exceptions/backblaze.py` and its schemas (`ApplicationData`,
 `FileDownloadLink`, `UploadedFileInfo`) in `app/schemas/back_blaze_bucket.py`.
 
 The integration is included when the project is generated with
@@ -71,7 +71,7 @@ await b2_client.delete_selected_bucket()
 - **Metadata**: custom file information with `UploadedFileInfo`
 - **Errors**: failures raise a subclass of `BlackBlazeError` (`B2AuthorizationError`,
   `B2BucketNotFoundError`, `B2BucketNotSelectedError`, `B2BucketOperationError`,
-  `B2FileOperationError`) from `app.core.exceptions.back_blaze_exceptions`, with the cause logged
+  `B2FileOperationError`) from `app.services.exceptions.backblaze`, with the cause logged
 
 ### Bucket types
 
