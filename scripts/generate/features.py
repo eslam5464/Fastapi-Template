@@ -294,7 +294,6 @@ PATHS: dict[str, str] = {
     "scripts/celery_worker.sh": "celery",
     "scripts/celery_worker.bat": "celery",
     "docs/integrations/celery.md": "celery",
-    "app/core/openobserve.py": "openobserve",
     "tests/core/openobserve_test.py": "openobserve",
     "docs/integrations/openobserve.md": "openobserve",
     "app/services/email/": "resend|brevo",

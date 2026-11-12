@@ -119,7 +119,7 @@ Optional files in this project:
   - `app/services/email/brevo.py` — Brevo provider
 <!-- --- FEATURE[brevo] END --- -->
 <!-- --- FEATURE[openobserve] START --- -->
-- `app/core/openobserve.py` — OpenObserve log shipping ([guide](integrations/openobserve.md))
+- `app/core/logger.py` — OpenObserve log shipping ([guide](integrations/openobserve.md))
 <!-- --- FEATURE[openobserve] END --- -->
 <!-- --- FEATURE[apple_pay] START --- -->
 - `app/services/payments/apple_pay.py`, `app/core/credentials/apple_pay.py`, `app/services/exceptions/apple_pay.py` — Apple Pay ([guide](integrations/apple-pay.md))
