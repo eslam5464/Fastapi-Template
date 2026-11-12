@@ -7,15 +7,15 @@ from b2sdk.v2.exception import NonExistentBucket
 from faker import Faker
 from pydantic import AnyUrl
 
-from app.core.exceptions.back_blaze_exceptions import (
+from app.schemas import ApplicationData, UploadedFileInfo
+from app.services.back_blaze_b2 import B2BucketTypeEnum, BackBlaze
+from app.services.exceptions.backblaze import (
     B2AuthorizationError,
     B2BucketNotFoundError,
     B2BucketNotSelectedError,
     B2BucketOperationError,
     B2FileOperationError,
 )
-from app.schemas import ApplicationData, UploadedFileInfo
-from app.services.back_blaze_b2 import B2BucketTypeEnum, BackBlaze
 
 
 class TestBackBlazeInitialization:

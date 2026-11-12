@@ -13,13 +13,13 @@ from gcloud.aio.storage import Bucket, Storage
 from loguru import logger
 from pydantic import HttpUrl, ValidationError
 
-from app.core.exceptions.gcs_exceptions import (
-    GCSError,
-)
 from app.schemas import (
     BucketFile,
     BucketFolder,
     ServiceAccount,
+)
+from app.services.exceptions.gcs import (
+    GCSError,
 )
 
 

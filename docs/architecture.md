@@ -89,7 +89,7 @@ Optional files in this project:
 - `app/services/cache/manager.py`, `decorators.py` — Redis cache ([guide](integrations/caching.md))
 <!-- --- FEATURE[redis_cache] END --- -->
 <!-- --- FEATURE[redis_rate_limit] START --- -->
-- `app/services/cache/rate_limiter.py`, `app/api/v1/deps/rate_limit.py`, `app/middleware/rate_limit.py`, `app/core/exceptions/rate_limiter.py`, `app/core/types.py` — rate limiting ([guide](integrations/rate-limiting.md))
+- `app/services/cache/rate_limiter.py`, `app/api/v1/deps/rate_limit.py`, `app/middleware/rate_limit.py`, `app/services/exceptions/rate_limiter.py`, `app/core/types.py` — rate limiting ([guide](integrations/rate-limiting.md))
 <!-- --- FEATURE[redis_rate_limit] END --- -->
 <!-- --- FEATURE[redis_token_blacklist] START --- -->
 - `app/services/cache/token_blacklist.py` — token revocation ([guide](integrations/token-revocation.md))
@@ -98,16 +98,16 @@ Optional files in this project:
 - `app/services/task_queue/` (`celery_config.py`, `tasks/`), `app/core/db_sync.py` — Celery background jobs ([guide](integrations/celery.md))
 <!-- --- FEATURE[celery] END --- -->
 <!-- --- FEATURE[firebase] START --- -->
-- `app/services/firebase.py`, `app/schemas/firebase.py`, `app/core/credentials/firebase.py`, `app/core/exceptions/firebase_exceptions.py` — Firebase ([guide](integrations/firebase.md))
+- `app/services/firebase.py`, `app/schemas/firebase.py`, `app/core/credentials/firebase.py`, `app/services/exceptions/firebase.py` — Firebase ([guide](integrations/firebase.md))
 <!-- --- FEATURE[firebase] END --- -->
 <!-- --- FEATURE[firestore] START --- -->
 - `app/services/firestore.py` — Firestore ([guide](integrations/firestore.md))
 <!-- --- FEATURE[firestore] END --- -->
 <!-- --- FEATURE[gcs] START --- -->
-- `app/services/gcs.py`, `app/schemas/google_bucket.py`, `app/core/exceptions/gcs_exceptions.py` — Google Cloud Storage ([guide](integrations/gcs.md))
+- `app/services/gcs.py`, `app/schemas/google_bucket.py`, `app/services/exceptions/gcs.py` — Google Cloud Storage ([guide](integrations/gcs.md))
 <!-- --- FEATURE[gcs] END --- -->
 <!-- --- FEATURE[backblaze] START --- -->
-- `app/services/back_blaze_b2.py`, `app/schemas/back_blaze_bucket.py`, `app/core/exceptions/back_blaze_exceptions.py` — BackBlaze B2 ([guide](integrations/backblaze.md))
+- `app/services/back_blaze_b2.py`, `app/schemas/back_blaze_bucket.py`, `app/services/exceptions/backblaze.py` — BackBlaze B2 ([guide](integrations/backblaze.md))
 <!-- --- FEATURE[backblaze] END --- -->
 <!-- --- FEATURE[resend|brevo] START --- -->
 - `app/services/email/` (`base.py`, `static/` templates), `app/services/types/email.py`, `app/services/exceptions/email.py` — email ([guide](integrations/email.md))
@@ -122,7 +122,7 @@ Optional files in this project:
 - `app/core/openobserve.py` — OpenObserve log shipping ([guide](integrations/openobserve.md))
 <!-- --- FEATURE[openobserve] END --- -->
 <!-- --- FEATURE[apple_pay] START --- -->
-- `app/services/payments/apple_pay.py`, `app/core/credentials/apple_pay.py`, `app/core/exceptions/apple_pay.py` — Apple Pay ([guide](integrations/apple-pay.md))
+- `app/services/payments/apple_pay.py`, `app/core/credentials/apple_pay.py`, `app/services/exceptions/apple_pay.py` — Apple Pay ([guide](integrations/apple-pay.md))
 <!-- --- FEATURE[apple_pay] END --- -->
 
 ## Layer Architecture
