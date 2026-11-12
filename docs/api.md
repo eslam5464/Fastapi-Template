@@ -240,6 +240,46 @@ Revoked tokens are kept on a Redis blacklist until their natural expiration time
 
 <!-- --- FEATURE[auth] END --- -->
 
+<!-- --- FEATURE[example_items] START --- -->
+### Item Endpoints (example domain)
+
+| Method | Path | Result |
+| ------ | ---- | ------ |
+| GET | `/v1/items?skip=0&limit=50` | 200 with a page of items, oldest first |
+| POST | `/v1/items` | 201 with the new item; 409 if the name is taken |
+| GET | `/v1/items/{item_id}` | 200 with the item; 404 if it does not exist |
+| PATCH | `/v1/items/{item_id}` | 200 with the changed item; 404 or 409 |
+| DELETE | `/v1/items/{item_id}` | 204; 404 if it does not exist |
+
+**Request Body** (POST; PATCH takes the same fields, all optional):
+
+```json
+{
+  "name": "Blue widget",
+  "description": "Optional text",
+  "is_active": true
+}
+```
+
+**Response** (item):
+
+```json
+{
+  "id": 1,
+  "name": "Blue widget",
+  "description": "Optional text",
+  "is_active": true,
+  "created_at": "2025-01-19T10:30:00Z",
+  "updated_at": "2025-01-19T10:30:00Z"
+}
+```
+
+<!-- --- FEATURE[auth] START --- -->
+Every item route needs an `Authorization: Bearer <access_token>` header.
+
+<!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[example_items] END --- -->
+
 ### Health Endpoints
 
 #### GET /health

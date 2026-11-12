@@ -38,6 +38,17 @@ Root /docs, /redoc, and /openapi.json are intentionally disabled.
 
 <!-- --- FEATURE[auth] END --- -->
 
+<!-- --- FEATURE[example_items] START --- -->
+## Item Endpoints (v1, example domain)
+
+- GET /v1/items
+- POST /v1/items
+- GET /v1/items/{item_id}
+- PATCH /v1/items/{item_id}
+- DELETE /v1/items/{item_id}
+
+<!-- --- FEATURE[example_items] END --- -->
+
 ## Health Endpoint
 
 - GET /health

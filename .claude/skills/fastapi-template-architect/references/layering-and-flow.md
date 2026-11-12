@@ -124,6 +124,17 @@ async def process_resource(
 No function docstring on the endpoint — its documentation lives in `summary`,
 `description`, and `responses`, per the Google-docstring standard's one exception.
 
+## A worked example in the code: Items
+
+Projects generated with `include_example_items` have a small, complete slice to pattern-match
+against: `app/models/item.py`, `app/schemas/item.py`, `app/repos/item.py`,
+`app/services/item_service.py`, `app/api/v1/deps/items.py` and
+`app/api/v1/endpoints/items.py`, with tests in `tests/services/item_service_test.py` and
+`tests/api/v1/endpoints/items_test.py`. The service takes its repository in the
+constructor and raises service exceptions; the endpoints translate them to HTTP
+exceptions. When the project also has auth, the router carries a `get_current_user`
+dependency. Check that the files exist before pointing a user at them.
+
 ## Deps: file organization and version isolation
 
 ```

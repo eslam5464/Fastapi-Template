@@ -19,7 +19,8 @@ what the template actually generates.
    default, no optional services) or `custom`.
 3. With `services=custom`, each optional service is its own yes/no question (all
    default to no) and a declined service is stripped from the generated project:
-   `include_auth` (JWT auth with the User model), `include_api_v2` (an empty `/v2`
+   `include_auth` (JWT auth with the User model), `include_example_items` (an example
+   CRUD domain), `include_api_v2` (an empty `/v2`
    scaffold), `include_csrf` (the CSRF middleware), `include_redis_cache`,
    `include_redis_rate_limit`, `include_redis_token_blacklist` (only with auth),
    `include_celery`, `include_firebase`, `include_firestore` (only with Firebase),

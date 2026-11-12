@@ -54,6 +54,12 @@ include_auth:
   default: false
   when: "{{ services == 'custom' }}"
 
+include_example_items:
+  type: bool
+  help: "Include an example CRUD domain, Items (model, repository, service, /v1/items endpoints, migration, tests)? Its routes need a login when authentication is included."
+  default: false
+  when: "{{ services == 'custom' }}"
+
 include_api_v2:
   type: bool
   help: "Include an empty second API version (/v2, mounted with its own docs)?"
@@ -162,4 +168,4 @@ _tasks:
      "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_example_items': include_example_items, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]

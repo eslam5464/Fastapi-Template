@@ -29,13 +29,16 @@ FastAPI Template provides a reusable backend foundation for APIs with layered ar
 | Migrations | Alembic |
 | Testing | pytest + anyio |
 
-<!-- --- FEATURE[auth|redis|celery] START --- -->
+<!-- --- FEATURE[auth|example_items|redis|celery] START --- -->
 Optional parts of this project:
 
-<!-- --- FEATURE[auth|redis|celery] END --- -->
+<!-- --- FEATURE[auth|example_items|redis|celery] END --- -->
 <!-- --- FEATURE[auth] START --- -->
 - **Authentication** — JWT access and refresh tokens with the User model (`app/services/auth_service.py`)
 <!-- --- FEATURE[auth] END --- -->
+<!-- --- FEATURE[example_items] START --- -->
+- **Example domain** — Items, a complete CRUD slice under `/v1/items` (`app/services/item_service.py`)
+<!-- --- FEATURE[example_items] END --- -->
 <!-- --- FEATURE[redis] START --- -->
 - **Redis** — backs the services below that need it
 <!-- --- FEATURE[redis] END --- -->
