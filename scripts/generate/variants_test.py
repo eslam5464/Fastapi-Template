@@ -63,7 +63,7 @@ def test_answers_rejects_unknown_feature(fake_manifest):
 
 
 def test_copier_data_args(fake_manifest):
-    assert variants.copier_data_args(variants.answers(set())) == []
+    assert variants.copier_data_args(variants.answers(set())) == ["--data", "services=minimal"]
     assert variants.copier_data_args(variants.answers({"a", "b"})) == [
         "--data",
         "services=custom",
@@ -78,7 +78,7 @@ def test_matrix_shape(fake_manifest):
     entries = variants.matrix()["include"]
     assert [entry["variant"] for entry in entries] == list(variants.all_variants())
     minimal = entries[0]
-    assert minimal == {"variant": "minimal", "data": "", "features": "", "computed": ""}
+    assert minimal == {"variant": "minimal", "data": "--data services=minimal", "features": "", "computed": ""}
     only_b = next(entry for entry in entries if entry["variant"] == "only-b")
     assert only_b["features"] == "a,b"
     assert only_b["data"] == "--data services=custom --data include_a=true --data include_b=true"

@@ -6,6 +6,10 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking**: `copier copy --defaults` now generates the project with every optional service (`services=full`); interactive runs still pre-select the minimal base (`services=minimal`), and scripts that relied on `--defaults` for the minimal base must now pass `--data services=minimal`. The `services` question gained a `full` choice, and the minimum Copier version is now 9.15.0.
+
 ### Fixed
 
 - Added missing Celery worker/beat scripts (`scripts/celery_worker.sh`, `scripts/celery_worker.bat`, `scripts/celery_beat.sh`, `scripts/celery_beat.bat`) referenced in README and docs

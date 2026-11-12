@@ -42,7 +42,7 @@ Full reference for what's built into this project: what each feature does, which
 - 🧪 [Testing & quality tooling](#-testing--quality-tooling)
 - 🌍 [Environment management](#-environment-management)
 
-Optional services are chosen when the project is generated (Copier's `services=custom` questions); a chosen service's packages are regular dependencies, so `uv sync` installs everything the project uses.
+Optional services are chosen when the project is generated: Copier's `services` question offers `minimal` (the base, pre-selected in an interactive run), `custom` (pick services one by one), or `full` (everything, which `copier copy --defaults` selects). A chosen service's packages are regular dependencies, so `uv sync` installs everything the project uses.
 
 ---
 

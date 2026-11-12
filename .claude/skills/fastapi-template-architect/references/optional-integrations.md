@@ -11,8 +11,9 @@ substitute for the real source.
 
 **Every service below is a Copier question, decided when the project is generated**
 (see [copier-template-mechanics.md](copier-template-mechanics.md)). A generated project
-has only the services that were chosen; the default (`services=minimal`) has none of
-them. So first check whether the target project has the service at all (its module,
+has only the services that were chosen; `services=minimal` (pre-selected in an
+interactive run) has none of them, while `services=full` (what `--defaults` selects) has
+all of them. So first check whether the target project has the service at all (its module,
 its settings in `app/core/config.py`, its guide in `docs/integrations/`). A chosen
 service's packages are regular dependencies (`uv sync` installs them); "enabling" it
 means filling in its `.env` config block. There are no extras to install. Adding a

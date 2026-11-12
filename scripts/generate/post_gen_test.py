@@ -87,6 +87,17 @@ class TestResolve:
         with pytest.raises(SystemExit, match="include_apple_pay=true requires services=custom"):
             post_gen.resolve(answers(services="minimal", include_apple_pay=True))
 
+    def test_full_everything_on(self):
+        everything = answers(services="full", **{question: True for question in QUESTIONS})
+        all_on = [feature.name for feature in features.FEATURES if feature.name != "_template"]
+        assert post_gen.resolve(everything) == flags(*all_on)
+
+    def test_full_rejects_off_feature(self):
+        everything = {question: True for question in QUESTIONS}
+        everything["include_apple_pay"] = False
+        with pytest.raises(SystemExit, match="include_apple_pay=false requires services=custom"):
+            post_gen.resolve(answers(services="full", **everything))
+
     def test_unknown_key(self):
         with pytest.raises(SystemExit, match="unknown feature answer"):
             post_gen.resolve({**answers(services="minimal"), "surprise": True})
@@ -100,7 +111,7 @@ class TestResolve:
             post_gen.resolve(answers(include_apple_pay="true"))
 
     def test_bad_services_value(self):
-        with pytest.raises(SystemExit, match="services must be 'minimal' or 'custom'"):
+        with pytest.raises(SystemExit, match="services must be 'minimal', 'custom' or 'full'"):
             post_gen.resolve(answers(services="everything"))
 
 
