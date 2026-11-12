@@ -9,63 +9,63 @@ dependencies = [
     # --- FEATURE[gcs] START ---
     "aiofiles>=25.1.0",
     # --- FEATURE[gcs] END ---
-    "alembic>=1.16.5",
+    "alembic>=1.20.1",
     # --- FEATURE[apple_pay] START ---
     "app-store-server-library[async]>=2.0.0",
     # --- FEATURE[apple_pay] END ---
-    "asyncpg>=0.30.0",
+    "asyncpg>=0.32.0",
     # --- FEATURE[celery] START ---
     "celery[redis]>=5.3.1",
     # --- FEATURE[celery] END ---
     # --- FEATURE[backblaze] START ---
-    "b2sdk>=2.10.1",
+    "b2sdk>=2.13.3",
     # --- FEATURE[backblaze] END ---
     # --- FEATURE[brevo] START ---
-    "brevo-python>=5.0.2",
+    "brevo-python>=5.1.0",
     # --- FEATURE[brevo] END ---
     # --- FEATURE[auth|firebase] START ---
     "email-validator>=2.3.0",
     # --- FEATURE[auth|firebase] END ---
     # --- FEATURE[celery&auth] START ---
-    "faker>=40.36.0",
+    "faker>=40.52.0",
     # --- FEATURE[celery&auth] END ---
-    "fastapi>=0.116.2",
+    "fastapi>=0.162.2",
     # --- FEATURE[firebase] START ---
-    "firebase-admin>=7.1.0",
+    "firebase-admin>=7.7.0",
     # --- FEATURE[firebase] END ---
     # --- FEATURE[gcs] START ---
-    "gcloud-aio-storage>=9.6.1",
+    "gcloud-aio-storage>=9.6.5",
     # --- FEATURE[gcs] END ---
     "gunicorn>=26.2.0",
-    "httptools>=0.6.4 ; sys_platform == 'linux'",
+    "httptools>=0.9.0 ; sys_platform == 'linux'",
     # --- FEATURE[openobserve] START ---
     "httpx>=0.28.1",
     # --- FEATURE[openobserve] END ---
     "loguru>=0.7.3",
     # --- FEATURE[celery] START ---
     "psycopg[binary]>=3.3.4 ; sys_platform == 'win32'",
-    "psycopg>=3.3.2 ; sys_platform != 'win32'",
+    "psycopg>=3.3.8 ; sys_platform != 'win32'",
     # --- FEATURE[celery] END ---
     # --- FEATURE[auth] START ---
     "pwdlib[argon2]>=0.3.0",
     # --- FEATURE[auth] END ---
-    "pydantic>=2.11.9",
-    "pydantic-settings>=2.10.1",
+    "pydantic>=2.14.3",
+    "pydantic-settings>=2.16.2",
     # --- FEATURE[auth] START ---
     "python-jose>=3.5.0",
-    "python-multipart>=0.0.20",
+    "python-multipart>=0.0.33",
     # --- FEATURE[auth] END ---
     # --- FEATURE[redis] START ---
     "redis>=7.1.0",
     # --- FEATURE[redis] END ---
     # --- FEATURE[resend] START ---
-    "resend>=2.23.0",
+    "resend>=2.53.0",
     # --- FEATURE[resend] END ---
     "sqlalchemy[asyncio]>=2.0.51",
-    "tzdata>=2026.4",
+    "tzdata>=2026.6",
     "uvicorn[standard]>=0.52.1",
-    "uvloop>=0.21.0 ; sys_platform == 'linux'",
-    "yarl>=1.20.1",
+    "uvloop>=0.23.0 ; sys_platform == 'linux'",
+    "yarl>=1.25.1",
 ]
 
 [dependency-groups]
@@ -73,30 +73,30 @@ test = [
     # anyio's pytest plugin (its own, not pytest-asyncio) is what runs every
     # @pytest.mark.anyio test in this suite - previously a transitive dep of
     # httpx/fastapi, made explicit since tests rely on it directly.
-    "anyio>=4.11.0",
-    "faker>=40.36.0",
+    "anyio>=4.16.0",
+    "faker>=40.52.0",
     # The tests' HTTP client (httpx.AsyncClient against the app).
     "httpx>=0.28.1",
-    "pytest>=9.1.1",
-    "pytest-cov>=7.0.0",
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
 ]
 dev = [
     "bandit[toml]>=1.9.4",
     # --- FEATURE[_template] START ---
-    "commitizen>=4.16.5",
+    "commitizen>=4.19.3",
     # --- FEATURE[_template] END ---
     "detect-secrets>=1.5.0",
-    "mypy>=1.13.0",
-    "pre-commit>=4.3.0",
-    "ruff>=0.14.0",
-    "tach>=0.29.0",
+    "mypy>=2.4.1",
+    "pre-commit>=4.7.0",
+    "ruff>=0.17.4",
+    "tach>=0.35.3",
     # --- FEATURE[gcs] START ---
     "types-aiofiles>=25.1.0",
     # --- FEATURE[gcs] END ---
 ]
 # --- FEATURE[_template] START ---
 template = [
-    "copier>=9.15.0",
+    "copier>=9.19.1",
 ]
 # --- FEATURE[_template] END ---
 
