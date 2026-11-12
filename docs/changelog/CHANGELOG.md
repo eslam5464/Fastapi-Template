@@ -6,7 +6,7 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
-## [1.3.0] - 2026-11-09
+## [1.3.0] - 2026-11-12
 
 ### Changed defaults
 
@@ -15,16 +15,24 @@ answers. Projects generated before 1.3.0 are not affected (each one is an indepe
 copy, and `copier update` is not supported).
 
 - `copier copy --defaults`, or pressing Enter at every question, now generates a **minimal
-  base**: FastAPI with versioned routers, async PostgreSQL (SQLAlchemy 2, Alembic), JWT
-  auth with the User model, the middleware stack (CORS, trusted hosts, security headers,
-  CSRF, request logging), Loguru logging, `/health`, Docker (backend and database) and CI.
-  No optional service is included.
+  base**: FastAPI with a versioned API (`/v1`), async PostgreSQL (SQLAlchemy 2, Alembic),
+  the generic layers (base model, base repository, base schema, service exceptions), the
+  middleware stack (CORS, trusted hosts, security headers, request logging), Loguru
+  logging, `/health`, Docker (backend and database) and CI. No optional part is included.
+- **The minimal base has no authentication.** JWT auth with the User model, the `/auth`
+  and `/users` routes, the CSRF middleware and the empty `/v2` scaffold used to be in
+  every project; each is now a question that defaults to no. Without authentication
+  every route is public.
 - The new first question, `services`, picks `minimal` (the default) or `custom`. With
-  `custom`, each optional service is its own yes/no question, and each one defaults to no:
-  the Redis cache, rate limiting, the token blacklist, Celery, Firebase (and Firestore,
-  asked only after Firebase), Google Cloud Storage, BackBlaze B2, Resend, Brevo,
-  OpenObserve and Apple Pay. Without prompts:
-  `--data services=custom --data include_<service>=true`.
+  `custom`, each optional part is its own yes/no question, and each one defaults to no:
+  authentication (`include_auth`), the example Items domain (`include_example_items`), the
+  `/v2` scaffold (`include_api_v2`), the CSRF middleware (`include_csrf`), the Redis
+  cache, rate limiting, the token blacklist (asked only after authentication), Celery,
+  Firebase (and Firestore, asked only after Firebase), Google Cloud Storage, BackBlaze
+  B2, Resend, Brevo, OpenObserve and Apple Pay. Without prompts:
+  `--data services=custom --data include_<name>=true`.
+- Per-user rate limits and the Celery user-seeding task exist only in projects with
+  authentication. Celery always has a `ping` task.
 - A declined service is removed completely: its code, tests, settings, `.env.example`
   entries, `docker-compose.yml` and CI entries, docs and dependencies.
 - `include_apple_pay` now defaults to `false`, and like every service question it needs
@@ -35,8 +43,10 @@ copy, and `copier update` is not supported).
 - The `pyproject.toml` extras are gone. A chosen service's packages are regular
   dependencies, so `uv sync --all-groups` installs everything the project uses;
   `--extra` and `--all-extras` are no longer needed.
-- Security: a project without rate limiting has no request limits on its auth routes, and
-  a project without the token blacklist cannot revoke tokens on logout (logout returns
+- Security: a project without authentication has only public routes; one without the
+  CSRF middleware has no cross-site request forgery check (needed before browser clients
+  authenticate with cookies); one without rate limiting has no request limits; and one
+  without the token blacklist cannot revoke tokens on logout (logout returns
   `revoked: false` and the access token stays valid until it expires; keep expiry times
   short). The generated README and `docs/features.md` say so.
 
@@ -46,8 +56,14 @@ copy, and `copier update` is not supported).
   (`scripts/generate/markers.py`): whole-line feature markers and per-path rules
   strip every declined service at generation time, with no Jinja in the source tree, so
   the template repo stays a runnable app with every service on.
+- An optional example domain, Items (`include_example_items`): model, schemas,
+  repository, service, `/v1/items` endpoints, migration and tests, with a guide
+  (`docs/guides/example-items.md`) on turning it into a real domain. Its routes need a
+  login when the project has authentication.
 - One integration guide per service under `docs/integrations/`, included only when the
-  service is.
+  service is, including a new authentication guide (`docs/integrations/auth.md`).
+- `tests/sample_model.py`: a test-only model, so the base model and base repository tests
+  do not depend on a domain model.
 - Template CI builds its matrix from the manifest (minimal, everything, each service
   alone, everything but one service) and runs each generated variant's own pre-commit
   hooks, migrations and full test suite (failing on skipped tests) and boots it, plus a
@@ -72,9 +88,23 @@ copy, and `copier update` is not supported).
 - The fastapi-template-architect skill, its references and `run_copier.sh`/`.ps1`
   describe the service questions; `--extras` is replaced by `--features`.
 - The Archify architecture diagram files are kept in the template repo only.
+- The generic service exceptions (`ValidationError`, `ResourceNotFoundError`,
+  `DuplicateResourceError`) live in `app/services/exceptions/base.py`
+  (`app/services/exceptions/auth.py` is gone), and route-level dependencies are declared
+  on each endpoint module's `APIRouter`.
+- Per-user rate limits moved from `app/api/v1/deps/rate_limit.py` to
+  `app/api/v1/deps/rate_limit_user.py`.
+- The first Alembic revision creates only the tables of the parts a project includes
+  (none in the minimal base); its revision ID is the same in every project.
+- The default project description no longer mentions JWT auth.
 
 ### Fixed
 
+- `refresh_token_expire_seconds` defaulted to 0 when `REFRESH_TOKEN_EXPIRE_SECONDS` was not
+  set; the token lifetimes now default to 3600 (access) and 86400 (refresh) seconds.
+- `docs/api.md` used `/api/v1` paths that the app never served, and `docs/development.md`
+  described a CSRF meta tag instead of the `csrf_token` cookie and `X-CSRF-Token` header.
+- Removed `app/core/exceptions/domain.py`, which nothing imported.
 - `@cache_result` built its keys with Python's per-process randomized `hash()`, so
   cached results were never shared between workers or restarts; keys are now stable
   across processes and include the function's module.
