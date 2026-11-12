@@ -25,7 +25,7 @@ service the project was generated without means porting its files from the templ
 | Cache, rate limiting, token blacklist (Redis) | `include_redis_cache`, `include_redis_rate_limit`, `include_redis_token_blacklist` (Redis is computed from them and Celery) | `app/services/cache/{base,manager,decorators,rate_limiter,token_blacklist}.py` | Fails open / no-op in `LOCAL` |
 | Firebase, Firestore, GCS, BackBlaze | `include_firebase`, `include_firestore`, `include_gcs`, `include_backblaze` | `app/services/{firebase,firestore,gcs,back_blaze_b2}.py` | Not usable until credentials are set |
 | Task queue | `include_celery` | `app/services/task_queue/{celery_config.py, tasks/health_tasks.py}` (plus `tasks/user_tasks.py` with auth) | Inert unless a worker/beat process is actually started |
-| Log shipping | `include_openobserve` | `app/core/openobserve.py` | Off until `LOG_TO_OPENOBSERVE=true` |
+| Log shipping | `include_openobserve` | `app/core/logger.py` | Off until `LOG_TO_OPENOBSERVE=true` |
 | Apple Pay | `include_apple_pay` | `app/services/payments/apple_pay.py` | Not usable until credentials are set |
 
 ## Email (`include_resend`, `include_brevo`)

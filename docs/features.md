@@ -62,7 +62,7 @@ Optional services are chosen when the project is generated: Copier's `services` 
 - **Clean/layered architecture** — repository pattern (`app/repos/`) + dependency injection, with module boundaries enforced by `tach` (see `tach.toml`): `core` → `models`/`schemas` → `repos` → `services` → `api`/`middleware`.
 - **Structured logging** — Loguru-based (`app/core/logger.py`): console and rotating file output, request and process IDs.
 <!-- --- FEATURE[openobserve] START --- -->
-- **Log shipping** — non-blocking, batched shipping to OpenObserve (`app/core/openobserve.py`). Guide: [integrations/openobserve.md](integrations/openobserve.md).
+- **Log shipping** — non-blocking, batched shipping to OpenObserve (`app/core/logger.py`). Guide: [integrations/openobserve.md](integrations/openobserve.md).
 <!-- --- FEATURE[openobserve] END --- -->
 - **Automatic API documentation** — Swagger UI and ReDoc, generated per API version.
 

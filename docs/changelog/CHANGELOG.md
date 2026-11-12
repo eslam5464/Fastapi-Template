@@ -10,6 +10,7 @@ The format is based on Keep a Changelog.
 
 - Service-specific exceptions moved from `app/core/exceptions/` to `app/services/exceptions/`: `app/services/exceptions/firebase.py`, `app/services/exceptions/gcs.py`, `app/services/exceptions/backblaze.py`, `app/services/exceptions/apple_pay.py`, and `app/services/exceptions/rate_limiter.py`; `RateLimitPrefix` moved from `app/core/constants.py` to `app/services/cache/rate_limiter.py`.
 - **Breaking**: `copier copy --defaults` now generates the project with every optional service (`services=full`); interactive runs still pre-select the minimal base (`services=minimal`), and scripts that relied on `--defaults` for the minimal base must now pass `--data services=minimal`. The `services` question gained a `full` choice, and the minimum Copier version is now 9.15.0.
+- The OpenObserve log shipping code moved from `app/core/openobserve.py` back into `app/core/logger.py`; `app/core/openobserve.py` no longer exists.
 
 ### Fixed
 

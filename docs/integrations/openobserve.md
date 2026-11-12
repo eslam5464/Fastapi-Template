@@ -1,6 +1,6 @@
 # OpenObserve log shipping
 
-`app/core/openobserve.py` ships the application's Loguru records to
+The OpenObserve sink in `app/core/logger.py` ships the application's Loguru records to
 [OpenObserve](https://openobserve.ai/) without blocking requests: records go into a
 bounded in-memory queue, a background thread sends them in batches over HTTP (`httpx`),
 retries with exponential backoff, and flushes what is left on shutdown. Local console and

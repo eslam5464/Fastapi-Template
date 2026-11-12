@@ -31,7 +31,7 @@ loggers) into Loguru so log formatting stays consistent everywhere:
 3. **OpenObserve** (the `include_openobserve` Copier toggle, then `settings.log_to_openobserve`;
    guide `docs/integrations/openobserve.md`) — a **hand-rolled**,
    thread-based, batching async HTTP log shipper (`OpenObserveHandler` in
-   `app/core/openobserve.py`, added by `setup_logger()` via `add_openobserve_sink()`): a daemon
+   `app/core/logger.py`, added by `setup_logger()` via `add_openobserve_sink()`): a daemon
    background thread reads off a bounded `queue.Queue(maxsize=1000)`, batches by size or
    a flush interval, retries with exponential backoff, and registers `atexit.register
    (self.shutdown)` for a graceful flush on process exit. `shutdown_logger()` (called
