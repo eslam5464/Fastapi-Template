@@ -69,7 +69,7 @@ Optional services are chosen when the project is generated (Copier's `services=c
 <!-- --- FEATURE[auth] START --- -->
 ## 🔐 Authentication
 
-- **JWT-based auth** — access + refresh tokens, implemented in `app/services/auth_service.py`. Password hashing via Argon2 (`pwdlib`).
+- **JWT-based auth** — access + refresh tokens, implemented in `app/services/auth_service.py`. Password hashing via Argon2 (`pwdlib`). Guide: [integrations/auth.md](integrations/auth.md).
 <!-- --- FEATURE[redis_token_blacklist] START --- -->
 - **Token blacklisting** — logout revokes the token, backed by Redis (`app/services/cache/token_blacklist.py`). Guide: [integrations/token-revocation.md](integrations/token-revocation.md).
 <!-- --- FEATURE[redis_token_blacklist] END --- -->
@@ -103,6 +103,7 @@ A small, complete CRUD slice that shows how the layers fit together. Copy it for
 - **Access:** the `/v1/items` routes are public, because this project has no authentication.
 <!-- --- FEATURE[!auth] END --- -->
 - **Tests:** `tests/services/item_service_test.py` and `tests/api/v1/endpoints/items_test.py`.
+- **Guide:** [guides/example-items.md](guides/example-items.md) — how a request flows through it, and how to turn it into your own domain.
 
 <!-- --- FEATURE[example_items] END --- -->
 

@@ -64,7 +64,7 @@ FEATURES: tuple[Feature, ...] = (
             r"deps\.auth\b",
             r"models\.user\b",
         ),
-        doc_forbidden=(r"(?i)\bjwt\b",),
+        doc_forbidden=(r"(?i)\bjwt\b", r"integrations/auth\.md"),
     ),
     Feature(
         "example_items",
@@ -76,6 +76,7 @@ FEATURES: tuple[Feature, ...] = (
             r"models\.item\b",
             r"\bclass Item\b",
         ),
+        doc_forbidden=(r"guides/example-items",),
     ),
     Feature(
         "api_v2",
@@ -228,6 +229,8 @@ PATHS: dict[str, str] = {
     "tests/api/v1/endpoints/logout_test.py": "auth",
     "tests/api/v1/deps/authentication_test.py": "auth",
     "tests/api/v1/deps/token_type_validation_test.py": "auth",
+    "docs/guides/example-items.md": "example_items",
+    "docs/integrations/auth.md": "auth",
     "app/models/item.py": "example_items",
     "app/repos/item.py": "example_items",
     "app/schemas/item.py": "example_items",
