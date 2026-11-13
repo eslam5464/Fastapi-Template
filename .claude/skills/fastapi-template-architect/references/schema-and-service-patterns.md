@@ -1,6 +1,6 @@
 # Schema & Service Patterns
 
-Source: `docs/backend-architecture.md` ("Schema Layer", "Service Layer" sections) plus
+Source: `docs/backend-architecture.md` ("Schema Layer", "Service Layer" sections; when the project was generated with it) plus
 the real `app/schemas/base.py` (snapshotted in `../assets/`).
 
 ## Schema layer (`app/schemas/`)

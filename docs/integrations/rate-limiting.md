@@ -3,7 +3,7 @@
 Redis-backed sliding-window rate limiting: the limiter (`app/services/cache/rate_limiter.py`),
 the FastAPI dependencies (`app/api/v1/deps/rate_limit.py`), the `X-RateLimit-*` header
 middleware (`app/middleware/rate_limit.py`), the key prefixes (`RateLimitPrefix` in
-`app/core/constants.py`) and the `RATE_LIMIT_*` settings.
+`app/services/cache/rate_limiter.py`) and the `RATE_LIMIT_*` settings.
 
 It is included when the project is generated with
 `--data services=custom --data include_redis_rate_limit=true` (or by answering "yes" to
@@ -146,7 +146,7 @@ RATE_LIMIT_USER=300         # Authenticated user endpoints
 Rate limit keys use prefixes to separate quotas by endpoint group:
 
 ```python
-from app.core.constants import RateLimitPrefix
+from app.services.cache.rate_limiter import RateLimitPrefix
 
 # Pre-defined prefixes
 RateLimitPrefix.AUTH      # "ratelimit:auth:"    - Authentication
@@ -159,7 +159,7 @@ RateLimitPrefix.SEARCH    # "ratelimit:search:"  - Search queries
 RateLimitPrefix.ADMIN     # "ratelimit:admin:"   - Admin operations
 ```
 
-Add custom prefixes to `app/core/constants.py` to avoid collisions.
+Add custom prefixes to `app/services/cache/rate_limiter.py` to avoid collisions.
 
 ## Local Development
 

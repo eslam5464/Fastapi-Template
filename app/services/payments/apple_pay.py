@@ -30,7 +30,13 @@ from loguru import logger
 from app.core.config import Environment as AppEnvironment
 from app.core.config import settings
 from app.core.credentials.apple_pay import ApplePayStoreCredentials
-from app.core.exceptions.apple_pay import (
+
+# --- FEATURE[redis_cache] START ---
+from app.services.cache.manager import cache_manager
+
+# --- FEATURE[redis_cache] END ---
+# --- FEATURE[apple_pay] START ---
+from app.services.exceptions.apple_pay import (
     AppStoreClientNotInitializedException,
     AppStoreConnectionAbortedException,
     AppStoreConnectionErrorException,
@@ -42,10 +48,7 @@ from app.core.exceptions.apple_pay import (
     AppStoreValidationException,
 )
 
-# --- FEATURE[redis_cache] START ---
-from app.services.cache.manager import cache_manager
-
-# --- FEATURE[redis_cache] END ---
+# --- FEATURE[apple_pay] END ---
 
 
 @dataclass

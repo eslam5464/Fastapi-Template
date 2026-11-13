@@ -58,7 +58,7 @@ def test_test_only_import_rejected_in_app(tmp_path):
 
 
 def test_test_only_import_allowed_in_tests(tmp_path):
-    root = _tree(tmp_path, {"tests/x_test.py": "import pytest\n\npytest.skip\n"})
+    root = _tree(tmp_path, {"tests/x_test.py": 'import pytest\n\npytest.skip("later")\n'})
     assert check_variants.check_tree(root, MINIMAL) == []
 
 

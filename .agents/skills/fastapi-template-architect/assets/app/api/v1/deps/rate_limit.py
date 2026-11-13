@@ -1,5 +1,5 @@
 # --- SNAPSHOT NOTICE (fastapi-template-architect skill) ---
-# Copy of app/api/v1/deps/rate_limit.py from eslam5464/Fastapi-Template, taken 2026-11-11,
+# Copy of app/api/v1/deps/rate_limit.py from eslam5464/Fastapi-Template, taken 2026-11-12,
 # with every optional service included (a generated project only has the
 # services chosen for it). The real repo is the source of truth; this is a
 # fallback/reference copy for offline scaffolding and Extend/Audit-mode
@@ -13,10 +13,9 @@ from fastapi import Request, status
 
 from app.core import responses
 from app.core.config import settings
-from app.core.constants import RateLimitPrefix
 from app.core.exceptions.http_exceptions import TooManyRequestsException
 from app.core.utils import get_client_ip
-from app.services.cache.rate_limiter import rate_limiter
+from app.services.cache.rate_limiter import RateLimitPrefix, rate_limiter
 
 
 def rate_limit_responses(limit: int, reset_example: int = 1764425820102866) -> dict[int | str, dict[str, Any]]:

@@ -11,7 +11,7 @@ Full reference for what's built into this project: what each feature does, which
 <!-- --- FEATURE[example_items] START --- -->
 - 📦 [Example domain: Items](#-example-domain-items) — a complete CRUD slice to copy from
 <!-- --- FEATURE[example_items] END --- -->
-- 🔒 [Security middleware](#-security-middleware) — security headers and the other request middleware
+- 🔒 [Security middleware](#-security-middleware) — request logging and the other request middleware
 <!-- --- FEATURE[redis_cache] START --- -->
 - ⚡ [Caching](#-caching) — Redis cache
 <!-- --- FEATURE[redis_cache] END --- -->
@@ -42,7 +42,17 @@ Full reference for what's built into this project: what each feature does, which
 - 🧪 [Testing & quality tooling](#-testing--quality-tooling)
 - 🌍 [Environment management](#-environment-management)
 
-Optional services are chosen when the project is generated (Copier's `services=custom` questions); a chosen service's packages are regular dependencies, so `uv sync` installs everything the project uses.
+Optional services are chosen when the project is generated: Copier's `services` question offers `minimal` (the base, pre-selected in an interactive run), `custom` (pick services one by one), or `full` (everything, which `copier copy --defaults` selects). A chosen service's packages are regular dependencies, so `uv sync` installs everything the project uses.
+
+<!-- --- FEATURE[github_extras|extra_docs] START --- -->
+Two more parts are optional the same way, and are included by `full` / `--defaults`:
+<!-- --- FEATURE[github_extras] START --- -->
+- the GitHub extras (CodeQL, Dependabot, issue and pull request templates, CODEOWNERS, SECURITY.md)
+<!-- --- FEATURE[github_extras] END --- -->
+<!-- --- FEATURE[extra_docs] START --- -->
+- the extra documentation (guides, architecture, API reference, runbooks, strategy)
+<!-- --- FEATURE[extra_docs] END --- -->
+<!-- --- FEATURE[github_extras|extra_docs] END --- -->
 
 ---
 
@@ -58,11 +68,14 @@ Optional services are chosen when the project is generated (Copier's `services=c
 <!-- --- FEATURE[celery] START --- -->
 - **Sync engine for Celery** — `psycopg` engine and `session_factory` in `app/core/db_sync.py`, from `settings.db_url_sync`.
 <!-- --- FEATURE[celery] END --- -->
-- **Database migrations** — Alembic (`app/alembic/`). Run via `./scripts/alembic.sh` / `.bat` or `alembic upgrade head` directly.
+- **Database migrations** — Alembic (`app/alembic/`), run with `alembic upgrade head` directly.
+<!-- --- FEATURE[alembic_scripts] START --- -->
+- **Migration helper scripts** — `./scripts/alembic.sh` (Linux/macOS) and `.\scripts\alembic.bat` (Windows).
+<!-- --- FEATURE[alembic_scripts] END --- -->
 - **Clean/layered architecture** — repository pattern (`app/repos/`) + dependency injection, with module boundaries enforced by `tach` (see `tach.toml`): `core` → `models`/`schemas` → `repos` → `services` → `api`/`middleware`.
 - **Structured logging** — Loguru-based (`app/core/logger.py`): console and rotating file output, request and process IDs.
 <!-- --- FEATURE[openobserve] START --- -->
-- **Log shipping** — non-blocking, batched shipping to OpenObserve (`app/core/openobserve.py`). Guide: [integrations/openobserve.md](integrations/openobserve.md).
+- **Log shipping** — non-blocking, batched shipping to OpenObserve (`app/core/logger.py`). Guide: [integrations/openobserve.md](integrations/openobserve.md).
 <!-- --- FEATURE[openobserve] END --- -->
 - **Automatic API documentation** — Swagger UI and ReDoc, generated per API version.
 
@@ -117,7 +130,9 @@ All in `app/middleware/`:
 <!-- --- FEATURE[!csrf] START --- -->
 - **No cross-site request forgery check** — this project was generated without that middleware. Add one before you authenticate browser clients with cookies.
 <!-- --- FEATURE[!csrf] END --- -->
-- **Security headers** (`security_headers.py`)
+<!-- --- FEATURE[security_headers] START --- -->
+- **Security headers** (`security_headers.py`) — OWASP-recommended headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, CSP and more) on every response.
+<!-- --- FEATURE[security_headers] END --- -->
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - **Rate limiting** (`rate_limit.py`) — sliding-window algorithm with microsecond precision, Redis-backed. Guide: [integrations/rate-limiting.md](integrations/rate-limiting.md).
 <!-- --- FEATURE[redis_rate_limit] END --- -->
@@ -201,7 +216,10 @@ All in `app/middleware/`:
 - **bandit** — security static analysis.
 - **detect-secrets** — secret-leak scanning.
 - **tach** — module boundary enforcement (see `tach.toml`).
-- **pre-commit** — runs all of the above locally before commit; `commitizen` additionally lints commit messages against Conventional Commits (see [Contributing](guides/contributing.md)).
+- **pre-commit** — runs all of the above locally before commit; `commitizen` additionally lints commit messages against Conventional Commits.
+<!-- --- FEATURE[extra_docs] START --- -->
+  See [Contributing](guides/contributing.md).
+<!-- --- FEATURE[extra_docs] END --- -->
 - **CI** — GitHub Actions runs the same lint/type/security suite plus the full test suite against real service containers (Postgres, plus any other service the project uses), with a coverage badge/comment posted per PR (green ≥90%, orange ≥70%).
 
 ## 🌍 Environment management

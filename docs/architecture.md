@@ -58,18 +58,17 @@ app/
 │   ├── exceptions/         # Service-layer exceptions
 │   └── types/              # Service-layer TypedDicts
 ├── middleware/
-│   ├── logging.py          # Request logging middleware
-│   └── security_headers.py # Security headers middleware
+│   └── logging.py          # Request logging middleware
 └── alembic/                # Database migrations
     ├── env.py
     ├── script.py.mako
     └── versions/
 ```
 
-<!-- --- FEATURE[auth|example_items|api_v2|csrf|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] START --- -->
+<!-- --- FEATURE[auth|example_items|api_v2|csrf|security_headers|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] START --- -->
 Optional files in this project:
 
-<!-- --- FEATURE[auth|example_items|api_v2|csrf|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] END --- -->
+<!-- --- FEATURE[auth|example_items|api_v2|csrf|security_headers|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] END --- -->
 <!-- --- FEATURE[auth] START --- -->
 - `app/models/user.py`, `app/repos/user.py`, `app/schemas/user.py`, `app/schemas/token.py`, `app/services/auth_service.py`, `app/api/v1/deps/auth.py`, `app/api/v1/endpoints/auth.py`, `app/api/v1/endpoints/user.py` — authentication and the User model ([guide](integrations/auth.md))
 <!-- --- FEATURE[auth] END --- -->
@@ -82,6 +81,9 @@ Optional files in this project:
 <!-- --- FEATURE[csrf] START --- -->
 - `app/middleware/csrf.py` — CSRF protection middleware
 <!-- --- FEATURE[csrf] END --- -->
+<!-- --- FEATURE[security_headers] START --- -->
+- `app/middleware/security_headers.py` — security headers middleware
+<!-- --- FEATURE[security_headers] END --- -->
 <!-- --- FEATURE[redis] START --- -->
 - `app/services/cache/base.py` — shared Redis connection pool (`BaseRedisClient`)
 <!-- --- FEATURE[redis] END --- -->
@@ -89,7 +91,7 @@ Optional files in this project:
 - `app/services/cache/manager.py`, `decorators.py` — Redis cache ([guide](integrations/caching.md))
 <!-- --- FEATURE[redis_cache] END --- -->
 <!-- --- FEATURE[redis_rate_limit] START --- -->
-- `app/services/cache/rate_limiter.py`, `app/api/v1/deps/rate_limit.py`, `app/middleware/rate_limit.py`, `app/core/exceptions/rate_limiter.py`, `app/core/types.py` — rate limiting ([guide](integrations/rate-limiting.md))
+- `app/services/cache/rate_limiter.py`, `app/api/v1/deps/rate_limit.py`, `app/middleware/rate_limit.py`, `app/services/exceptions/rate_limiter.py`, `app/core/types.py` — rate limiting ([guide](integrations/rate-limiting.md))
 <!-- --- FEATURE[redis_rate_limit] END --- -->
 <!-- --- FEATURE[redis_token_blacklist] START --- -->
 - `app/services/cache/token_blacklist.py` — token revocation ([guide](integrations/token-revocation.md))
@@ -98,16 +100,16 @@ Optional files in this project:
 - `app/services/task_queue/` (`celery_config.py`, `tasks/`), `app/core/db_sync.py` — Celery background jobs ([guide](integrations/celery.md))
 <!-- --- FEATURE[celery] END --- -->
 <!-- --- FEATURE[firebase] START --- -->
-- `app/services/firebase.py`, `app/schemas/firebase.py`, `app/core/credentials/firebase.py`, `app/core/exceptions/firebase_exceptions.py` — Firebase ([guide](integrations/firebase.md))
+- `app/services/firebase.py`, `app/schemas/firebase.py`, `app/core/credentials/firebase.py`, `app/services/exceptions/firebase.py` — Firebase ([guide](integrations/firebase.md))
 <!-- --- FEATURE[firebase] END --- -->
 <!-- --- FEATURE[firestore] START --- -->
 - `app/services/firestore.py` — Firestore ([guide](integrations/firestore.md))
 <!-- --- FEATURE[firestore] END --- -->
 <!-- --- FEATURE[gcs] START --- -->
-- `app/services/gcs.py`, `app/schemas/google_bucket.py`, `app/core/exceptions/gcs_exceptions.py` — Google Cloud Storage ([guide](integrations/gcs.md))
+- `app/services/gcs.py`, `app/schemas/google_bucket.py`, `app/services/exceptions/gcs.py` — Google Cloud Storage ([guide](integrations/gcs.md))
 <!-- --- FEATURE[gcs] END --- -->
 <!-- --- FEATURE[backblaze] START --- -->
-- `app/services/back_blaze_b2.py`, `app/schemas/back_blaze_bucket.py`, `app/core/exceptions/back_blaze_exceptions.py` — BackBlaze B2 ([guide](integrations/backblaze.md))
+- `app/services/back_blaze_b2.py`, `app/schemas/back_blaze_bucket.py`, `app/services/exceptions/backblaze.py` — BackBlaze B2 ([guide](integrations/backblaze.md))
 <!-- --- FEATURE[backblaze] END --- -->
 <!-- --- FEATURE[resend|brevo] START --- -->
 - `app/services/email/` (`base.py`, `static/` templates), `app/services/types/email.py`, `app/services/exceptions/email.py` — email ([guide](integrations/email.md))
@@ -119,10 +121,10 @@ Optional files in this project:
   - `app/services/email/brevo.py` — Brevo provider
 <!-- --- FEATURE[brevo] END --- -->
 <!-- --- FEATURE[openobserve] START --- -->
-- `app/core/openobserve.py` — OpenObserve log shipping ([guide](integrations/openobserve.md))
+- `app/core/logger.py` — OpenObserve log shipping ([guide](integrations/openobserve.md))
 <!-- --- FEATURE[openobserve] END --- -->
 <!-- --- FEATURE[apple_pay] START --- -->
-- `app/services/payments/apple_pay.py`, `app/core/credentials/apple_pay.py`, `app/core/exceptions/apple_pay.py` — Apple Pay ([guide](integrations/apple-pay.md))
+- `app/services/payments/apple_pay.py`, `app/core/credentials/apple_pay.py`, `app/services/exceptions/apple_pay.py` — Apple Pay ([guide](integrations/apple-pay.md))
 <!-- --- FEATURE[apple_pay] END --- -->
 
 ## Layer Architecture
@@ -501,7 +503,9 @@ Request → CORS Middleware → Logging Middleware → Route Handler
 ### Custom Middleware
 
 - **Logging Middleware**: Request/response logging
+<!-- --- FEATURE[security_headers] START --- -->
 - **Security Middleware**: Additional security headers
+<!-- --- FEATURE[security_headers] END --- -->
 - **Error Handling**: Centralized exception handling
 
 ## Logging Architecture
@@ -723,7 +727,9 @@ class NotFoundError(BaseAPIException):
 <!-- --- FEATURE[csrf] START --- -->
 - **CSRF Protection**: Middleware-based CSRF token validation
 <!-- --- FEATURE[csrf] END --- -->
+<!-- --- FEATURE[security_headers] START --- -->
 - **Security Headers**: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
+<!-- --- FEATURE[security_headers] END --- -->
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - **Rate Limiting**: Redis-based sliding window algorithm with microsecond precision
 <!-- --- FEATURE[redis_rate_limit] END --- -->

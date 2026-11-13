@@ -1,4 +1,4 @@
-_min_copier_version: "9.4.0"
+_min_copier_version: "9.15.0"
 
 project_name:
   type: str
@@ -42,106 +42,131 @@ python_version:
 
 services:
   type: str
-  help: "Optional services: keep the minimal base, or choose services one by one?"
+  help: "Optional parts: keep the minimal base, choose parts one by one, or include everything?"
   choices:
-    "Minimal base (no optional services)": minimal
-    "Choose services one by one": custom
-  default: minimal
+    "Minimal base (no optional parts)": minimal
+    "Choose parts one by one": custom
+    "Everything": full
+  default: "{{ 'full' if _copier_conf.defaults else 'minimal' }}"
 
 include_auth:
   type: bool
   help: "Include JWT authentication with the User model (signup, login, token refresh, logout, /users/me)? Adds SECRET_KEY and the token settings."
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 include_example_items:
   type: bool
   help: "Include an example CRUD domain, Items (model, repository, service, /v1/items endpoints, migration, tests)? Its routes need a login when authentication is included."
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 include_api_v2:
   type: bool
   help: "Include an empty second API version (/v2, mounted with its own docs)?"
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 include_csrf:
   type: bool
   help: "Include the CSRF middleware (X-CSRF-Token must match the csrf_token cookie; for browser clients that authenticate with cookies)?"
-  default: false
+  default: "{{ services == 'full' }}"
+  when: "{{ services == 'custom' }}"
+
+include_security_headers:
+  type: bool
+  help: "Include the security headers middleware (OWASP-recommended response headers like X-Frame-Options and CSP)?"
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 include_redis_cache:
   type: bool
   help: "Include the Redis cache (cache_manager, @cache_result)? Any Redis-backed choice adds Redis to the settings, docker-compose and CI."
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 include_redis_rate_limit:
   type: bool
   help: "Include Redis-backed rate limiting (per IP address; per user and on the auth routes when authentication is included)? Adds the RATE_LIMIT_* settings."
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 include_redis_token_blacklist:
   type: bool
   help: "Include the Redis token blacklist, so logout revokes tokens? Without it, logged-out tokens stay valid until they expire."
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' and include_auth }}"
 
 include_celery:
   type: bool
   help: "Include Celery background jobs (worker, beat, sync DB engine)? Uses Redis as the broker."
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 include_firebase:
   type: bool
   help: "Include Firebase (Admin SDK: authentication, users, push notifications)? Adds the FIREBASE_* settings."
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 include_firestore:
   type: bool
   help: "Include Firestore (document database, uses the Firebase credentials)?"
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' and include_firebase }}"
 
 include_gcs:
   type: bool
   help: "Include Google Cloud Storage (gcloud-aio-storage, aiofiles)?"
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 include_backblaze:
   type: bool
   help: "Include BackBlaze B2 cloud storage (b2sdk)?"
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 include_resend:
   type: bool
   help: "Include the Resend email provider? Adds RESEND_API_KEY."
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 include_brevo:
   type: bool
   help: "Include the Brevo email provider? Adds BREVO_API_KEY."
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 include_openobserve:
   type: bool
   help: "Include OpenObserve log shipping (httpx)? Adds the LOG_TO_OPENOBSERVE and OPENOBSERVE_* settings."
-  default: false
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 include_apple_pay:
   type: bool
   help: "Include the Apple Pay in-app purchase verification module?"
-  default: false
+  default: "{{ services == 'full' }}"
+  when: "{{ services == 'custom' }}"
+
+include_alembic_scripts:
+  type: bool
+  help: "Include the Alembic helper scripts (scripts/alembic.sh and scripts/alembic.bat)? Alembic itself stays in every project."
+  default: "{{ services == 'full' }}"
+  when: "{{ services == 'custom' }}"
+
+include_github_extras:
+  type: bool
+  help: "Include the GitHub extras (CodeQL, Dependabot, issue and pull request templates, CODEOWNERS, SECURITY.md)?"
+  default: "{{ services == 'full' }}"
+  when: "{{ services == 'custom' }}"
+
+include_extra_docs:
+  type: bool
+  help: "Include the extra documentation (guides, architecture, API reference, runbooks, strategy)?"
+  default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
 _exclude:
@@ -168,4 +193,4 @@ _tasks:
      "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_example_items': include_example_items, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_example_items': include_example_items, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_security_headers': include_security_headers, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay, 'include_alembic_scripts': include_alembic_scripts, 'include_github_extras': include_github_extras, 'include_extra_docs': include_extra_docs} | tojson }}"]

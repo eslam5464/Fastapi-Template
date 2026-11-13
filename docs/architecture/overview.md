@@ -15,7 +15,7 @@ FastAPI Template provides a reusable backend foundation for APIs with layered ar
 | Model Layer (app/models) | ORM table mapping | Shared base model and entity models |
 | Schema Layer (app/schemas) | Validation and serialization | Pydantic request/response contracts |
 | Core Layer (app/core) | Config, db setup, HTTP exceptions, utilities | Lowest dependency layer |
-| Middleware Layer (app/middleware) | Security headers, logging and the other request middleware | Applied in root app order |
+| Middleware Layer (app/middleware) | Logging and the other request middleware | Applied in root app order |
 
 ## Tech Stack
 
@@ -71,7 +71,7 @@ This keeps OpenAPI schemas isolated by version and allows independent evolution 
 
 ## Request Data Flow
 
-1. Request reaches root app middleware chain (security headers, logging and the other middleware of this project).
+1. Request reaches root app middleware chain (logging and the other middleware of this project).
 2. Request is routed to root endpoints (for example /health) or a mounted version app (for example /v1).
 3. Endpoint dependencies assemble service objects and repositories with request-scoped session.
 4. Service executes business logic and calls repositories as needed.
@@ -79,7 +79,9 @@ This keeps OpenAPI schemas isolated by version and allows independent evolution 
 
 ## Middleware Notes
 
+<!-- --- FEATURE[security_headers] START --- -->
 - SecurityHeadersMiddleware uses route-aware CSP so Swagger/ReDoc can load safely on versioned docs paths.
+<!-- --- FEATURE[security_headers] END --- -->
 <!-- --- FEATURE[csrf] START --- -->
 - CSRFMiddleware exempts the versioned docs/openapi paths (and the auth endpoints, where the project has them).
 <!-- --- FEATURE[csrf] END --- -->

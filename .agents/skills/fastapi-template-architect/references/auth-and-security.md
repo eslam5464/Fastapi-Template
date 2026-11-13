@@ -1,6 +1,6 @@
 # Auth & Security
 
-Source: `docs/backend-architecture.md` ("Middleware Layer" section) plus the real
+Source: `docs/backend-architecture.md` ("Middleware Layer" section; when the project was generated with it) plus the real
 `app/middleware/{csrf,security_headers,rate_limit}.py` and
 `app/api/v1/deps/rate_limit.py` (all snapshotted in `../assets/`), and
 `app/services/auth_service.py` / `app/services/cache/token_blacklist.py` (described here
@@ -79,6 +79,11 @@ Real code in `../assets/app/middleware/csrf.py`:
   disable the middleware wholesale.
 
 ## Security headers + dual CSP
+
+Only in projects generated with `include_security_headers` (check that
+`app/middleware/security_headers.py` exists). A project without it sends no such
+headers from the app itself — add them at the reverse proxy or gateway if you need
+them.
 
 Real code in `../assets/app/middleware/security_headers.py`. Every response gets OWASP
 baseline headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,

@@ -187,11 +187,13 @@ class TestAppConfiguration:
 
     def test_app_router_included(self):
         """Test that API router is included."""
-        # Check that routes are registered
-        routes = [route.path for route in app.routes]
+        # FastAPI 0.162+ wraps include_router() routes in a lazy _IncludedRouter
+        # with no `path`, so the root routes are read from the OpenAPI schema
+        # and only the mounted sub-apps are read from app.routes.
+        assert "/health" in app.openapi()["paths"]
+        routes = [route.path for route in app.routes if hasattr(route, "path")]
 
-        # Should have root health route and mounted versioned apps
-        assert "/health" in routes
+        # Should have mounted versioned apps
         assert "/v1" in routes
         # --- FEATURE[api_v2] START ---
         assert "/v2" in routes

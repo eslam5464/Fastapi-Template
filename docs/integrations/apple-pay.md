@@ -5,7 +5,7 @@
 verify in-app purchases and subscriptions. Credentials are modeled by
 `ApplePayStoreCredentials` in `app/core/credentials/apple_pay.py` (built from settings by
 `settings.apple_pay_store_credentials`), and errors are the `AppStore*Exception` classes
-in `app/core/exceptions/apple_pay.py`.
+in `app/services/exceptions/apple_pay.py`.
 
 The integration is included when the project is generated with
 `--data services=custom --data include_apple_pay=true` (or by answering "yes" to the
@@ -39,7 +39,7 @@ The module builds a ready client at import time (`apple_pay` at the bottom of
 Every call to Apple is `async`.
 
 ```python
-from app.core.exceptions.apple_pay import AppStoreNotFoundException, AppStoreValidationException
+from app.services.exceptions.apple_pay import AppStoreNotFoundException, AppStoreValidationException
 from app.services.payments.apple_pay import apple_pay
 
 transaction = await apple_pay.verify_transaction(transaction_id)
@@ -73,7 +73,7 @@ Failures raise `AppStoreNotFoundException`, `AppStoreValidationException`,
 ```python
 from fastapi import APIRouter, HTTPException
 
-from app.core.exceptions.apple_pay import AppStoreNotFoundException, AppStoreValidationException
+from app.services.exceptions.apple_pay import AppStoreNotFoundException, AppStoreValidationException
 from app.services.payments.apple_pay import apple_pay
 
 router = APIRouter()

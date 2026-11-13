@@ -111,9 +111,18 @@ def _assert_ruff_clean(root: Path) -> None:
         )
 
 
+def _assert_full_project(dst: Path) -> None:
+    # Every file or folder an optional feature owns is present; only the
+    # template's own sections (the "_template" feature) stay out.
+    for rel, expr in features.PATHS.items():
+        if "_template" in expr:
+            continue
+        assert (dst / rel).exists(), f"{rel} should be in the full project"
+
+
 def _assert_minimal_base(dst: Path) -> None:
     assert not (dst / "app" / "services" / "payments").exists()
-    assert not (dst / "app" / "core" / "exceptions" / "apple_pay.py").exists()
+    assert not (dst / "app" / "services" / "exceptions" / "apple_pay.py").exists()
     assert not (dst / "app" / "core" / "credentials" / "apple_pay.py").exists()
     assert not (dst / "tests" / "services" / "payments").exists()
     assert not (dst / "tests" / "apple_pay_credentials.py").exists()
@@ -137,6 +146,21 @@ def test_bake_with_defaults(tmp_path: Path):
     assert (dst / "pyproject.toml").is_file()
     assert (dst / "app" / "main.py").is_file()
     assert (dst / "Dockerfile").is_file()
+    _assert_full_project(dst)
+    _assert_no_leftover_jinja(dst)
+    _assert_no_feature_markers(dst)
+    _assert_no_tool_caches(dst)
+    _assert_ruff_clean(dst)
+
+
+@pytest.mark.slow
+def test_bake_minimal(tmp_path: Path):
+    dst = tmp_path / "generated"
+    _bake(dst, services="minimal")
+
+    assert (dst / "pyproject.toml").is_file()
+    assert (dst / "app" / "main.py").is_file()
+    assert (dst / "Dockerfile").is_file()
     _assert_minimal_base(dst)
     _assert_no_leftover_jinja(dst)
     _assert_no_feature_markers(dst)
@@ -151,7 +175,7 @@ def test_bake_with_apple_pay(tmp_path: Path):
 
     assert (dst / "app" / "services" / "payments" / "apple_pay.py").is_file()
     assert (dst / "app" / "core" / "credentials" / "apple_pay.py").is_file()
-    assert (dst / "app" / "core" / "exceptions" / "apple_pay.py").is_file()
+    assert (dst / "app" / "services" / "exceptions" / "apple_pay.py").is_file()
     assert (dst / "tests" / "apple_pay_credentials.py").is_file()
     assert "app-store-server-library" in (dst / "pyproject.toml").read_text()
     _assert_no_leftover_jinja(dst)
@@ -163,11 +187,11 @@ def test_bake_with_apple_pay(tmp_path: Path):
 @pytest.mark.slow
 def test_bake_rejects_stray_apple_pay(tmp_path: Path):
     dst = tmp_path / "generated"
-    # services defaults to minimal; a stray include_apple_pay=true must be
+    # With services pinned to minimal, a stray include_apple_pay=true must be
     # rejected by post_gen.py's answer validation instead of silently shipping
     # Apple Pay files in a minimal bake.
     with pytest.raises(Exception) as excinfo:
-        _bake(dst, include_apple_pay=True)
+        _bake(dst, services="minimal", include_apple_pay=True)
     stderr = getattr(excinfo.value, "stderr", None)
     if stderr:
         assert "services=custom" in str(stderr)
@@ -176,7 +200,7 @@ def test_bake_rejects_stray_apple_pay(tmp_path: Path):
 @pytest.mark.slow
 def test_project_slug_derivation(tmp_path: Path):
     dst = tmp_path / "generated"
-    _bake(dst, project_name="My Cool App")
+    _bake(dst, services="minimal", project_name="My Cool App")
 
     pyproject = (dst / "pyproject.toml").read_text()
     assert 'name = "my-cool-app"' in pyproject

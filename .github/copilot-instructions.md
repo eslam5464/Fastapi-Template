@@ -3,8 +3,10 @@
 This repo (and any project generated from it via its Copier template) follows a strict
 layered architecture. For the full detail — SQLAlchemy patterns, auth/security
 conventions, testing gotchas, CI config, Copier generation mechanics — see
-`docs/backend-architecture.md` and, if you have access to it, the
-`fastapi-template-architect` skill at `.claude/skills/fastapi-template-architect/` (same
+<!-- --- FEATURE[extra_docs] START --- -->
+`docs/backend-architecture.md`, or
+<!-- --- FEATURE[extra_docs] END --- -->
+the `fastapi-template-architect` skill at `.claude/skills/fastapi-template-architect/` (same
 content, organized for an AI agent to consult on demand). What follows is the condensed
 version for everyday work in this repo.
 
@@ -53,7 +55,9 @@ down into `app/schemas/`, don't reach up.
 ## Before proposing a change
 
 Check it against the rules above and the full anti-patterns catalog in
-`.claude/skills/fastapi-template-architect/references/anti-patterns-catalog.md` (or
-`docs/backend-architecture.md`'s "Anti-patterns Catalog" section if that's not
-available). When something in this repo's actual code conflicts with what's documented,
+`.claude/skills/fastapi-template-architect/references/anti-patterns-catalog.md`.
+<!-- --- FEATURE[extra_docs] START --- -->
+(If the skill isn't available, use `docs/backend-architecture.md`'s "Anti-patterns Catalog" section instead.)
+<!-- --- FEATURE[extra_docs] END --- -->
+When something in this repo's actual code conflicts with what's documented,
 follow the real code — it wins.

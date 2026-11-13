@@ -2,7 +2,7 @@
 
 `app/services/gcs.py` provides `GCS`, an async client built on
 [gcloud-aio-storage](https://github.com/talkiq/gcloud-aio) (file reads and writes use
-`aiofiles`). Its exceptions live in `app/core/exceptions/gcs_exceptions.py` and its
+`aiofiles`). Its exceptions live in `app/services/exceptions/gcs.py` and its
 schemas (`ServiceAccount`, `BucketFile`, `BucketFolder`) in `app/schemas/google_bucket.py`.
 
 The integration is included when the project is generated with
@@ -73,7 +73,7 @@ async with GCS("/path/to/service-account.json") as gcs:
 `crc32c_checksum` (int), `content_type`, `metadata` and creation/modification dates.
 
 Errors raise `GCSError` (or `GCSBucketNotFoundError` / `GCSBucketNotSelectedError`) from
-`app.core.exceptions.gcs_exceptions`; using the client outside `async with` raises
+`app.services.exceptions.gcs`; using the client outside `async with` raises
 `GCSError`.
 
 ### In an endpoint

@@ -917,6 +917,7 @@ fetch('/v1/reports/1', {
 ```
 
 <!-- --- FEATURE[csrf] END --- -->
+<!-- --- FEATURE[security_headers] START --- -->
 #### Security Headers Middleware
 
 Automatically adds security headers to all responses:
@@ -926,6 +927,7 @@ Automatically adds security headers to all responses:
 - `X-XSS-Protection: 1; mode=block` - XSS filter (legacy browsers)
 - `Strict-Transport-Security` - HSTS for HTTPS enforcement (production only)
 
+<!-- --- FEATURE[security_headers] END --- -->
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 #### Rate Limit Headers Middleware
 

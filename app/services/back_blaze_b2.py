@@ -12,17 +12,17 @@ from b2sdk.v2.exception import NonExistentBucket
 from loguru import logger
 from pydantic import AnyUrl
 
-from app.core.exceptions.back_blaze_exceptions import (
+from app.schemas import (
+    ApplicationData,
+    FileDownloadLink,
+    UploadedFileInfo,
+)
+from app.services.exceptions.backblaze import (
     B2AuthorizationError,
     B2BucketNotFoundError,
     B2BucketNotSelectedError,
     B2BucketOperationError,
     B2FileOperationError,
-)
-from app.schemas import (
-    ApplicationData,
-    FileDownloadLink,
-    UploadedFileInfo,
 )
 
 

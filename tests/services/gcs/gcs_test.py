@@ -6,8 +6,8 @@ import pytest
 from faker import Faker
 from pydantic import ValidationError
 
-from app.core.exceptions.gcs_exceptions import GCSError
 from app.schemas import ServiceAccount
+from app.services.exceptions.gcs import GCSError
 from app.services.gcs import GCS
 
 

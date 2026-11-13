@@ -11,8 +11,9 @@ substitute for the real source.
 
 **Every service below is a Copier question, decided when the project is generated**
 (see [copier-template-mechanics.md](copier-template-mechanics.md)). A generated project
-has only the services that were chosen; the default (`services=minimal`) has none of
-them. So first check whether the target project has the service at all (its module,
+has only the services that were chosen; `services=minimal` (pre-selected in an
+interactive run) has none of them, while `services=full` (what `--defaults` selects) has
+all of them. So first check whether the target project has the service at all (its module,
 its settings in `app/core/config.py`, its guide in `docs/integrations/`). A chosen
 service's packages are regular dependencies (`uv sync` installs them); "enabling" it
 means filling in its `.env` config block. There are no extras to install. Adding a
@@ -24,7 +25,7 @@ service the project was generated without means porting its files from the templ
 | Cache, rate limiting, token blacklist (Redis) | `include_redis_cache`, `include_redis_rate_limit`, `include_redis_token_blacklist` (Redis is computed from them and Celery) | `app/services/cache/{base,manager,decorators,rate_limiter,token_blacklist}.py` | Fails open / no-op in `LOCAL` |
 | Firebase, Firestore, GCS, BackBlaze | `include_firebase`, `include_firestore`, `include_gcs`, `include_backblaze` | `app/services/{firebase,firestore,gcs,back_blaze_b2}.py` | Not usable until credentials are set |
 | Task queue | `include_celery` | `app/services/task_queue/{celery_config.py, tasks/health_tasks.py}` (plus `tasks/user_tasks.py` with auth) | Inert unless a worker/beat process is actually started |
-| Log shipping | `include_openobserve` | `app/core/openobserve.py` | Off until `LOG_TO_OPENOBSERVE=true` |
+| Log shipping | `include_openobserve` | `app/core/logger.py` | Off until `LOG_TO_OPENOBSERVE=true` |
 | Apple Pay | `include_apple_pay` | `app/services/payments/apple_pay.py` | Not usable until credentials are set |
 
 ## Email (`include_resend`, `include_brevo`)
@@ -88,11 +89,9 @@ closed on shutdown.
   raw key string or a file-path-based key and auto-escapes `\n` → `\\n` for a PEM key
   embedded directly in an env var). Guides: `docs/integrations/firebase.md` and
   `docs/integrations/firestore.md`.
-- Each has its own exception module under `app/core/exceptions/` (`gcs_exceptions.py`,
-  `back_blaze_exceptions.py`, `firebase_exceptions.py`) — note these live in `app/core/`
-  rather than `app/services/exceptions/`, a documented deviation from the strict-profile
-  domain-exception placement (same category of deviation as the `AppException`
-  compatibility shim — see [layering-and-flow.md](layering-and-flow.md)).
+Shared base and HTTP exceptions live in `app/core/exceptions/`; service-specific exceptions
+live in `app/services/exceptions/` (`gcs.py`, `backblaze.py`, `firebase.py`, `apple_pay.py`,
+`rate_limiter.py`).
 
 ## Task queue / background jobs (`include_celery` Copier toggle, Celery + Redis)
 

@@ -1,6 +1,6 @@
 # Alembic Migration Safety
 
-Source: `docs/backend-architecture.md` ("Alembic Migration Safety Guide") plus the real
+Source: `docs/backend-architecture.md` ("Alembic Migration Safety Guide"; when the project was generated with it) plus the real
 `app/alembic/env.py` (snapshotted in `../assets/`) and `alembic.ini`.
 
 ## This repo's `env.py` — real mechanics, not generic Alembic boilerplate
@@ -83,7 +83,10 @@ production with running application code depending on the old shape.
 
 ## Commands (this repo's conventions)
 
-Prefer the interactive wrapper scripts over raw `alembic` when working in this repo:
+The interactive wrapper scripts (`./scripts/alembic.sh` on Linux/macOS,
+`.\scripts\alembic.bat` on Windows) exist only in projects generated with
+`include_alembic_scripts`. Where a project has them, prefer them over raw `alembic`
+when working in it:
 
 ```bash
 # Linux/macOS

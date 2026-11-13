@@ -19,7 +19,7 @@ Use concise imperative messages.
 Examples:
 
 - feat: mount versioned docs app
-- fix: whitelist docs CSP in security headers
+- fix: whitelist docs CSP
 - docs: align architecture with mounted versioning
 
 ## Quality Commands

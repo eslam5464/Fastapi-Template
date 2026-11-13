@@ -6,49 +6,73 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
-## [1.3.0] - 2026-11-12
+## [1.3.0] - 2026-11-13
 
 ### Changed defaults
 
-This release changes what a new project contains when it is generated with the default
-answers. Projects generated before 1.3.0 are not affected (each one is an independent
-copy, and `copier update` is not supported).
+This release changes what a new project contains. Projects generated before 1.3.0 are not
+affected (each one is an independent copy, and `copier update` is not supported).
 
-- `copier copy --defaults`, or pressing Enter at every question, now generates a **minimal
-  base**: FastAPI with a versioned API (`/v1`), async PostgreSQL (SQLAlchemy 2, Alembic),
-  the generic layers (base model, base repository, base schema, service exceptions), the
-  middleware stack (CORS, trusted hosts, security headers, request logging), Loguru
-  logging, `/health`, Docker (backend and database) and CI. No optional part is included.
+- The new first question, `services`, has three answers:
+  - `full`: every optional part. `copier copy --defaults` selects it.
+  - `minimal`: the minimal base. An interactive run pre-selects it, so pressing Enter at
+    every question gives the minimal base.
+  - `custom`: one yes/no question per optional part, each defaulting to no. Without
+    prompts: `--defaults --data services=custom --data include_<name>=true`.
+- The **minimal base** is FastAPI with a versioned API (`/v1`), async PostgreSQL
+  (SQLAlchemy 2, Alembic), the generic layers (base model, base repository, base schema,
+  service exceptions), the CORS, trusted hosts and request logging middleware, Loguru
+  logging, `/health`, Docker (backend and database), CI, the README, `docs/features.md`,
+  `docs/llms.txt` and this changelog.
 - **The minimal base has no authentication.** JWT auth with the User model, the `/auth`
   and `/users` routes, the CSRF middleware and the empty `/v2` scaffold used to be in
-  every project; each is now a question that defaults to no. Without authentication
-  every route is public.
-- The new first question, `services`, picks `minimal` (the default) or `custom`. With
-  `custom`, each optional part is its own yes/no question, and each one defaults to no:
-  authentication (`include_auth`), the example Items domain (`include_example_items`), the
-  `/v2` scaffold (`include_api_v2`), the CSRF middleware (`include_csrf`), the Redis
+  every project; each is now an optional part. Without authentication every route is
+  public.
+- The optional parts: authentication (`include_auth`), the example Items domain
+  (`include_example_items`), the `/v2` scaffold (`include_api_v2`), the CSRF middleware
+  (`include_csrf`), the security headers middleware (`include_security_headers`), the Redis
   cache, rate limiting, the token blacklist (asked only after authentication), Celery,
-  Firebase (and Firestore, asked only after Firebase), Google Cloud Storage, BackBlaze
-  B2, Resend, Brevo, OpenObserve and Apple Pay. Without prompts:
-  `--data services=custom --data include_<name>=true`.
+  Firebase (and Firestore, asked only after Firebase), Google Cloud Storage, BackBlaze B2,
+  Resend, Brevo, OpenObserve, Apple Pay, the Alembic helper scripts
+  (`include_alembic_scripts`), the GitHub extras (`include_github_extras`: CodeQL,
+  Dependabot, issue and pull request templates, CODEOWNERS, SECURITY.md) and the extra
+  documentation (`include_extra_docs`: guides, architecture, API reference, runbooks,
+  strategy).
 - Per-user rate limits and the Celery user-seeding task exist only in projects with
   authentication. Celery always has a `ping` task.
-- A declined service is removed completely: its code, tests, settings, `.env.example`
+- A declined part is removed completely: its code, tests, settings, `.env.example`
   entries, `docker-compose.yml` and CI entries, docs and dependencies.
-- `include_apple_pay` now defaults to `false`, and like every service question it needs
-  `services=custom`. An `include_*=true` answer with `services=minimal` is an error.
+- An `include_*=true` answer with `services=minimal`, or an `include_*=false` answer with
+  `services=full`, is an error. `include_apple_pay` now needs `services=custom`.
 - Redis is never asked. It is added (the `redis` dependency, the `REDIS_*` settings and the
   Redis service in compose and CI) when the cache, rate limiting, the token blacklist or
   Celery is chosen.
-- The `pyproject.toml` extras are gone. A chosen service's packages are regular
+- The `pyproject.toml` extras are gone. A chosen part's packages are regular
   dependencies, so `uv sync --all-groups` installs everything the project uses;
   `--extra` and `--all-extras` are no longer needed.
 - Security: a project without authentication has only public routes; one without the
   CSRF middleware has no cross-site request forgery check (needed before browser clients
-  authenticate with cookies); one without rate limiting has no request limits; and one
-  without the token blacklist cannot revoke tokens on logout (logout returns
-  `revoked: false` and the access token stays valid until it expires; keep expiry times
-  short). The generated README and `docs/features.md` say so.
+  authenticate with cookies); one without the security headers middleware sends none of
+  the OWASP response headers (X-Frame-Options, Content-Security-Policy and the others);
+  one without rate limiting has no request limits; and one without the token blacklist
+  cannot revoke tokens on logout (logout returns `revoked: false` and the access token
+  stays valid until it expires; keep expiry times short). The generated README and
+  `docs/features.md` say so.
+
+### Upgrading from 1.2.0
+
+- Copier 9.15.0 or newer is required.
+- `copier copy --defaults` now generates every optional part. For the minimal base pass
+  `--data services=minimal`; to choose parts pass
+  `--data services=custom --data include_<name>=true`.
+- `--data include_apple_pay=true` on its own is now an error; add `--data services=custom`.
+- Code written against a 1.2.0 project uses import paths that moved:
+  `app.core.exceptions.{firebase_exceptions,gcs_exceptions,back_blaze_exceptions,apple_pay,rate_limiter}`
+  is now `app.services.exceptions.{firebase,gcs,backblaze,apple_pay,rate_limiter}`, and
+  `RateLimitPrefix` is in `app.services.cache.rate_limiter`.
+- FastAPI 0.162 wraps `include_router()` routes in an object without `path`. Tests that
+  read `route.path` from `app.routes` for those routes need the change described under
+  Changed.
 
 ### Added
 
@@ -81,8 +105,8 @@ copy, and `copier update` is not supported).
 ### Changed
 
 - Optional service code is split so each service can be removed on its own: per-service
-  credential modules under `app/core/credentials/`, `app/core/openobserve.py`,
-  `app/core/db_sync.py` (Celery's sync engine), and one test package or file per service.
+  credential modules under `app/core/credentials/`, `app/core/db_sync.py` (Celery's sync
+  engine), and one test package or file per service.
 - The docs, the README and the Copilot prompts describe only the services a project
   includes.
 - The fastapi-template-architect skill, its references and `run_copier.sh`/`.ps1`
@@ -97,6 +121,9 @@ copy, and `copier update` is not supported).
 - The first Alembic revision creates only the tables of the parts a project includes
   (none in the minimal base); its revision ID is the same in every project.
 - The default project description no longer mentions JWT auth.
+- Service-specific exceptions moved from `app/core/exceptions/` to `app/services/exceptions/`: `app/services/exceptions/firebase.py`, `app/services/exceptions/gcs.py`, `app/services/exceptions/backblaze.py`, `app/services/exceptions/apple_pay.py`, and `app/services/exceptions/rate_limiter.py`; `RateLimitPrefix` moved from `app/core/constants.py` to `app/services/cache/rate_limiter.py`.
+- Dependencies updated to the latest minor and patch versions, including FastAPI 0.162, Pydantic 2.14, pytest 9.2, mypy 2.4, Ruff 0.17 (pre-commit hook `v0.17.5`), and Copier 9.19 for development; Markdown files are now excluded from Ruff (`extend-exclude = ["*.md"]`) because Ruff 0.17 formats Python code blocks in Markdown and the docs keep their snippets as written.
+- `tests/main_test.py`: the router test reads `/health` from the OpenAPI schema, because FastAPI 0.162 wraps `include_router()` routes in an `_IncludedRouter` that has no `path` attribute; projects with their own tests that read `app.routes[...].path` need the same change.
 
 ### Fixed
 

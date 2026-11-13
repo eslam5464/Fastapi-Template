@@ -65,7 +65,8 @@ def resolve(raw: dict) -> dict[str, bool]:
 
     ``raw`` keys must be exactly ``{"services"}`` plus every ``Feature.question``
     in ``features.FEATURES``. ``services`` selects the minimal base (no optional
-    features) or per-service answers; every ``include_*`` value must be a bool.
+    features), per-service answers (``custom``), or every feature (``full``);
+    every ``include_*`` value must be a bool.
     """
     questions = {feature.question for feature in features.FEATURES if feature.question}
     expected = {"services"} | questions
@@ -78,8 +79,8 @@ def resolve(raw: dict) -> dict[str, bool]:
         raise SystemExit(f"post_gen.py: missing feature answer(s): {', '.join(missing)}")
 
     services = raw["services"]
-    if services not in ("minimal", "custom"):
-        raise SystemExit(f"post_gen.py: services must be 'minimal' or 'custom', got {services!r}")
+    if services not in ("minimal", "custom", "full"):
+        raise SystemExit(f"post_gen.py: services must be 'minimal', 'custom' or 'full', got {services!r}")
 
     answers: dict[str, bool] = {}
     for question in sorted(questions):
@@ -93,6 +94,13 @@ def resolve(raw: dict) -> dict[str, bool]:
         if enabled:
             raise SystemExit(
                 "post_gen.py: " + "; ".join(f"{question}=true requires services=custom" for question in enabled)
+            )
+
+    if services == "full":
+        disabled = [question for question in sorted(answers) if not answers[question]]
+        if disabled:
+            raise SystemExit(
+                "post_gen.py: " + "; ".join(f"{question}=false requires services=custom" for question in disabled)
             )
 
     flags: dict[str, bool] = {}

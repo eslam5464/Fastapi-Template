@@ -35,23 +35,27 @@ author_name:        # str, default "Eslam"
 author_email:        # str, default "eslam5464@users.noreply.github.com"
 github_username:     # str, default "eslam5464"
 python_version:      # str, default "3.14"; validator enforces >= 3.14 (PEP 758 syntax requirement)
-services:            # choice: "minimal" (default) or "custom"
-include_auth:        # bool, default false, asked only when services == custom
-include_example_items: # bool, default false, asked only when services == custom
-include_api_v2:      # bool, default false, asked only when services == custom
-include_csrf:        # bool, default false, asked only when services == custom
-include_redis_cache: # bool, default false, asked only when services == custom
-include_redis_rate_limit: # bool, default false, asked only when services == custom
-include_redis_token_blacklist: # bool, default false, asked only when include_auth is true
-include_celery:      # bool, default false, asked only when services == custom
-include_firebase:    # bool, default false, asked only when services == custom
-include_firestore:   # bool, default false, asked only when include_firebase is true
-include_gcs:         # bool, default false, asked only when services == custom
-include_backblaze:   # bool, default false, asked only when services == custom
-include_resend:      # bool, default false, asked only when services == custom
-include_brevo:       # bool, default false, asked only when services == custom
-include_openobserve: # bool, default false, asked only when services == custom
-include_apple_pay:   # bool, default false, asked only when services == custom
+services:            # choice: "minimal" (pre-selected interactively), "custom", or "full" (everything; --defaults selects full)
+include_auth:        # bool, default true when services == full, asked only when services == custom
+include_example_items: # bool, default true when services == full, asked only when services == custom
+include_api_v2:      # bool, default true when services == full, asked only when services == custom
+include_csrf:        # bool, default true when services == full, asked only when services == custom
+include_security_headers: # bool, default true when services == full, asked only when services == custom
+include_redis_cache: # bool, default true when services == full, asked only when services == custom
+include_redis_rate_limit: # bool, default true when services == full, asked only when services == custom
+include_redis_token_blacklist: # bool, default true when services == full, asked only when include_auth is true
+include_celery:      # bool, default true when services == full, asked only when services == custom
+include_firebase:    # bool, default true when services == full, asked only when services == custom
+include_firestore:   # bool, default true when services == full, asked only when include_firebase is true
+include_gcs:         # bool, default true when services == full, asked only when services == custom
+include_backblaze:   # bool, default true when services == full, asked only when services == custom
+include_resend:      # bool, default true when services == full, asked only when services == custom
+include_brevo:       # bool, default true when services == full, asked only when services == custom
+include_openobserve: # bool, default true when services == full, asked only when services == custom
+include_apple_pay:   # bool, default true when services == full, asked only when services == custom
+include_alembic_scripts: # bool, default true when services == full, asked only when services == custom
+include_github_extras: # bool, default true when services == full, asked only when services == custom
+include_extra_docs: # bool, default true when services == full, asked only when services == custom
 
 _exclude:
   - "copier.yml"
@@ -64,7 +68,7 @@ _tasks:
      "--author-name", "{{ author_name }}", "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_example_items': include_example_items, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_example_items': include_example_items, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_security_headers': include_security_headers, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay, 'include_alembic_scripts': include_alembic_scripts, 'include_github_extras': include_github_extras, 'include_extra_docs': include_extra_docs} | tojson }}"]
 ```
 
 Invocation (from `README.md`):
