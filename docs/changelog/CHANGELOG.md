@@ -13,6 +13,8 @@ The format is based on Keep a Changelog.
 - The OpenObserve log shipping code moved from `app/core/openobserve.py` back into `app/core/logger.py`; `app/core/openobserve.py` no longer exists.
 - **Breaking**: the security headers middleware and the Alembic helper scripts are now opt-in parts (`include_security_headers`, `include_alembic_scripts`); the minimal base no longer contains them, while `copier copy --defaults` and `services=full` include them.
 - **Breaking**: the GitHub extras (CodeQL, Dependabot, issue and pull request templates, CODEOWNERS, SECURITY.md) and the extra documentation (guides, architecture, API reference, runbooks, strategy) are now opt-in parts (`include_github_extras`, `include_extra_docs`); the minimal base no longer contains them, while `copier copy --defaults` and `services=full` include them.
+- Dependencies updated to the latest minor and patch versions, including FastAPI 0.162, Pydantic 2.14, pytest 9.2, mypy 2.4, Ruff 0.17 (pre-commit hook `v0.17.5`), and Copier 9.19 for development; Markdown files are now excluded from Ruff (`extend-exclude = ["*.md"]`) because Ruff 0.17 formats Python code blocks in Markdown and the docs keep their snippets as written.
+- `tests/main_test.py`: the router test reads `/health` from the OpenAPI schema, because FastAPI 0.162 wraps `include_router()` routes in an `_IncludedRouter` that has no `path` attribute; projects with their own tests that read `app.routes[...].path` need the same change.
 
 ### Fixed
 
