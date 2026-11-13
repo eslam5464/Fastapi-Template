@@ -58,7 +58,10 @@ Complete guide for local development environment setup and daily development tas
 <!-- --- FEATURE[apple_pay] START --- -->
 - Apple Pay (App Store Server API) integration guide ([integrations/apple-pay.md](integrations/apple-pay.md))
 <!-- --- FEATURE[apple_pay] END --- -->
-- Security middleware (security headers)
+<!-- --- FEATURE[security_headers] START --- -->
+- Security headers middleware
+<!-- --- FEATURE[security_headers] END --- -->
+- Security middleware (request logging)
 <!-- --- FEATURE[csrf] START --- -->
 - CSRF protection middleware
 <!-- --- FEATURE[csrf] END --- -->

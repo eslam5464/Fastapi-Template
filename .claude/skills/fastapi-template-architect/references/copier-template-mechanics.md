@@ -40,6 +40,7 @@ include_auth:        # bool, default true when services == full, asked only when
 include_example_items: # bool, default true when services == full, asked only when services == custom
 include_api_v2:      # bool, default true when services == full, asked only when services == custom
 include_csrf:        # bool, default true when services == full, asked only when services == custom
+include_security_headers: # bool, default true when services == full, asked only when services == custom
 include_redis_cache: # bool, default true when services == full, asked only when services == custom
 include_redis_rate_limit: # bool, default true when services == full, asked only when services == custom
 include_redis_token_blacklist: # bool, default true when services == full, asked only when include_auth is true
@@ -52,6 +53,7 @@ include_resend:      # bool, default true when services == full, asked only when
 include_brevo:       # bool, default true when services == full, asked only when services == custom
 include_openobserve: # bool, default true when services == full, asked only when services == custom
 include_apple_pay:   # bool, default true when services == full, asked only when services == custom
+include_alembic_scripts: # bool, default true when services == full, asked only when services == custom
 
 _exclude:
   - "copier.yml"
@@ -64,7 +66,7 @@ _tasks:
      "--author-name", "{{ author_name }}", "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_example_items': include_example_items, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_example_items': include_example_items, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_security_headers': include_security_headers, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay, 'include_alembic_scripts': include_alembic_scripts} | tojson }}"]
 ```
 
 Invocation (from `README.md`):

@@ -90,6 +90,12 @@ FEATURES: tuple[Feature, ...] = (
         forbidden=(r"(?i)csrf",),
     ),
     Feature(
+        "security_headers",
+        question="include_security_headers",
+        forbidden=(r"SecurityHeadersMiddleware", r"security_headers"),
+        doc_forbidden=(r"(?i)security headers",),
+    ),
+    Feature(
         "redis_cache",
         question="include_redis_cache",
         forbidden=(
@@ -206,6 +212,11 @@ FEATURES: tuple[Feature, ...] = (
             r"(?i)apple pay",
         ),
     ),
+    Feature(
+        "alembic_scripts",
+        question="include_alembic_scripts",
+        forbidden=(r"alembic\.sh", r"alembic\.bat"),
+    ),
 )
 
 FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEATURES}
@@ -243,6 +254,8 @@ PATHS: dict[str, str] = {
     "app/api/v2/": "api_v2",
     "app/middleware/csrf.py": "csrf",
     "tests/middleware/csrf_test.py": "csrf",
+    "app/middleware/security_headers.py": "security_headers",
+    "tests/middleware/security_headers_test.py": "security_headers",
     # The skill's eval prompts test the template itself: template repo only.
     ".claude/skills/fastapi-template-architect/evals/": "_template",
     # The Archify diagram of the template itself (every service on): template repo only.
@@ -293,6 +306,8 @@ PATHS: dict[str, str] = {
     "scripts/celery_beat.bat": "celery",
     "scripts/celery_worker.sh": "celery",
     "scripts/celery_worker.bat": "celery",
+    "scripts/alembic.sh": "alembic_scripts",
+    "scripts/alembic.bat": "alembic_scripts",
     "docs/integrations/celery.md": "celery",
     "tests/core/openobserve_test.py": "openobserve",
     "docs/integrations/openobserve.md": "openobserve",

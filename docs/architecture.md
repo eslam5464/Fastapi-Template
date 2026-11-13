@@ -58,18 +58,17 @@ app/
 │   ├── exceptions/         # Service-layer exceptions
 │   └── types/              # Service-layer TypedDicts
 ├── middleware/
-│   ├── logging.py          # Request logging middleware
-│   └── security_headers.py # Security headers middleware
+│   └── logging.py          # Request logging middleware
 └── alembic/                # Database migrations
     ├── env.py
     ├── script.py.mako
     └── versions/
 ```
 
-<!-- --- FEATURE[auth|example_items|api_v2|csrf|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] START --- -->
+<!-- --- FEATURE[auth|example_items|api_v2|csrf|security_headers|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] START --- -->
 Optional files in this project:
 
-<!-- --- FEATURE[auth|example_items|api_v2|csrf|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] END --- -->
+<!-- --- FEATURE[auth|example_items|api_v2|csrf|security_headers|redis|celery|firebase|gcs|backblaze|resend|brevo|openobserve|apple_pay] END --- -->
 <!-- --- FEATURE[auth] START --- -->
 - `app/models/user.py`, `app/repos/user.py`, `app/schemas/user.py`, `app/schemas/token.py`, `app/services/auth_service.py`, `app/api/v1/deps/auth.py`, `app/api/v1/endpoints/auth.py`, `app/api/v1/endpoints/user.py` — authentication and the User model ([guide](integrations/auth.md))
 <!-- --- FEATURE[auth] END --- -->
@@ -82,6 +81,9 @@ Optional files in this project:
 <!-- --- FEATURE[csrf] START --- -->
 - `app/middleware/csrf.py` — CSRF protection middleware
 <!-- --- FEATURE[csrf] END --- -->
+<!-- --- FEATURE[security_headers] START --- -->
+- `app/middleware/security_headers.py` — security headers middleware
+<!-- --- FEATURE[security_headers] END --- -->
 <!-- --- FEATURE[redis] START --- -->
 - `app/services/cache/base.py` — shared Redis connection pool (`BaseRedisClient`)
 <!-- --- FEATURE[redis] END --- -->
@@ -501,7 +503,9 @@ Request → CORS Middleware → Logging Middleware → Route Handler
 ### Custom Middleware
 
 - **Logging Middleware**: Request/response logging
+<!-- --- FEATURE[security_headers] START --- -->
 - **Security Middleware**: Additional security headers
+<!-- --- FEATURE[security_headers] END --- -->
 - **Error Handling**: Centralized exception handling
 
 ## Logging Architecture
@@ -723,7 +727,9 @@ class NotFoundError(BaseAPIException):
 <!-- --- FEATURE[csrf] START --- -->
 - **CSRF Protection**: Middleware-based CSRF token validation
 <!-- --- FEATURE[csrf] END --- -->
+<!-- --- FEATURE[security_headers] START --- -->
 - **Security Headers**: X-Frame-Options, X-Content-Type-Options, X-XSS-Protection
+<!-- --- FEATURE[security_headers] END --- -->
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - **Rate Limiting**: Redis-based sliding window algorithm with microsecond precision
 <!-- --- FEATURE[redis_rate_limit] END --- -->

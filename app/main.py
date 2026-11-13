@@ -24,8 +24,10 @@ from app.middleware.logging import LoggingMiddleware
 from app.middleware.rate_limit import RateLimitHeaderMiddleware
 
 # --- FEATURE[redis_rate_limit] END ---
+# --- FEATURE[security_headers] START ---
 from app.middleware.security_headers import SecurityHeadersMiddleware
 
+# --- FEATURE[security_headers] END ---
 # --- FEATURE[redis_cache] START ---
 from app.services.cache.manager import cache_manager
 
@@ -213,8 +215,10 @@ app.add_middleware(
     ],
 )
 
+# --- FEATURE[security_headers] START ---
 # Set security headers middleware (OWASP recommended)
 app.add_middleware(SecurityHeadersMiddleware)
+# --- FEATURE[security_headers] END ---
 
 # --- FEATURE[csrf] START ---
 # Set CSRF protection middleware (header-based)

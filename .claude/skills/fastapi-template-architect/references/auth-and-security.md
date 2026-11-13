@@ -80,6 +80,11 @@ Real code in `../assets/app/middleware/csrf.py`:
 
 ## Security headers + dual CSP
 
+Only in projects generated with `include_security_headers` (check that
+`app/middleware/security_headers.py` exists). A project without it sends no such
+headers from the app itself — add them at the reverse proxy or gateway if you need
+them.
+
 Real code in `../assets/app/middleware/security_headers.py`. Every response gets OWASP
 baseline headers: `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`,
 `X-XSS-Protection: 1; mode=block`, `Referrer-Policy: strict-origin-when-cross-origin`, a

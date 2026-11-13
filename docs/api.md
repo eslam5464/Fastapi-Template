@@ -412,13 +412,15 @@ The API validates tokens by:
 3. Extracting user information
 4. Validating user exists in database
 
-### Security Headers
+### Response Headers
 
-The API includes security headers:
+The API includes these response headers:
 
 - `WWW-Authenticate: Bearer` (for 401 responses)
 - CORS headers (configurable origins)
+<!-- --- FEATURE[security_headers] START --- -->
 - Security middleware headers
+<!-- --- FEATURE[security_headers] END --- -->
 
 <!-- --- FEATURE[auth] END --- -->
 

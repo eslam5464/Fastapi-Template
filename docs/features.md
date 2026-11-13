@@ -11,7 +11,7 @@ Full reference for what's built into this project: what each feature does, which
 <!-- --- FEATURE[example_items] START --- -->
 - 📦 [Example domain: Items](#-example-domain-items) — a complete CRUD slice to copy from
 <!-- --- FEATURE[example_items] END --- -->
-- 🔒 [Security middleware](#-security-middleware) — security headers and the other request middleware
+- 🔒 [Security middleware](#-security-middleware) — request logging and the other request middleware
 <!-- --- FEATURE[redis_cache] START --- -->
 - ⚡ [Caching](#-caching) — Redis cache
 <!-- --- FEATURE[redis_cache] END --- -->
@@ -58,7 +58,10 @@ Optional services are chosen when the project is generated: Copier's `services` 
 <!-- --- FEATURE[celery] START --- -->
 - **Sync engine for Celery** — `psycopg` engine and `session_factory` in `app/core/db_sync.py`, from `settings.db_url_sync`.
 <!-- --- FEATURE[celery] END --- -->
-- **Database migrations** — Alembic (`app/alembic/`). Run via `./scripts/alembic.sh` / `.bat` or `alembic upgrade head` directly.
+- **Database migrations** — Alembic (`app/alembic/`), run with `alembic upgrade head` directly.
+<!-- --- FEATURE[alembic_scripts] START --- -->
+- **Migration helper scripts** — `./scripts/alembic.sh` (Linux/macOS) and `.\scripts\alembic.bat` (Windows).
+<!-- --- FEATURE[alembic_scripts] END --- -->
 - **Clean/layered architecture** — repository pattern (`app/repos/`) + dependency injection, with module boundaries enforced by `tach` (see `tach.toml`): `core` → `models`/`schemas` → `repos` → `services` → `api`/`middleware`.
 - **Structured logging** — Loguru-based (`app/core/logger.py`): console and rotating file output, request and process IDs.
 <!-- --- FEATURE[openobserve] START --- -->
@@ -117,7 +120,9 @@ All in `app/middleware/`:
 <!-- --- FEATURE[!csrf] START --- -->
 - **No cross-site request forgery check** — this project was generated without that middleware. Add one before you authenticate browser clients with cookies.
 <!-- --- FEATURE[!csrf] END --- -->
-- **Security headers** (`security_headers.py`)
+<!-- --- FEATURE[security_headers] START --- -->
+- **Security headers** (`security_headers.py`) — OWASP-recommended headers (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, CSP and more) on every response.
+<!-- --- FEATURE[security_headers] END --- -->
 <!-- --- FEATURE[redis_rate_limit] START --- -->
 - **Rate limiting** (`rate_limit.py`) — sliding-window algorithm with microsecond precision, Redis-backed. Guide: [integrations/rate-limiting.md](integrations/rate-limiting.md).
 <!-- --- FEATURE[redis_rate_limit] END --- -->
