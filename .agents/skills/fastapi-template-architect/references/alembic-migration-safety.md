@@ -1,6 +1,6 @@
 # Alembic Migration Safety
 
-Source: `docs/backend-architecture.md` ("Alembic Migration Safety Guide") plus the real
+Source: `docs/backend-architecture.md` ("Alembic Migration Safety Guide"; when the project was generated with it) plus the real
 `app/alembic/env.py` (snapshotted in `../assets/`) and `alembic.ini`.
 
 ## This repo's `env.py` — real mechanics, not generic Alembic boilerplate

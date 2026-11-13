@@ -1,6 +1,6 @@
 # Auth & Security
 
-Source: `docs/backend-architecture.md` ("Middleware Layer" section) plus the real
+Source: `docs/backend-architecture.md` ("Middleware Layer" section; when the project was generated with it) plus the real
 `app/middleware/{csrf,security_headers,rate_limit}.py` and
 `app/api/v1/deps/rate_limit.py` (all snapshotted in `../assets/`), and
 `app/services/auth_service.py` / `app/services/cache/token_blacklist.py` (described here

@@ -1,7 +1,7 @@
 # Observability & Performance
 
 Source: `docs/backend-architecture.md` ("Observability Baseline", "Performance Budget
-Guide") plus the real `app/core/logger.py` and `app/middleware/logging.py`
+Guide"; when the project was generated with it) plus the real `app/core/logger.py` and `app/middleware/logging.py`
 (snapshotted in `../assets/`).
 
 ## Logging — Loguru, not stdlib, with a real interception layer

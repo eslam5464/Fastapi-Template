@@ -31,9 +31,11 @@ Every PR runs, and must pass, all of the following before it's mergeable:
 
 - `ci.yml` `lint` job — the same pre-commit hooks as the checklist above, run as a required check.
 - `ci.yml` `test` job — pytest against real service containers (Postgres, plus any other service the project uses), with a coverage diff posted as a PR comment.
-- `codeql.yml` and `dependency-review.yml` — static security analysis and dependency vulnerability scanning.
+<!-- --- FEATURE[github_extras] START --- -->
+- `codeql.yml` — static security analysis.
 
 `.github/CODEOWNERS` auto-requests review on every PR.
+<!-- --- FEATURE[github_extras] END --- -->
 
 ## Commit Messages
 

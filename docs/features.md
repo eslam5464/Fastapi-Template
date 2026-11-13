@@ -44,6 +44,16 @@ Full reference for what's built into this project: what each feature does, which
 
 Optional services are chosen when the project is generated: Copier's `services` question offers `minimal` (the base, pre-selected in an interactive run), `custom` (pick services one by one), or `full` (everything, which `copier copy --defaults` selects). A chosen service's packages are regular dependencies, so `uv sync` installs everything the project uses.
 
+<!-- --- FEATURE[github_extras|extra_docs] START --- -->
+Two more parts are optional the same way, and are included by `full` / `--defaults`:
+<!-- --- FEATURE[github_extras] START --- -->
+- the GitHub extras (CodeQL, Dependabot, issue and pull request templates, CODEOWNERS, SECURITY.md)
+<!-- --- FEATURE[github_extras] END --- -->
+<!-- --- FEATURE[extra_docs] START --- -->
+- the extra documentation (guides, architecture, API reference, runbooks, strategy)
+<!-- --- FEATURE[extra_docs] END --- -->
+<!-- --- FEATURE[github_extras|extra_docs] END --- -->
+
 ---
 
 ## 🚀 Core
@@ -206,7 +216,10 @@ All in `app/middleware/`:
 - **bandit** — security static analysis.
 - **detect-secrets** — secret-leak scanning.
 - **tach** — module boundary enforcement (see `tach.toml`).
-- **pre-commit** — runs all of the above locally before commit; `commitizen` additionally lints commit messages against Conventional Commits (see [Contributing](guides/contributing.md)).
+- **pre-commit** — runs all of the above locally before commit; `commitizen` additionally lints commit messages against Conventional Commits.
+<!-- --- FEATURE[extra_docs] START --- -->
+  See [Contributing](guides/contributing.md).
+<!-- --- FEATURE[extra_docs] END --- -->
 - **CI** — GitHub Actions runs the same lint/type/security suite plus the full test suite against real service containers (Postgres, plus any other service the project uses), with a coverage badge/comment posted per PR (green ≥90%, orange ≥70%).
 
 ## 🌍 Environment management

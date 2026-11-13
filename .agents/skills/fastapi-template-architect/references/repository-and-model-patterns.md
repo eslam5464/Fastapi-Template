@@ -1,7 +1,7 @@
 # Repository & Model Patterns
 
 Source: `docs/backend-architecture.md` ("Repository Layer", "Model Layer" and its
-relationship deep-dive sections) cross-checked against the real
+relationship deep-dive sections; when the project was generated with it) cross-checked against the real
 `app/repos/base.py` and `app/models/base.py` (both snapshotted in `../assets/`).
 
 ## `BaseRepository` — the generic CRUD base

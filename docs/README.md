@@ -2,6 +2,7 @@
 
 Welcome to the FastAPI Template documentation. This directory contains comprehensive guides to help you understand, develop, deploy, and maintain applications built with this template.
 
+<!-- --- FEATURE[extra_docs] START --- -->
 ## 📚 Documentation Index
 
 ### [🏗️ Architecture](./architecture.md)
@@ -130,7 +131,9 @@ Production deployment strategies, configuration, and monitoring:
 **Best for**: DevOps engineers, deployment planning, production environment setup.
 
 ---
+<!-- --- FEATURE[extra_docs] END --- -->
 
+<!-- --- FEATURE[extra_docs] START --- -->
 ## 🎯 Quick Navigation
 
 ### I want to
@@ -151,6 +154,7 @@ Production deployment strategies, configuration, and monitoring:
 | Deploy with Docker              | [Deployment > Docker Deployment](./deployment.md#docker-deployment)                 |
 | Configure environment variables | [Deployment > Environment Configuration](./deployment.md#environment-configuration) |
 | Set up monitoring               | [Deployment > Monitoring](./deployment.md#monitoring)                               |
+<!-- --- FEATURE[extra_docs] END --- -->
 
 ---
 
@@ -282,6 +286,7 @@ This documentation is maintained for the FastAPI Template project and is updated
 
 ---
 
+<!-- --- FEATURE[extra_docs] START --- -->
 ## Summary
 
 This documentation suite provides everything you need to work with the FastAPI Template:
@@ -292,3 +297,4 @@ This documentation suite provides everything you need to work with the FastAPI T
 - **[Deployment](./deployment.md)** - Deploy to production
 
 Start with the section most relevant to your role and use the cross-references to navigate to related topics.
+<!-- --- FEATURE[extra_docs] END --- -->
