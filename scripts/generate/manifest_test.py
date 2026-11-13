@@ -136,16 +136,60 @@ def _owning_paths(rel: str) -> list[str]:
     return [key for key in features.PATHS if key == rel or (key.endswith("/") and rel.startswith(key))]
 
 
+def _expr_feature_names(expr: str) -> set[str]:
+    """Feature names referenced in one marker expression."""
+    return {name for name in re.split(r"[|&!]", expr) if name}
+
+
+def _content_line_enclosures(text: str, style: str) -> tuple[bool, list[list[str]]]:
+    """Walk a file's lines the way process_text does.
+
+    Returns whether any non-blank, non-marker line sits outside every marker
+    block, and the enclosing START expressions of each such line.
+    """
+    marker_re = markers._MARKER_RE[style]
+    has_outside = False
+    enclosures: list[list[str]] = []
+    stack: list[str] = []
+    for line in text.splitlines(keepends=True):
+        body = markers._body(line)
+        match = marker_re.fullmatch(body)
+        if match is None:
+            if body.strip() != "":
+                if not stack:
+                    has_outside = True
+                enclosures.append(list(stack))
+            continue
+        if match.group("side") == "START":
+            stack.append(match.group("expr"))
+        elif stack:
+            stack.pop()
+    return has_outside, enclosures
+
+
 def test_every_marked_file_strips_for_every_combination_of_its_features(tracked_files):
     """The marker pass succeeds (no MarkerError) for every answer set.
 
-    A file's markers can only fail on the features that file mentions (its
-    marker expressions and the PATHS entries that own it), so trying every
-    combination of those per file covers every answer set without copying the
-    whole template for each one. Whole-tree runs of the CI variants are in
-    check_variants_test.py.
+    Structural errors - near-miss marker text, an END without a START, an END
+    whose expression differs from its START, an unclosed START, an expression
+    parse error or an unknown feature name - are raised the same way for every
+    flag set: process_text walks every line and evaluates every START
+    expression even when its enclosing block is off. One call per file, with
+    every feature on, therefore finds all of them.
+
+    The only flag-dependent error is "file became empty or whitespace-only
+    after marker stripping". If any non-blank line sits outside every marker
+    block the file can never become empty; otherwise every non-blank line is
+    enclosed by some block, and the file empties only when a combination of
+    the features named by those enclosing expressions (plus the PATHS owner
+    expressions) removes them all. Those are a handful, not 2^n.
     """
-    names_all = [feature.name for feature in features.FEATURES]
+    all_names = [feature.name for feature in features.FEATURES]
+    all_on = {name: name != "_template" for name in all_names}
+
+    def kept(flags, owners):
+        return not any(not markers._eval_expr(features.PATHS[key], flags, False, key, 0) for key in owners)
+
     checked = 0
     for rel in tracked_files:
         path = REPO_ROOT / rel
@@ -158,19 +202,34 @@ def test_every_marked_file_strips_for_every_combination_of_its_features(tracked_
             text = path.read_text(encoding="utf-8")
         except UnicodeDecodeError:
             continue
-        owners = _owning_paths(rel)
-        names = _marker_feature_names(text)
-        if not names:
+        if not _marker_feature_names(text):
             continue
+        owners = _owning_paths(rel)
+
+        flags = dict(all_on)
+        if not kept(flags, owners):
+            flags["_template"] = True
+            if not kept(flags, owners):
+                continue  # no answer set keeps this file
+        markers.process_text(text, flags, style, rel)
+
+        has_outside, enclosures = _content_line_enclosures(text, style)
+        if has_outside:
+            checked += 1
+            continue
+
+        combo_names: set[str] = set()
+        for enclosing in enclosures:
+            for expr in enclosing:
+                combo_names |= _expr_feature_names(expr)
         for key in owners:
-            names |= _marker_feature_names(f"FEATURE[{features.PATHS[key]}]")
-        names = sorted(names)
-        for values in itertools.product([False, True], repeat=len(names)):
-            flags = dict.fromkeys(names_all, False)
-            flags.update(zip(names, values))
-            if any(not markers._eval_expr(features.PATHS[key], flags, False, key, 0) for key in owners):
+            combo_names |= _expr_feature_names(features.PATHS[key])
+        for values in itertools.product([False, True], repeat=len(combo_names)):
+            combo_flags = dict.fromkeys(all_names, False)
+            combo_flags.update(zip(sorted(combo_names), values))
+            if not kept(combo_flags, owners):
                 continue  # the file is deleted for this answer set, never processed
-            markers.process_text(text, flags, style, rel)
+            markers.process_text(text, combo_flags, style, rel)
         checked += 1
     assert checked > 0, "no marked files found"
 
