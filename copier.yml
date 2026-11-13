@@ -157,6 +157,18 @@ include_alembic_scripts:
   default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
+include_github_extras:
+  type: bool
+  help: "Include the GitHub extras (CodeQL, Dependabot, issue and pull request templates, CODEOWNERS, SECURITY.md)?"
+  default: "{{ services == 'full' }}"
+  when: "{{ services == 'custom' }}"
+
+include_extra_docs:
+  type: bool
+  help: "Include the extra documentation (guides, architecture, API reference, runbooks, strategy)?"
+  default: "{{ services == 'full' }}"
+  when: "{{ services == 'custom' }}"
+
 _exclude:
   # Copier's built-in defaults (https://copier.readthedocs.io/en/stable/configuring/#exclude) -
   # defining _exclude replaces them entirely rather than extending them, so they must be
@@ -181,4 +193,4 @@ _tasks:
      "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_example_items': include_example_items, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_security_headers': include_security_headers, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay, 'include_alembic_scripts': include_alembic_scripts} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_example_items': include_example_items, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_security_headers': include_security_headers, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay, 'include_alembic_scripts': include_alembic_scripts, 'include_github_extras': include_github_extras, 'include_extra_docs': include_extra_docs} | tojson }}"]

@@ -217,6 +217,34 @@ FEATURES: tuple[Feature, ...] = (
         question="include_alembic_scripts",
         forbidden=(r"alembic\.sh", r"alembic\.bat"),
     ),
+    Feature(
+        "github_extras",
+        question="include_github_extras",
+        doc_forbidden=(
+            r"(?i)codeql",
+            r"(?i)dependabot",
+            r"CODEOWNERS",
+            r"SECURITY\.md",
+            r"ISSUE_TEMPLATE",
+            r"PULL_REQUEST_TEMPLATE",
+        ),
+    ),
+    Feature(
+        "extra_docs",
+        question="include_extra_docs",
+        doc_forbidden=(
+            r"guides/(getting-started|development|contributing|deployment|versioning)",
+            r"runbooks/",
+            r"strategy/",
+            r"api/reference",
+            r"backend-architecture",
+            r"architecture/overview",
+            r"(?<![\w-])architecture\.md",
+            r"(?<![\w-])development\.md",
+            r"(?<![\w-])deployment\.md",
+            r"(?<![\w-])api\.md",
+        ),
+    ),
 )
 
 FEATURES_BY_NAME: dict[str, Feature] = {feature.name: feature for feature in FEATURES}
@@ -345,6 +373,28 @@ PATHS: dict[str, str] = {
     "tests/services/payments/": "apple_pay",
     "tests/apple_pay_credentials.py": "apple_pay",
     "docs/integrations/apple-pay.md": "apple_pay",
+    # GitHub extras: CodeQL, Dependabot, issue/PR templates, CODEOWNERS, SECURITY.md.
+    ".github/workflows/codeql.yml": "github_extras",
+    ".github/dependabot.yml": "github_extras",
+    ".github/ISSUE_TEMPLATE/": "github_extras",
+    ".github/PULL_REQUEST_TEMPLATE.md": "github_extras",
+    ".github/CODEOWNERS": "github_extras",
+    ".github/SECURITY.md": "github_extras",
+    # Extra documentation: the guides, architecture, API reference, runbooks and strategy pages.
+    "docs/runbooks/": "extra_docs",
+    "docs/strategy/": "extra_docs",
+    "docs/api/": "extra_docs",
+    "docs/api.md": "extra_docs",
+    "docs/architecture.md": "extra_docs",
+    "docs/backend-architecture.md": "extra_docs",
+    "docs/deployment.md": "extra_docs",
+    "docs/development.md": "extra_docs",
+    "docs/architecture/overview.md": "extra_docs",
+    "docs/guides/getting-started.md": "extra_docs",
+    "docs/guides/development.md": "extra_docs",
+    "docs/guides/contributing.md": "extra_docs",
+    "docs/guides/deployment.md": "extra_docs",
+    "docs/guides/versioning.md": "extra_docs",
 }
 
 # Third-party top-level modules every generated project may import (checked by

@@ -19,8 +19,7 @@ Instead, use GitHub's private vulnerability reporting for this repository:
 2. Click **Report a vulnerability**.
 3. Include a description of the issue, steps to reproduce, and potential impact.
 
-This repository also runs [CodeQL](../.github/workflows/codeql.yml) and
-[Dependency Review](../.github/workflows/dependency-review.yml) on every change,
+This repository also runs [CodeQL](../.github/workflows/codeql.yml) on every change,
 and [Dependabot](../.github/dependabot.yml) for dependency updates — findings from
 those show up in the Security tab automatically.
 

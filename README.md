@@ -1,7 +1,9 @@
 # FastAPI Template
 
 [![CI](https://github.com/eslam5464/Fastapi-Template/actions/workflows/ci.yml/badge.svg)](https://github.com/eslam5464/Fastapi-Template/actions/workflows/ci.yml)
+<!-- --- FEATURE[github_extras] START --- -->
 [![CodeQL](https://github.com/eslam5464/Fastapi-Template/actions/workflows/codeql.yml/badge.svg)](https://github.com/eslam5464/Fastapi-Template/actions/workflows/codeql.yml)
+<!-- --- FEATURE[github_extras] END --- -->
 [![Coverage](https://raw.githubusercontent.com/eslam5464/Fastapi-Template/python-coverage-comment-action-data/badge.svg)](https://github.com/eslam5464/Fastapi-Template/tree/python-coverage-comment-action-data)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -157,7 +159,7 @@ uvx copier copy gh:eslam5464/Fastapi-Template <new-project-dir> --trust
 
 **Alternative:** if you'd rather have `copier` installed permanently (e.g. for `copier update` later), use `uv tool install copier` instead. On Windows, that installs into a user tools directory that's often **not yet on PATH** in your *current* terminal session — if you see `'copier' is not recognized as an internal or external command` right after installing, either open a **new** terminal window, or run `uv tool update-shell` and then restart the terminal. The `uvx` command above sidesteps the PATH issue entirely since it doesn't need `copier` installed anywhere persistent.
 
-You'll be prompted for a project name, description, author name/email, GitHub username, Python version, and how much of the template to include. The `services` question offers three values: `minimal` (the base, pre-selected in an interactive run), `custom` (choose optional services one by one), or `full` (everything). `copier copy ... --defaults` selects `full`, so it generates the project with every optional service; for a scripted minimal base use `copier copy ... --defaults --data services=minimal`. The optional services are authentication, the example Items domain, the `/v2` API scaffold, the CSRF middleware, the security headers middleware, the Redis cache, rate limiting, the token blacklist, Celery, Firebase, Firestore, Google Cloud Storage, BackBlaze B2, Resend, Brevo, OpenObserve, Apple Pay and the Alembic helper scripts. Everything identity-specific — the `pyproject.toml` name, Docker container names, the Postgres schema, `README.md`, `LICENSE`, `CODEOWNERS` — is filled in automatically; see [docs/features.md](docs/features.md) for what ships by default versus what's opt-in.
+You'll be prompted for a project name, description, author name/email, GitHub username, Python version, and how much of the template to include. The `services` question offers three values: `minimal` (the base, pre-selected in an interactive run), `custom` (choose optional services one by one), or `full` (everything). `copier copy ... --defaults` selects `full`, so it generates the project with every optional service; for a scripted minimal base use `copier copy ... --defaults --data services=minimal`. The optional services are authentication, the example Items domain, the `/v2` API scaffold, the CSRF middleware, the security headers middleware, the Redis cache, rate limiting, the token blacklist, Celery, Firebase, Firestore, Google Cloud Storage, BackBlaze B2, Resend, Brevo, OpenObserve, Apple Pay, the Alembic helper scripts, the GitHub extras (CodeQL, Dependabot, issue and pull request templates, CODEOWNERS, SECURITY.md) and the extra documentation (guides, architecture, API reference, runbooks, strategy). Everything identity-specific — the `pyproject.toml` name, Docker container names, the Postgres schema, `README.md`, `LICENSE`, `CODEOWNERS` — is filled in automatically; see [docs/features.md](docs/features.md) for what ships by default versus what's opt-in.
 
 `--trust` is required because generation runs a small post-processing script (`scripts/generate/post_gen.py`) that substitutes your answers into the copied files, removes unused Apple Pay files when you opt out, regenerates `uv.lock`, and runs `git init` for you.
 
@@ -248,6 +250,7 @@ Detailed documentation is available in the [docs/](docs/) folder:
 - **[LLM Index](docs/llms.txt)** - Canonical documentation entrypoint for AI and quick doc navigation
 - **[AI Coding Assistant Skill](.claude/skills/fastapi-template-architect/SKILL.md)** - Scaffold or extend/review projects with this architecture from Claude Code, Codex CLI, or GitHub Copilot
 - **[Features](docs/features.md)** - Full list of integrations and services, with setup notes
+<!-- --- FEATURE[extra_docs] START --- -->
 - **[Architecture Overview](docs/architecture/overview.md)** - Current system design and versioned routing model
 - **[Backend Architecture Guide](docs/backend-architecture.md)** - Layered architecture deep dive
 - **[API Reference](docs/api/reference.md)** - Versioned endpoint reference
@@ -258,12 +261,15 @@ Detailed documentation is available in the [docs/](docs/) folder:
 - **[Deployment Guide](docs/guides/deployment.md)** - Production deployment checklist
 - **[Strategy Vision](docs/strategy/vision.md)** - Product and technical direction
 - **[Roadmap](docs/strategy/roadmap.md)** - Milestones and priorities
+<!-- --- FEATURE[extra_docs] END --- -->
 - **[Changelog](docs/changelog/CHANGELOG.md)** - Release history
 
+<!-- --- FEATURE[extra_docs] START --- -->
 ## 🏛️ Architecture
 
 See **[Architecture Overview](docs/architecture/overview.md)** for the layers, request flow and module boundaries.
 
+<!-- --- FEATURE[extra_docs] END --- -->
 <!-- --- FEATURE[_template] START --- -->
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/architecture/fastapi-template.architecture.visual-check.1440x900.dark.png">

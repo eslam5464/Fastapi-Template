@@ -1,6 +1,6 @@
 # API Governance
 
-Source: `docs/backend-architecture.md` ("API Governance", "Repository Profile Appendix")
+Source: `docs/backend-architecture.md` ("API Governance", "Repository Profile Appendix"; when the project was generated with it)
 plus the real `app/main.py` (snapshotted in `../assets/`).
 
 ## The mounted-sub-app pattern — this repo's actual routing shape

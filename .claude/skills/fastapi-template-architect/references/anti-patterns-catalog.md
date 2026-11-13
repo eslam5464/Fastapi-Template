@@ -1,6 +1,6 @@
 # Anti-Patterns Catalog
 
-Source: `docs/backend-architecture.md` ("Anti-patterns Catalog"). Use this as a literal
+Source: `docs/backend-architecture.md` ("Anti-patterns Catalog"; when the project was generated with it). Use this as a literal
 review checklist in Extend/Audit Mode, not just background reading — when reviewing a
 diff or freshly-written code, check it against each of these explicitly.
 

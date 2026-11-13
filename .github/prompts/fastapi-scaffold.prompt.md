@@ -28,7 +28,10 @@ what the template actually generates.
    `include_celery`, `include_firebase`, `include_firestore` (only with Firebase),
    `include_gcs`, `include_backblaze`, `include_resend`, `include_brevo`,
    `include_openobserve`, `include_apple_pay`, `include_alembic_scripts` (the Alembic
-   helper scripts). Redis is never asked: it is added when
+   helper scripts), `include_github_extras` (the GitHub extras: CodeQL, Dependabot,
+   issue and pull request templates, CODEOWNERS, SECURITY.md), `include_extra_docs`
+   (the extra documentation: guides, architecture, API reference, runbooks, strategy).
+   Redis is never asked: it is added when
    the cache, rate limiting, the token blacklist or Celery is chosen. Point out that
    without auth every route is public, without rate limiting no route has a request
    limit, and without the token blacklist logout cannot revoke tokens.

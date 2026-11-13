@@ -123,10 +123,8 @@ command, just with real dependencies installed).
   credentials, creates a `_test`-suffixed database, runs `alembic upgrade head` then
   `pytest`, then posts a coverage PR comment (green ≥ 90%, orange ≥ 70%) via
   `py-cov-action/python-coverage-comment-action`.
-- **`codeql.yml`** — Python CodeQL analysis on push/PR/weekly cron.
-- **`dependency-review.yml`** — fails on `high`-severity or worse dependency
-  vulnerabilities in a PR, posts a summary comment.
-- **`dependabot.yml`** — `uv` ecosystem + `github-actions`, weekly, groups minor/patch
+- **`codeql.yml`** (when the project was generated with it) — Python CodeQL analysis on push/PR/weekly cron.
+- **`dependabot.yml`** (when the project was generated with it) — `uv` ecosystem + `github-actions`, weekly, groups minor/patch
   updates, 3-day cooldown, reviewers sourced from `CODEOWNERS`.
 - **`template-ci.yml`** (source-template repo only — excluded from generated projects,
   see [copier-template-mechanics.md](copier-template-mechanics.md)) — bakes every

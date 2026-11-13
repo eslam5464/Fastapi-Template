@@ -1,7 +1,7 @@
 # Testing Conventions
 
 Source: `docs/backend-architecture.md` ("Testing Strategy", "Pytest Implementation
-Appendix") plus the real `tests/conftest.py` (snapshotted in `../assets/`).
+Appendix"; when the project was generated with it) plus the real `tests/conftest.py` (snapshotted in `../assets/`).
 
 ## File naming — `*_test.py`, not `test_*.py`
 

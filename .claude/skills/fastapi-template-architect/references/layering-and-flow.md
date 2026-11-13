@@ -1,7 +1,7 @@
 # Layering & Data Flow
 
 Source: `docs/backend-architecture.md` ("Overview", "Data Flow", "Dependency Direction
-Rules" sections) plus `app/main.py`, `tach.toml` (both snapshotted in `../assets/`).
+Rules" sections; when the project was generated with it) plus `app/main.py`, `tach.toml` (both snapshotted in `../assets/`).
 
 ## The six layers
 
