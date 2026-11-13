@@ -72,7 +72,7 @@ that show up in generic FastAPI testing tutorials.
 From `app/main.py`, in this exact order:
 
 1. `CORSMiddleware`
-2. `SecurityHeadersMiddleware`
+2. `SecurityHeadersMiddleware` (only with `include_security_headers`)
 3. `CSRFMiddleware` (only with `include_csrf`)
 4. `RateLimitHeaderMiddleware` (only with rate limiting)
 5. `LoggingMiddleware`

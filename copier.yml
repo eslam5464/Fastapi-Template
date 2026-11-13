@@ -42,11 +42,11 @@ python_version:
 
 services:
   type: str
-  help: "Optional services: keep the minimal base, choose services one by one, or include everything?"
+  help: "Optional parts: keep the minimal base, choose parts one by one, or include everything?"
   choices:
-    "Minimal base (no optional services)": minimal
-    "Choose services one by one": custom
-    "All services": full
+    "Minimal base (no optional parts)": minimal
+    "Choose parts one by one": custom
+    "Everything": full
   default: "{{ 'full' if _copier_conf.defaults else 'minimal' }}"
 
 include_auth:
@@ -70,6 +70,12 @@ include_api_v2:
 include_csrf:
   type: bool
   help: "Include the CSRF middleware (X-CSRF-Token must match the csrf_token cookie; for browser clients that authenticate with cookies)?"
+  default: "{{ services == 'full' }}"
+  when: "{{ services == 'custom' }}"
+
+include_security_headers:
+  type: bool
+  help: "Include the security headers middleware (OWASP-recommended response headers like X-Frame-Options and CSP)?"
   default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
@@ -145,6 +151,12 @@ include_apple_pay:
   default: "{{ services == 'full' }}"
   when: "{{ services == 'custom' }}"
 
+include_alembic_scripts:
+  type: bool
+  help: "Include the Alembic helper scripts (scripts/alembic.sh and scripts/alembic.bat)? Alembic itself stays in every project."
+  default: "{{ services == 'full' }}"
+  when: "{{ services == 'custom' }}"
+
 _exclude:
   # Copier's built-in defaults (https://copier.readthedocs.io/en/stable/configuring/#exclude) -
   # defining _exclude replaces them entirely rather than extending them, so they must be
@@ -169,4 +181,4 @@ _tasks:
      "--author-email", "{{ author_email }}",
      "--github-username", "{{ github_username }}",
      "--python-version", "{{ python_version }}",
-     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_example_items': include_example_items, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay} | tojson }}"]
+     "--features-json", "{{ {'services': services, 'include_auth': include_auth, 'include_example_items': include_example_items, 'include_api_v2': include_api_v2, 'include_csrf': include_csrf, 'include_security_headers': include_security_headers, 'include_redis_cache': include_redis_cache, 'include_redis_rate_limit': include_redis_rate_limit, 'include_redis_token_blacklist': include_redis_token_blacklist, 'include_celery': include_celery, 'include_firebase': include_firebase, 'include_firestore': include_firestore, 'include_gcs': include_gcs, 'include_backblaze': include_backblaze, 'include_resend': include_resend, 'include_brevo': include_brevo, 'include_openobserve': include_openobserve, 'include_apple_pay': include_apple_pay, 'include_alembic_scripts': include_alembic_scripts} | tojson }}"]

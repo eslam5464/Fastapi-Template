@@ -83,7 +83,10 @@ production with running application code depending on the old shape.
 
 ## Commands (this repo's conventions)
 
-Prefer the interactive wrapper scripts over raw `alembic` when working in this repo:
+The interactive wrapper scripts (`./scripts/alembic.sh` on Linux/macOS,
+`.\scripts\alembic.bat` on Windows) exist only in projects generated with
+`include_alembic_scripts`. Where a project has them, prefer them over raw `alembic`
+when working in it:
 
 ```bash
 # Linux/macOS
