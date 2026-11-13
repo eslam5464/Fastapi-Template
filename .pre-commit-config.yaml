@@ -14,7 +14,7 @@ repos:
         exclude: ^tests/(\w+_credentials|conftest|sample_model|schemas|utils)\.py$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.22
+    rev: v0.17.5
     hooks:
       # Replaces autoflake (unused imports/variables) + pyflakes + isort.
       - id: ruff
