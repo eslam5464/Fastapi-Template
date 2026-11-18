@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.14"
 resolution-markers = [
     "python_full_version >= '3.15' and sys_platform == 'win32'",
@@ -959,7 +959,7 @@ requires-dist = [
     { name = "loguru", specifier = ">=0.7.3" },
     { name = "psycopg", marker = "sys_platform != 'win32'", specifier = ">=3.3.8" },
     { name = "psycopg", extras = ["binary"], marker = "sys_platform == 'win32'", specifier = ">=3.3.4" },
-    { name = "pwdlib", extras = ["argon2"], specifier = ">=0.3.0" },
+    { name = "pwdlib", extras = ["argon2"], specifier = ">=0.4.0" },
     { name = "pydantic", specifier = ">=2.14.3" },
     { name = "pydantic-settings", specifier = ">=2.16.2" },
     { name = "python-jose", specifier = ">=3.5.0" },
@@ -1960,7 +1960,7 @@ resolution-markers = [
     "python_full_version < '3.15' and sys_platform == 'win32'",
 ]
 dependencies = [
-    { name = "tzdata", marker = "sys_platform == 'win32'" },
+    { name = "tzdata" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/db/2f/cb91e5502ec9de1de6f1b76cfbf69531932725361168bb06963620c77e2e/psycopg-3.3.4.tar.gz", hash = "sha256:e21207764952cff81b6b8bdacad9a3939f2793367fdac2987b3aac36a651b5bc", size = 165799, upload-time = "2026-05-01T23:31:55.179Z" }
 wheels = [
@@ -1969,7 +1969,7 @@ wheels = [
 
 [package.optional-dependencies]
 binary = [
-    { name = "psycopg-binary", marker = "implementation_name != 'pypy' and sys_platform == 'win32'" },
+    { name = "psycopg-binary", marker = "implementation_name != 'pypy'" },
 ]
 
 [[package]]
@@ -1995,11 +1995,11 @@ wheels = [
 
 [[package]]
 name = "pwdlib"
-version = "0.3.0"
+version = "0.4.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/5f/41/a7c0d8a003c36ce3828ae3ed0391fe6a15aad65f082dbd6bec817ea95c0b/pwdlib-0.3.0.tar.gz", hash = "sha256:6ca30f9642a1467d4f5d0a4d18619de1c77f17dfccb42dd200b144127d3c83fc", size = 215810, upload-time = "2025-10-25T12:44:24.395Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/9f/63dc5850fe793c0c13637792dd2494ff5ae6f7b95e334fd2b89a2d5803c9/pwdlib-0.4.0.tar.gz", hash = "sha256:123fd269d0980416f3a2a7b0c3a183f3b2f8580bb44bdadadde93e4bf7582f9d", size = 226803, upload-time = "2026-11-14T10:06:30.026Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/62/0c/9086a357d02a050fbb3270bf5043ac284dbfb845670e16c9389a41defc9e/pwdlib-0.3.0-py3-none-any.whl", hash = "sha256:f86c15c138858c09f3bba0a10984d4f9178158c55deaa72eac0210849b1a140d", size = 8633, upload-time = "2025-10-25T12:44:23.406Z" },
+    { url = "https://files.pythonhosted.org/packages/dc/6c/63119c0eba65efbe799e291a2cc9532ecaf7abc03d3f20e888df3fddff79/pwdlib-0.4.0-py3-none-any.whl", hash = "sha256:ef34f40b43efd610fce615391027f08bdb1403fcccda9897978f69275b61b2ee", size = 9470, upload-time = "2026-11-14T10:06:28.478Z" },
 ]
 
 [package.optional-dependencies]
