@@ -2,6 +2,10 @@ version: 2
 
 # Reviewer assignment for these PRs comes from .github/CODEOWNERS (`reviewers:` was
 # retired by GitHub in August 2025 in favor of CODEOWNERS-based review requests).
+#
+# Pace: version updates run monthly and land in one grouped PR per ecosystem.
+# Security updates ignore the schedule, cooldown and groups, so they still arrive
+# as soon as an advisory is published.
 updates:
   # Note: if GitHub's "uv" ecosystem isn't recognized on this account/plan yet,
   # fall back to `package-ecosystem: "pip"` - Dependabot's pip support has picked
@@ -9,20 +13,31 @@ updates:
   - package-ecosystem: "uv"
     directory: "/"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
+      interval: "monthly"
+    # Every pyproject requirement is an open `>=` bound, so new releases already fit
+    # and only uv.lock changes. This stops the separate "update X requirement from
+    # >=a to >=b" PRs that the default `increase` strategy opens.
+    versioning-strategy: "increase-if-necessary"
+    open-pull-requests-limit: 5
     cooldown:
-      default-days: 3
+      default-days: 7
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     groups:
-      minor-and-patch:
-        update-types:
-          - "minor"
-          - "patch"
+      # One PR for all version updates, majors included.
+      all-dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
+      interval: "monthly"
+    open-pull-requests-limit: 5
     cooldown:
-      default-days: 3
+      default-days: 7
+    groups:
+      github-actions:
+        patterns:
+          - "*"
