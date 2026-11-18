@@ -63,7 +63,7 @@ dependencies = [
     # --- FEATURE[resend] END ---
     "sqlalchemy[asyncio]>=2.0.51",
     "tzdata>=2026.6",
-    "uvicorn[standard]>=0.52.1",
+    "uvicorn[standard]>=0.54.0",
     "uvloop>=0.23.0 ; sys_platform == 'linux'",
     "yarl>=1.25.1",
 ]
