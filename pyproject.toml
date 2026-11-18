@@ -43,7 +43,7 @@ dependencies = [
     # --- FEATURE[openobserve] END ---
     "loguru>=0.7.3",
     # --- FEATURE[celery] START ---
-    "psycopg[binary]>=3.3.4 ; sys_platform == 'win32'",
+    "psycopg[binary]>=3.3.9 ; sys_platform == 'win32'",
     "psycopg>=3.3.8 ; sys_platform != 'win32'",
     # --- FEATURE[celery] END ---
     # --- FEATURE[auth] START ---
