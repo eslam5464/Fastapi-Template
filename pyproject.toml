@@ -91,7 +91,7 @@ dev = [
     "ruff>=0.17.4",
     "tach>=0.35.3",
     # --- FEATURE[gcs] START ---
-    "types-aiofiles>=25.1.0",
+    "types-aiofiles>=25.1.0.20261107",
     # --- FEATURE[gcs] END ---
 ]
 # --- FEATURE[_template] START ---
