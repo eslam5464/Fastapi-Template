@@ -47,7 +47,7 @@ dependencies = [
     "psycopg>=3.3.8 ; sys_platform != 'win32'",
     # --- FEATURE[celery] END ---
     # --- FEATURE[auth] START ---
-    "pwdlib[argon2]>=0.3.0",
+    "pwdlib[argon2]>=0.4.0",
     # --- FEATURE[auth] END ---
     "pydantic>=2.14.3",
     "pydantic-settings>=2.16.2",
